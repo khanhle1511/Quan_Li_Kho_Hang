@@ -12,5 +12,7 @@ Những điểm quan sát được khi đi qua toàn bộ luồng ngày 07/11/20
 | RISK-12 | Phiên kiểm kê chỉ lưu trong bộ nhớ trang; tải lại trang là mất số đã đếm | Đúng như code | Đổi người cùng tab thì vẫn giữ (F4 đạt). |
 | RISK-17 | Phiên đăng nhập lưu trong bộ nhớ máy chủ; Render khởi động lại là mọi người phải đăng nhập lại | Đúng như code | Giao diện xử lý đúng: về trang đăng nhập với thông báo rõ (ảnh `99-F5-locked-session-expired.png`). |
 | — | Seeder chạy **sau** khi Tomcat mở cổng, nên request đầu tiên ngay lúc khởi động lần đầu có thể thấy số 0 | Đúng như code | Chỉ ảnh hưởng lần chạy đầu với CSDL trống; test nên đợi `/api/public/summary` trả `warehouses > 0`. |
+| USR-07 | Lịch sử hoạt động của tài khoản **đã xóa**: API `/api/users/{id}/activity` trả 404 dù nhật ký vẫn còn trong CSDL (TC-USR-07-10) | Đúng như đặc tả USR-07 mục 6 | Cân nhắc cho Admin xem lịch sử tài khoản đã xóa (tra theo user_id, bỏ kiểm tra tồn tại). |
+| USR-07 | Lịch sử **suy ra** từ chứng từ cũ dò người duyệt/xác nhận/tải hồ sơ theo **tên**; hai tài khoản trùng tên có thể bị gán nhầm. Thao tác chỉ ở trình duyệt (mở phiên kiểm kê) không được ghi | Đúng như đặc tả USR-07 mục 6 | Dòng suy ra có nhãn "Suy ra từ chứng từ". |
 
 Các RISK chưa kiểm tra: 01, 02, 03 (đồng thời), 05, 08, 09, 13, 14, 15, 16, 18, 19, 20, 21. Viết test `risk_…` trong `e2e/tests/` cho từng mục.

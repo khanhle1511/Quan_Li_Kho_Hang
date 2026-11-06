@@ -9,6 +9,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -89,11 +91,15 @@ public class UserService {
         boolean changePass = !Rules.blank(f.password());
         if (changePass) checkPassword(f.password());
         if (name.equals(u.name) && phone.equals(u.phone) && !changePass) throw ApiException.bad("Chưa có thay đổi nào để lưu.");
+        List<String> changes = new ArrayList<>(); // USR-07: ghi vào nhật ký những gì đã đổi
+        if (!name.equals(u.name)) changes.add("họ tên");
+        if (!phone.equals(u.phone)) changes.add("SĐT");
+        if (changePass) changes.add("mật khẩu");
         u.name = name;
         u.phone = phone;
         if (changePass) u.passwordHash = encoder.encode(f.password());
         users.save(u);
-        return Map.of("id", u.id, "name", u.name);
+        return Map.of("id", u.id, "name", u.name, "changes", changes);
     }
 
     @Transactional

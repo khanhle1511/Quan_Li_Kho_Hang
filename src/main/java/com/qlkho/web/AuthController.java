@@ -1,6 +1,7 @@
 package com.qlkho.web;
 
 import com.qlkho.model.UserAccount;
+import com.qlkho.service.ActivityService;
 import com.qlkho.service.AuthService;
 import com.qlkho.service.StateService;
 import jakarta.servlet.http.HttpSession;
@@ -15,10 +16,12 @@ import java.util.Map;
 public class AuthController {
     private final AuthService auth;
     private final StateService state;
+    private final ActivityService activity;
 
-    public AuthController(AuthService auth, StateService state) {
+    public AuthController(AuthService auth, StateService state, ActivityService activity) {
         this.auth = auth;
         this.state = state;
+        this.activity = activity;
     }
 
     @PostMapping("/auth/login")
@@ -29,6 +32,7 @@ public class AuthController {
 
     @PostMapping("/auth/logout")
     public Map<String, Object> logout(HttpSession session) {
+        auth.find(session).ifPresent(u -> activity.record(u, "LOGOUT", "USER", u.id, "")); // USR-07
         session.invalidate();
         return Map.of("ok", true);
     }

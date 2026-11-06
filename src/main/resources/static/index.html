@@ -250,6 +250,17 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
 @media (max-width:860px){.hero-art{display:none}.hero{padding:24px 20px 32px}}
 @media (prefers-reduced-motion:reduce){.grow .bfill,.grow .meter span{animation:none}.kpi2{transition:none}}
 @media (max-width:960px){.scene{display:none}.auth-brand{flex-basis:100%;padding:28px 24px 40px}}
+/* USR-07: bảng trượt lịch sử hoạt động */
+.overlay-right{align-items:stretch;justify-content:flex-end;padding:0}
+/* chọn theo .overlay-right>.drawer để thắng quy tắc chung aside{flex:1 1 240px;padding…} của thanh menu */
+.overlay-right>.drawer{flex:0 0 auto;width:min(700px,100%);max-width:700px;height:100%;padding:0;gap:0;border-right:0;background:#FFFFFF;box-shadow:-20px 0 60px rgba(15,23,42,.3);display:flex;flex-direction:column;overflow:hidden;animation:slidein .22s cubic-bezier(.2,.7,.2,1)}
+.drawer-body{flex:1;overflow:auto}
+@keyframes slidein{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+.ulink{background:none;border:0;padding:0;font:inherit;font-weight:600;color:#1A4FB8;cursor:pointer;text-align:left}
+.ulink:hover,.ulink:focus-visible{text-decoration:underline}
+.act-day{position:sticky;top:0;z-index:1;background:#F7F9FB;padding:8px 20px;font-size:12px;font-weight:600;color:#56606B;border-bottom:1px solid #E1E6EB}
+.act-item .tdot{width:26px;height:26px;left:25px;border-radius:8px}
+@media (prefers-reduced-motion:reduce){.drawer{animation:none}}
 </style>
 </head>
 <body>
@@ -380,6 +391,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       wf: { open: false, mode: 'create', id: null, code: '', name: '', address: '', keeperId: '', phone: '', capacity: '', opened: '', status: 'active', err: '' },
       pform: { open: false, mode: 'create', id: null, name: '', phone: '', email: '', address: '', note: '', err: '' },
       pq: '', pfil: 'all', pdetail: null, pnote: '',
+      act: null, // USR-07: { id, data, err, cat, q } khi bảng lịch sử đang mở
       toast: null
     };
   }
@@ -1575,7 +1587,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
           ? btn(svg('trash', 15) + 'Xóa', () => deleteUser(u), 'btn-sm', ' aria-label="Xóa tài khoản ' + esc(u.name) + '" style="color:#B42318;border-color:#F1B5AE"')
           : btn(svg('trash', 15), () => deleteUser(u), 'btn-sm btn-ghost btn-muted', ' aria-label="Xóa tài khoản ' + esc(u.name) + ' (cần khóa trước)" title="Khóa tài khoản trước khi xóa"'));
       }
-      const row = [cell('<span style="display:flex;align-items:center;gap:10px"><span class="avatar" style="width:34px;height:34px;background:' + RCOL[u.role][0] + ';color:' + RCOL[u.role][1] + '">' + esc(initialsOf(u.name)) + '</span><span class="col"><b style="font-weight:600">' + esc(u.name) + '</b>' + (me ? '<span class="muted small">Tài khoản của bạn</span>' : '') + '</span></span>'),
+      const row = [cell('<span style="display:flex;align-items:center;gap:10px"><span class="avatar" style="width:34px;height:34px;background:' + RCOL[u.role][0] + ';color:' + RCOL[u.role][1] + '">' + esc(initialsOf(u.name)) + '</span><span class="col"><button type="button" class="ulink" data-c="' + on(() => openActivity(u.id)) + '" aria-label="Xem lịch sử hoạt động của ' + esc(u.name) + '" title="Xem lịch sử hoạt động">' + esc(u.name) + '</button>' + (me ? '<span class="muted small">Tài khoản của bạn</span>' : '') + '</span></span>'),
         cell(esc(fmtPhone(u.phone)), 'font-variant-numeric:tabular-nums'), cell(chip({ t: ROLE[u.role], bg: RCOL[u.role][0], fg: RCOL[u.role][1] })), cell(isoToVn(u.opened)), cell(chip(USTAT[u.status])),
         cell(acts.join(''), 'display:flex;gap:6px;flex-wrap:wrap;align-items:center')];
       if (editing) row.cls = 'hl';
@@ -1590,6 +1602,61 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       '<section class="card" id="user-table" style="scroll-margin-top:16px">' + head('users', '#E6EFFF', '#1A4FB8', 'Tài khoản người dùng', 'Đăng nhập bằng số điện thoại và mật khẩu. Chỉ tài khoản đã khóa mới xóa được.') +
       table('minmax(200px,1.6fr) 140px 150px 120px 110px minmax(230px,1.4fr)', ['Họ tên', 'Số điện thoại', 'Vai trò', 'Ngày mở', 'Tình trạng', 'Thao tác'], rows, 980, 'Không có tài khoản nào khớp bộ lọc.') +
       '</section></div>';
+  }
+
+  // ---------- USR-07: lịch sử hoạt động của một tài khoản ----------
+  const ACAT = { AUTH: 'Đăng nhập', RECEIPT: 'Nhập/Xuất kho', STOCKTAKE: 'Kiểm kê', CATALOG: 'Hàng hóa & đối tác', USER: 'Tài khoản', WAREHOUSE: 'Kho' };
+  const ASTYLE = { AUTH: ['user', '#E6EFFF', '#1A4FB8'], RECEIPT: ['in', '#E8F4EE', '#13643A'], STOCKTAKE: ['stocktake', '#EFEAFE', '#5B3FB6'], CATALOG: ['products', '#FFF1DB', '#8A4B00'], USER: ['user', '#FDECEC', '#A01F17'], WAREHOUSE: ['warehouses', '#ECEEF1', '#454F5B'] };
+  function openActivity(id) {
+    upd((n) => { n.act = { id, data: null, err: '', cat: 'all', q: '' }; });
+    api('GET', '/api/users/' + encodeURIComponent(id) + '/activity')
+      .then((d) => upd((n) => { if (n.act && n.act.id === id) n.act.data = d; }))
+      .catch((e) => upd((n) => { if (n.act && n.act.id === id) n.act.err = e.message; }));
+  }
+  const closeActivity = () => upd((n) => { n.act = null; });
+  function viewActivity() {
+    const a = S.act; const d = a.data;
+    const u = (d && d.user) || S.users.find((x) => x.id === a.id) || { id: a.id, name: a.id, role: 'staff', status: 'active', phone: '' };
+    const headHtml = '<div class="cardhead" style="align-items:flex-start;flex-wrap:nowrap"><div style="display:flex;gap:12px;min-width:0">' +
+      '<span class="avatar" style="background:' + RCOL[u.role][0] + ';color:' + RCOL[u.role][1] + '">' + esc(initialsOf(u.name)) + '</span>' +
+      '<div class="col" style="gap:6px;min-width:0"><h2 class="h2" id="act-title" style="font-size:18px">' + esc(u.name) + '</h2>' +
+      '<div class="wrap g8" style="align-items:center">' + chip({ t: ROLE[u.role], bg: RCOL[u.role][0], fg: RCOL[u.role][1] }) + chip(USTAT[u.status]) +
+      (u.phone ? '<span class="muted small" style="display:flex;align-items:center;gap:5px">' + svg('phone', 13) + esc(fmtPhone(u.phone)) + '</span>' : '') + '</div>' +
+      '<span class="muted small">Lịch sử hoạt động, mới nhất ở trên</span></div></div>' +
+      btn(svg('x', 18), closeActivity, 'btn-sm btn-ghost', ' aria-label="Đóng" data-fid="act-close"') + '</div>';
+    let body;
+    if (a.err) body = '<div class="alert-err" role="alert" style="margin:20px">' + esc(a.err) + '</div>';
+    else if (!d) body = '<div class="muted" style="padding:48px;text-align:center">Đang tải lịch sử…</div>';
+    else {
+      const st = d.stats; const q = a.q.trim().toLowerCase();
+      const text = (it) => (it.label + ' ' + (it.detail || '') + ' ' + (it.targetId || '') + ' ' + (it.byOther || '')).toLowerCase();
+      const searched = d.items.filter((it) => !q || text(it).includes(q));
+      const counts = {}; searched.forEach((it) => { counts[it.category] = (counts[it.category] || 0) + 1; });
+      const shown = searched.filter((it) => a.cat === 'all' || it.category === a.cat);
+      const mini = (label, value, color) => '<div class="mini" style="flex:1 1 120px"><span class="muted small">' + label + '</span><b style="color:' + (color || '#17212B') + '">' + value + '</b></div>';
+      const statsHtml = '<div class="wrap g10" style="padding:16px 20px;border-bottom:1px solid #EEF1F4">' +
+        mini('Tổng hoạt động', fmt(st.total)) + mini('Đăng nhập gần nhất', st.lastLogin ? esc(st.lastLogin) : '<span class="muted" style="font-size:14px">Chưa có</span>') +
+        mini('Phiếu đã lập', fmt(st.receiptsCreated), '#13643A') + mini('Phiếu đã duyệt / từ chối', fmt(st.receiptsDecided), '#1A4FB8') +
+        mini('Đăng nhập sai', fmt(st.failedLogins), st.failedLogins ? '#A01F17' : '#17212B') + '</div>';
+      const filters = '<div class="col g10" style="padding:14px 20px;border-bottom:1px solid #EEF1F4">' +
+        '<label class="field"><span class="ifield"><span class="lead">' + svg('search', 18) + '</span>' + input('act-q', a.q, val((v) => upd((n) => { n.act.q = v; })), 'placeholder="Tìm mã phiếu, tên hàng, nội dung…"') + '</span></label>' +
+        pills([{ label: 'Tất cả (' + searched.length + ')', on: a.cat === 'all', pick: () => upd((n) => { n.act.cat = 'all'; }) }]
+          .concat(Object.keys(ACAT).map((c) => ({ label: ACAT[c] + ' (' + (counts[c] || 0) + ')', on: a.cat === c, pick: () => upd((n) => { n.act.cat = c; }) })))) + '</div>';
+      const today = isoToVn(isoToday());
+      const groups = []; let cur = null;
+      shown.forEach((it) => { const day = (it.at || '').slice(0, 10) || '—'; if (!cur || cur.day !== day) { cur = { day, items: [] }; groups.push(cur); } cur.items.push(it); });
+      const timeline = groups.length ? groups.map((g) => '<div class="act-day">' + (g.day === today ? 'Hôm nay · ' : '') + esc(g.day) + '</div>' + g.items.map((it) => {
+        const k = ASTYLE[it.category] || ASTYLE.USER;
+        return '<div class="tl act-item" data-cat="' + esc(it.category) + '" data-action="' + esc(it.action) + '" data-at="' + esc(it.at || '') + '"><span class="tdot" style="background:' + k[1] + ';color:' + k[2] + '">' + svg(k[0], 14) + '</span>' +
+          '<div class="col" style="gap:4px;min-width:0"><span style="font-size:14px;overflow-wrap:anywhere"><b style="font-weight:600">' + esc(it.label) + '</b>' + (it.detail ? ' <span class="muted">' + esc(it.detail) + '</span>' : '') + '</span>' +
+          '<span class="muted small" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span>' + esc((it.at || '').slice(11) || '—') + '</span>' +
+          (it.byOther ? '<span class="chip" style="background:#FFF1DB;color:#8A4B00">Do ' + esc(it.byOther) + ' thực hiện</span>' : '') +
+          (it.inferred ? '<span class="chip" style="background:#ECEEF1;color:#454F5B" title="Suy ra từ chứng từ đang có, không phải ghi lúc thao tác">Suy ra từ chứng từ</span>' : '') + '</span></div></div>';
+      }).join('')).join('') : '<div class="muted" style="padding:36px 20px;text-align:center">Không có hoạt động nào khớp bộ lọc.</div>';
+      body = statsHtml + filters + '<div class="col" id="act-list">' + timeline + '</div>' +
+        (d.truncated ? '<div class="notice" style="margin:16px 20px">Chỉ hiển thị 500 hoạt động mới nhất.</div>' : '');
+    }
+    return '<div class="overlay overlay-right" data-overlay="1"><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="act-title">' + headHtml + '<div class="drawer-body">' + body + '</div></aside></div>';
   }
 
   // ---------- render ----------
@@ -1607,6 +1674,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       html = '<div class="layout">' + viewSidebar(screen, low) + '<main>' + viewTop(screen === 'customers' && hideContact('cus') ? ['Khách hàng', 'Hàng đã xuất, phiếu chờ duyệt và ghi chú (FR-05)'] : screen === 'suppliers' && hideContact('sup') ? ['Nhà cung cấp', 'Hàng đã nhập, phiếu chờ duyệt và ghi chú (FR-04)'] : PAGES[screen]) + (views[screen] || views.dashboard)() + '</main></div>';
       prevScreen = screen;
     }
+    if (S.loggedIn && S.act) html += viewActivity();
     if (S.loggedIn && S.udel) html += viewDeleteDialog();
     if (S.loggedIn && S.wdel) html += viewWhDeleteDialog();
     if (S.loggedIn && S.kpick && S.wf.open) html += viewKeeperPicker();
@@ -1669,8 +1737,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
   root.addEventListener('input', (e) => { const t = e.target; if (t.dataset && t.dataset.i && H[t.dataset.i]) H[t.dataset.i]({ target: t }); });
   root.addEventListener('change', (e) => { const t = e.target; if (t.dataset && t.dataset.ch && H[t.dataset.ch]) H[t.dataset.ch]({ target: t }); });
   root.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !S.loggedIn && !S.home && e.target.tagName === 'INPUT') doLogin(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (S.udel || S.wdel || S.kpick)) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; }); });
-  root.addEventListener('mousedown', (e) => { if ((S.udel || S.wdel || S.kpick) && e.target.dataset && e.target.dataset.overlay) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; }); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (S.udel || S.wdel || S.kpick || S.act)) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; n.act = null; }); });
+  root.addEventListener('mousedown', (e) => { if ((S.udel || S.wdel || S.kpick || S.act) && e.target.dataset && e.target.dataset.overlay) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; n.act = null; }); });
   document.addEventListener('keydown', (e) => { if (S.home && !S.loggedIn && ['ArrowUp', 'ArrowDown', 'PageDown', 'Enter', ' '].indexOf(e.key) >= 0) { e.preventDefault(); leaveHome(); } });
 
   render();

@@ -69,6 +69,12 @@ public final class Rules {
 
     public static String now() { return LocalDateTime.now(VN).format(TS); }
 
+    /** "dd/MM/yyyy HH:mm" → mili-giây (0 nếu không đúng định dạng). Dùng để sắp xếp lịch sử suy ra từ chứng từ cũ. */
+    public static long toMillis(String ts) {
+        try { return LocalDateTime.parse(ts, TS).atZone(VN).toInstant().toEpochMilli(); }
+        catch (Exception e) { return 0L; }
+    }
+
     public static String normPhone(String v) {
         return v == null ? "" : PHONE_SEPARATORS.matcher(v).replaceAll("");
     }

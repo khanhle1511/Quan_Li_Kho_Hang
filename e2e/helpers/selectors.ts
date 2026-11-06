@@ -120,6 +120,15 @@ export const SEL = {
 
   // ---- Người dùng (viewUsers 1520, viewDeleteDialog 1504) ----
   userRow: '#user-table .trow',
+  // ---- USR-07: lịch sử hoạt động (viewActivity) ----
+  userNameBtn: 'button.ulink',                     // tên trong bảng Người dùng, bấm để mở lịch sử (aria-label "Xem lịch sử hoạt động của …")
+  actOverlay: '.overlay-right',                    // nền tối; bấm vào nền (ngoài .drawer) thì đóng
+  actDrawer: '.drawer',                            // bảng trượt bên phải; .cardhead: #act-title (tên), chip vai trò + tình trạng, SĐT; nút aria-label="Đóng"
+  actList: '#act-list',                            // chỉ xuất hiện khi API /activity đã trả về
+  actQ: '[data-fid="act-q"]',                      // ô tìm kiếm trong bảng
+  actPill: '.drawer .pill',                        // "Tất cả (n)", "Nhập/Xuất kho (n)", …
+  actDay: '.drawer .act-day',                      // tiêu đề nhóm ngày "Hôm nay · dd/MM/yyyy"
+  actItem: '.drawer .act-item',                    // data-cat, data-action, data-at; chip "Do X thực hiện" / "Suy ra từ chứng từ"
   userDelBtn: (name: string) => `button[aria-label^="Xóa tài khoản ${name}"]`,
   userDelAck: '[data-fid="del-ack"]',
   userDelConfirm: '.dialog-foot button:has-text("Xóa tài khoản")',

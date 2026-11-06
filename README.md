@@ -108,13 +108,14 @@ qlkho-web/
     ├── java/com/qlkho/
     │   ├── QlkhoApplication.java  Điểm khởi động
     │   ├── config/AppConfig       Bean băm mật khẩu BCrypt
-    │   ├── model/                 11 lớp @Entity ↔ 11 bảng
+    │   ├── model/                 12 lớp @Entity ↔ 12 bảng (gồm ActivityLog – nhật ký hoạt động)
     │   ├── repo/                  Spring Data JPA repository (truy vấn đếm, lấy mã… để không tải cả bảng)
     │   ├── service/               Nghiệp vụ
     │   │   ├── AuthService        UC01 Đăng nhập, kiểm tra quyền (requireAdmin / requireManager)
     │   │   ├── InventoryService   UC02–UC05 Lập phiếu, duyệt, kiểm kê
     │   │   ├── CatalogService     Hàng hóa, đối tác, hồ sơ PDF, kho
     │   │   ├── UserService        Quản lý tài khoản
+    │   │   ├── ActivityService    USR-07: ghi và tra cứu lịch sử hoạt động; ActivityBackfill suy ra lịch sử cũ lúc khởi động
     │   │   ├── StateService       Gom dữ liệu cho giao diện, ẩn liên hệ theo vai trò
     │   │   └── DataSeeder         Dữ liệu mẫu lần chạy đầu
     │   ├── web/                   REST controller + DTO (record)
@@ -145,6 +146,7 @@ qlkho-web/
 | POST                | `/api/partners/{id}/files`            | Theo phân quyền xem hồ sơ | Tải lên PDF (≤ 10 MB)                                   |
 | GET / DELETE        | `/api/files/{id}`                     | Theo phân quyền xem hồ sơ | Xem, tải về (`?download=1`), xóa PDF                    |
 | POST / PUT / DELETE | `/api/users…`                         | Admin                     | Tạo, sửa họ tên/SĐT/mật khẩu, đổi trạng thái, xóa tài khoản |
+| GET                 | `/api/users/{id}/activity`            | Admin                     | Lịch sử hoạt động của một tài khoản: thống kê + 500 dòng mới nhất (USR-07) |
 | POST / PUT / DELETE | `/api/warehouses…`                    | Admin                     | Thêm, sửa, tạm ngưng, xóa kho                           |
 
 Mọi lỗi đều trả về JSON dạng `{"error": "..."}`: lỗi nghiệp vụ là HTTP 400, chưa đăng nhập 401, không đủ quyền 403, không tìm thấy 404. Lỗi không lường trước trả về 500 với thông báo chung và được ghi log ở máy chủ. Giao diện hiển thị nguyên văn trường `error`.

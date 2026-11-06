@@ -24,7 +24,8 @@ Viết từ **QLKho_Test_Tracker.pdf** (66 tính năng · 172 test case). Đây 
 | 12-kho.feature | Kho | WH-01..07 | 19 |
 | 13-nguoi-dung.feature | Người dùng | USR-01..06 | 20 |
 | 14-moi-truong-online.feature | Môi trường online | ENV-01 | 6 |
-| **Tổng** | | **66** | **172** |
+| 15-lich-su-hoat-dong.feature | Lịch sử hoạt động của nhân viên (USR-07, bổ sung 07/11/2026 – spec/USR-07_testcases) | USR-07 | 10 |
+| **Tổng** | | **67** | **187** |
 
 ## Tag
 

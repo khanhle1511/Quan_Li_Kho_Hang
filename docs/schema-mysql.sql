@@ -128,3 +128,21 @@ CREATE TABLE phieu_kiem_ke (
   confirmed_by   VARCHAR(100),
   sort_key       BIGINT NOT NULL
 );
+
+-- USR-07: nhật ký hoạt động của từng tài khoản (Hibernate tự tạo; dòng inferred = 1 là suy ra từ chứng từ cũ)
+CREATE TABLE nhat_ky_hoat_dong (
+  id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id      VARCHAR(20)  NOT NULL,          -- tài khoản được ghi nhận (không khóa ngoại: giữ nhật ký sau khi xóa tài khoản)
+  user_name    VARCHAR(100),
+  user_role    VARCHAR(10),
+  category     VARCHAR(20)  NOT NULL,          -- AUTH | RECEIPT | STOCKTAKE | CATALOG | USER | WAREHOUSE
+  action       VARCHAR(30)  NOT NULL,          -- LOGIN, RECEIPT_CREATE, USER_STATUS… (xem ActivityService.LABEL)
+  target_type  VARCHAR(20),
+  target_id    VARCHAR(40),
+  detail       VARCHAR(500),
+  created_at   VARCHAR(20),                    -- dd/MM/yyyy HH:mm
+  sort_key     BIGINT       NOT NULL,          -- mili-giây, mới nhất lên đầu
+  inferred     BOOLEAN      NOT NULL,
+  by_other     VARCHAR(100),                   -- tên người khác đã thực hiện lên tài khoản này (Admin khóa, sửa…)
+  INDEX idx_nk_user (user_id)
+);

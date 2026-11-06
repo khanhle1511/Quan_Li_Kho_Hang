@@ -4,6 +4,7 @@ import com.qlkho.common.Rules;
 import com.qlkho.model.*;
 import com.qlkho.repo.*;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +13,7 @@ import java.util.List;
 
 /** Khởi tạo dữ liệu mẫu khi CSDL còn trống (lần chạy đầu tiên). Mật khẩu mọi tài khoản: 123456. */
 @Component
+@Order(1) // trước ActivityBackfill (USR-07)
 public class DataSeeder implements CommandLineRunner {
     private static final String MANAGER_NAME = "Trần Thị Bình";
 

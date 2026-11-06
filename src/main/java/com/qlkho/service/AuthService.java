@@ -39,10 +39,13 @@ public class AuthService {
 
     private final UserRepo users;
     private final BCryptPasswordEncoder encoder;
+    /** USR-07: ghi nhật ký đăng nhập thành công / sai mật khẩu / bị từ chối. */
+    private final ActivityService activity;
 
-    public AuthService(UserRepo users, BCryptPasswordEncoder encoder) {
+    public AuthService(UserRepo users, BCryptPasswordEncoder encoder, ActivityService activity) {
         this.users = users;
         this.encoder = encoder;
+        this.activity = activity;
     }
 
     public UserAccount login(String phoneRaw, String password, HttpSession session) {
@@ -54,21 +57,30 @@ public class AuthService {
         long now = System.currentTimeMillis();
         Attempts a = attempts.get(phone);
         // Đang khóa tạm: từ chối ngay, kể cả khi mật khẩu đúng, và không chạm vào CSDL
-        if (a != null && a.lockedUntil > now) throw ApiException.bad(lockedMessage(a.lockedUntil - now));
+        if (a != null && a.lockedUntil > now) {
+            users.findByPhone(phone).ifPresent(x -> activity.record(x, "LOGIN_BLOCKED", "USER", x.id, "khóa tạm do đăng nhập sai nhiều lần")); // USR-07
+            throw ApiException.bad(lockedMessage(a.lockedUntil - now));
+        }
         UserAccount u = users.findByPhone(phone).orElse(null);
         // Thông báo chung, không cho biết sai số điện thoại hay sai mật khẩu.
         // Mật khẩu dài hơn 72 byte chắc chắn sai (không thể băm được) nên không đưa vào BCrypt.
         if (u == null || Rules.passwordTooLong(password) || !encoder.matches(password, u.passwordHash)) {
             long lockedUntil = recordFailure(phone, now);
+            if (u != null) activity.record(u, "LOGIN_FAIL", "USER", u.id, "sai mật khẩu"); // USR-07
             if (lockedUntil > now) throw ApiException.bad(lockedMessage(lockedUntil - now));
             throw ApiException.bad("Sai số điện thoại hoặc mật khẩu.");
         }
         attempts.remove(phone); // Đúng mật khẩu: bộ đếm về 0
-        if (Rules.LOCKED.equals(u.status))
+        if (Rules.LOCKED.equals(u.status)) {
+            activity.record(u, "LOGIN_BLOCKED", "USER", u.id, "tài khoản đã khóa"); // USR-07
             throw ApiException.bad("Tài khoản đã bị khóa. Vui lòng liên hệ Quản trị viên.");
-        if (Rules.DRAFT.equals(u.status))
+        }
+        if (Rules.DRAFT.equals(u.status)) {
+            activity.record(u, "LOGIN_BLOCKED", "USER", u.id, "tài khoản chưa kích hoạt"); // USR-07
             throw ApiException.bad("Tài khoản chưa được kích hoạt. Vui lòng liên hệ Quản trị viên.");
+        }
         session.setAttribute(SESSION_KEY, u.id);
+        activity.record(u, "LOGIN", "USER", u.id, ""); // USR-07
         return u;
     }
 
