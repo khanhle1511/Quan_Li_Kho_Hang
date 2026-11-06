@@ -42,6 +42,14 @@ public final class Rules {
     public static final String APPROVED = "approved";
     public static final String CANCELLED = "cancelled";
 
+    /**
+     * BR-09 (sửa 07/11/2026): phiếu NHẬP do Quản lý kho hoặc Admin lập được duyệt ngay khi lưu (cộng tồn, ghi thẻ kho),
+     * không cần người khác duyệt. Phiếu của Nhân viên kho và mọi phiếu XUẤT vẫn phải chờ người khác duyệt.
+     */
+    public static boolean receiptAutoApproved(String role, String receiptType) {
+        return "in".equals(receiptType) && (ADMIN.equals(role) || MANAGER.equals(role));
+    }
+
     // ---------- định dạng hợp lệ ----------
     /** SĐT di động đăng nhập: 10 số, đầu 03/05/07/08/09 */
     public static final Pattern LOGIN_PHONE = Pattern.compile("^0[35789]\\d{8}$");

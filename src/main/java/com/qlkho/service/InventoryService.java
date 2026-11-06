@@ -126,20 +126,25 @@ public class InventoryService {
 
         String prefix = in ? "PN-" : "PX-";
         String code = Rules.nextCode(receipts.findIdsByPrefix(prefix), prefix, 4);
+        // BR-09: phiếu nhập của Quản lý kho / Admin được duyệt ngay, cùng transaction với việc lập phiếu
+        boolean autoApprove = Rules.receiptAutoApproved(me.role, type);
         Receipt r = new Receipt();
         r.id = code;
         r.receiptType = type;
         r.partnerId = p.id;
         r.warehouseId = w.id;
         r.createdAt = Rules.now();
-        r.status = Rules.PENDING;
+        r.status = autoApprove ? Rules.APPROVED : Rules.PENDING;
+        r.approverName = autoApprove ? me.name : null;
         r.creatorId = me.id;
         r.creatorName = me.name;
         r.note = Rules.trim(req.note());
         r.sortKey = System.currentTimeMillis();
         create.insert(r); // luôn INSERT; receipts.save() với mã gán tay sẽ merge() và ghi đè phiếu đã có cùng mã (BUG-005)
-        lines.saveAll(req.lines().stream().map(l -> ReceiptLine.of(code, l.productId(), l.qty())).toList());
-        return Map.of("code", code);
+        List<ReceiptLine> saved = lines.saveAll(req.lines().stream().map(l -> ReceiptLine.of(code, l.productId(), l.qty())).toList());
+        if (!autoApprove) return Map.of("code", code, "status", r.status);
+        List<String> low = applyStock(r, saved, w);
+        return Map.of("code", code, "status", r.status, "type", r.receiptType, "low", low);
     }
 
     // ---------- UC04: duyệt / từ chối ----------
@@ -164,9 +169,18 @@ public class InventoryService {
         Receipt r = pendingReceipt(id);
         if (me.id.equals(r.creatorId)) throw ApiException.bad("Bạn không thể tự duyệt phiếu do chính mình lập.");
         finish(r, Rules.APPROVED, me);
-        boolean in = IN.equals(r.receiptType);
         Warehouse w = warehouses.findById(r.warehouseId).orElseThrow(() -> ApiException.bad("Kho của phiếu không còn tồn tại."));
-        List<ReceiptLine> ls = lines.findByReceiptIdOrderByIdAsc(id);
+        List<String> low = applyStock(r, lines.findByReceiptIdOrderByIdAsc(id), w);
+        return Map.of("code", r.id, "type", r.receiptType, "low", low);
+    }
+
+    /**
+     * Cộng/trừ tồn theo các dòng của phiếu đã được duyệt và ghi thẻ kho; dùng chung cho duyệt sau ({@link #approve})
+     * và duyệt ngay khi lập (phiếu nhập của Quản lý kho / Admin). Trả về các mặt hàng xuống mức tồn thấp sau khi xuất.
+     */
+    private List<String> applyStock(Receipt r, List<ReceiptLine> ls, Warehouse w) {
+        String id = r.id;
+        boolean in = IN.equals(r.receiptType);
         List<String> pids = ls.stream().map(l -> l.productId).toList();
         Map<String, Product> prods = productsOf(pids);
         Map<String, Stock> stk = stocksOf(pids, w.id);
@@ -188,7 +202,7 @@ public class InventoryService {
             move(s, after, in ? "Nhập" : "Xuất", r.id, t);
             if (!in && after <= prods.get(l.productId).minStock) low.add(prods.get(l.productId).name);
         }
-        return Map.of("code", r.id, "type", r.receiptType, "low", low);
+        return low;
     }
 
     @Transactional

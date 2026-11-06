@@ -41,6 +41,15 @@ mvn clean package
 java -jar target/qlkho-web-1.0.0.jar
 ```
 
+**Cách D – nhiều instance cho nhiều agent làm việc cùng lúc**
+
+```bash
+node agents/agents.mjs start      # agent1..agent4 ở cổng 8101..8104, mỗi instance một CSDL riêng
+node agents/agents.mjs status
+```
+
+Xem chi tiết ở [agents/README.md](agents/README.md).
+
 ## 3. Tài khoản demo (mật khẩu: `123456`)
 
 | Vai trò                              | Số điện thoại |
@@ -84,7 +93,17 @@ CSDL `qlkho` và các bảng được tạo tự động. Lược đồ đầy �
 ```
 qlkho-web/
 ├── pom.xml
-├── docs/schema-mysql.sql          Lược đồ CSDL (bảng, khóa chính/ngoại, ràng buộc)
+├── docs/
+│   └── schema-mysql.sql           Lược đồ CSDL (bảng, khóa chính/ngoại, ràng buộc)
+├── agents/                        Chạy nhiều instance local (mỗi agent một cổng + CSDL), xem agents/README.md
+├── e2e/                           Mọi thứ phục vụ QA/QC và kiểm thử (xem e2e/README.md)
+│   ├── spec/                      Đặc tả kiểm thử tự động, test tracker (PDF, DOCX, XLSX)
+│   ├── features/ + steps/         Kịch bản BDD và step definition (playwright-bdd)
+│   ├── tests/                     Test Playwright viết tay (@smoke)
+│   ├── bugs/                      Ghi nhận và theo dõi bug
+│   ├── qa/                        Báo cáo kiểm thử thủ công/khám phá: ảnh chụp, kết quả từng bước
+│   └── scripts/smoke-api.sh       Smoke test API bằng curl (BASE=... để đổi địa chỉ)
+├── src/test/resources/            Cấu hình profile test cho Spring (phải ở đây theo quy ước Maven)
 └── src/main/
     ├── java/com/qlkho/
     │   ├── QlkhoApplication.java  Điểm khởi động
@@ -116,7 +135,7 @@ qlkho-web/
 | GET                 | `/api/auth/me`                        | Mọi người                 | Người dùng của phiên hiện tại                           |
 | GET                 | `/api/public/summary`                 | Mọi người                 | Số liệu cho trang chủ                                   |
 | GET                 | `/api/state`                          | Đã đăng nhập              | Toàn bộ dữ liệu, đã lược thông tin liên hệ theo vai trò |
-| POST                | `/api/receipts`                       | Đã đăng nhập              | Lập phiếu nhập / xuất                                   |
+| POST                | `/api/receipts`                       | Đã đăng nhập              | Lập phiếu nhập / xuất (phiếu nhập của QL kho, Admin được duyệt ngay) |
 | POST                | `/api/receipts/{id}/approve`          | QL kho, Admin             | Duyệt phiếu (cập nhật tồn, ghi thẻ kho)                 |
 | POST                | `/api/receipts/{id}/reject`           | QL kho, Admin             | Từ chối phiếu                                           |
 | POST                | `/api/stocktakes`                     | QL kho, Admin             | Xác nhận kiểm kê, điều chỉnh tồn                        |
@@ -136,7 +155,8 @@ Mọi lỗi đều trả về JSON dạng `{"error": "..."}`: lỗi nghiệp v�
 - Tài khoản Nháp hoặc Đã khóa không đăng nhập được.
 - Thông báo sai đăng nhập dùng chung một câu, không cho biết sai SĐT hay sai mật khẩu.
 - Phiếu chỉ cộng/trừ tồn khi được duyệt.
-- **Người lập không được tự duyệt phiếu của mình.**
+- **Phiếu nhập do Quản lý kho hoặc Admin lập được duyệt ngay khi lưu** (cộng tồn, ghi thẻ kho). Phiếu của Nhân viên kho phải chờ Quản lý kho / Admin duyệt.
+- **Phiếu xuất: người lập không được tự duyệt phiếu của mình.**
 - Phiếu xuất được kiểm tra tồn **hai lần**: khi lập và khi duyệt.
 - Tồn không bao giờ âm. Mọi biến động đều ghi vào thẻ kho, và duyệt phiếu, kiểm kê đều chạy trong transaction.
 - Chỉ xóa được tài khoản **đã khóa**, và chỉ xóa được kho **đã tạm ngưng và hết hàng**. Chứng từ cũ luôn được giữ lại.

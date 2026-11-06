@@ -407,6 +407,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
   const deltaColor = (d) => (d > 0 ? '#13643A' : d < 0 ? '#A01F17' : '#56606B');
   const chip = (c) => '<span class="chip" style="background:' + c.bg + ';color:' + c.fg + '">' + esc(c.t) + '</span>';
   const canApprove = () => S.role !== 'staff';
+  // BR-09: phiếu nhập của Quản lý kho / Admin được duyệt ngay khi lưu (khớp Rules.receiptAutoApproved ở máy chủ)
+  const autoApproves = (t) => t === 'in' && canApprove();
   const isAdmin = () => S.role === 'admin';
   const lowList = () => { const low = []; S.products.forEach((p) => S.warehouses.filter((w) => w.status !== 'paused').forEach((w) => { const v = have(p.id, w.id); if (v <= p.min) low.push({ p, w, v }); })); return low; };
   const sugg = (x) => Math.max(x.p.min * 2 - x.v, 1);
@@ -488,7 +490,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       const r = await api('POST', '/api/receipts', { type: t, partnerId: d.partner, warehouseId: d.wh, note: d.note, lines: d.lines.map((l) => ({ productId: l.pid, qty: Number(l.qty) })) });
       upd((n) => { n.draft[t].lines = []; n.draft[t].note = ''; n.draft[t].search = ''; n.err[t] = ''; });
       await sync();
-      say('Đã tạo phiếu ' + r.code + ' – đang chờ Quản lý kho duyệt.', 'ok');
+      if (r.status === 'approved') say('Đã nhập kho phiếu ' + r.code + '. Tồn kho đã được cộng thêm.', 'ok');
+      else say('Đã tạo phiếu ' + r.code + ' – đang chờ Quản lý kho duyệt.', 'ok');
     } catch (e) { err(e.message); }
   }
   async function approve(id) {
@@ -949,7 +952,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       '<label class="field">Ghi chú' + input('rc-note-' + t, d.note, val((v) => upd((n) => { n.draft[t].note = v; })), 'placeholder="Ví dụ: Giao theo đơn đặt hàng số …"') + '</label>' +
       (S.err[t] ? '<div class="alert-err" role="alert">' + esc(S.err[t]) + '</div>' : '') +
       '<div class="wrap g10" style="justify-content:flex-end">' + btn('Làm lại', () => upd((n) => { n.draft[t].lines = []; n.draft[t].note = ''; n.draft[t].search = ''; n.err[t] = ''; })) +
-      btn('Lưu phiếu và gửi duyệt', () => submit(t), 'btn-primary', ' style="box-shadow:0 6px 16px rgba(26,86,196,.25)"') + '</div></div></div>';
+      btn(autoApproves(t) ? 'Lưu phiếu và nhập kho' : 'Lưu phiếu và gửi duyệt', () => submit(t), 'btn-primary', ' style="box-shadow:0 6px 16px rgba(26,86,196,.25)"') + '</div></div></div>';
 
     const form = '<section class="card">' + head(t, ac.bg, ac.fg, isIn ? 'Lập phiếu nhập kho' : 'Lập phiếu xuất kho', isIn ? 'Phiếu được Quản lý kho duyệt thì tồn mới được cộng' : 'Hệ thống kiểm tra tồn khi lập và kiểm tra lại khi duyệt') +
       '<div class="col" style="gap:28px;padding:22px 20px">' + step1 + '<div class="wrap" style="gap:28px;align-items:flex-start">' + step2 + step3 + '</div></div></section>';
