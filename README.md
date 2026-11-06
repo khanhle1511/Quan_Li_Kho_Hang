@@ -3,7 +3,7 @@
 Đồ án môn **Phân tích và Thiết kế Yêu cầu**.
 
 - **Backend:** Java 25 + Spring Boot 3 (REST API, JPA/Hibernate).
-- **CSDL:** H2 lưu thành file (mặc định, không cần cài), hoặc MySQL.
+- **CSDL:** H2 lưu thành file (mặc định, không cần cài), hoặc MySQL / PostgreSQL.
 - **Giao diện:** trang web một file, được Spring Boot phục vụ tại `http://localhost:8080`.
 
 ## 1. Cần cài trước

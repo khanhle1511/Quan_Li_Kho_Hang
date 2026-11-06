@@ -3,7 +3,7 @@
 Kết quả cuối cùng là một đường link dạng `https://qlkho-web.onrender.com` để cả nhóm và giảng viên cùng dùng chung dữ liệu.
 
 ```
- Trình duyệt ──HTTPS──►  Render (Free)              ──SSL──►  Aiven for MySQL (Free)
+ Trình duyệt ──HTTPS──►  Render (Free)              ──SSL──►  Aiven MySQL / PostgreSQL (Free)
                          Docker: Spring Boot + giao diện       Toàn bộ dữ liệu + file PDF
 ```
 
@@ -11,7 +11,7 @@ Kết quả cuối cùng là một đường link dạng `https://qlkho-web.onre
 | --- | --- | --- | --- |
 | Mã nguồn | GitHub | 0 đ | — |
 | Ứng dụng | Render, gói *Free* | 0 đ | 512 MB RAM. **Ngủ sau 15 phút không ai truy cập**, lần mở đầu tiên chờ khoảng 30–60 giây |
-| CSDL | Aiven for MySQL, gói *Free* | 0 đ | Dung lượng nhỏ (đủ cho demo). Dịch vụ có thể bị tạm tắt nếu bỏ không quá lâu |
+| CSDL | Aiven MySQL hoặc PostgreSQL, gói *Free* | 0 đ | Dung lượng nhỏ (đủ cho demo). Dịch vụ có thể bị tạm tắt nếu bỏ không quá lâu |
 
 > Điều kiện của các gói miễn phí có thể thay đổi theo thời gian. Khi đăng ký, hãy xem lại trang giá của Render và Aiven.
 
@@ -42,7 +42,7 @@ Tổng thời gian khoảng **30–40 phút**. Phần lâu nhất là Render bui
 ## Bước 2 – Tạo MySQL miễn phí trên Aiven (10 phút)
 
 1. Đăng ký tại https://aiven.io. Có thể đăng nhập bằng Google hoặc GitHub. Gói free **không cần thẻ**.
-2. Bấm **Create service** → chọn **MySQL** → chọn gói **Free**. Chọn khu vực gần Việt Nam nhất trong danh sách được phép → đặt tên `qlkho-db` → **Create service**.
+2. Bấm **Create service** → chọn **MySQL** hoặc **PostgreSQL** (ứng dụng chạy được với cả hai; Aiven thường có gói free cho PostgreSQL ở nhiều khu vực hơn) → chọn gói **Free**. Chọn khu vực gần Việt Nam nhất trong danh sách được phép → đặt tên `qlkho-db` → **Create service**.
 3. Chờ trạng thái chuyển từ *Rebuilding* sang **Running** (1–3 phút).
 4. Ở tab **Overview** → mục **Connection information**, ghi lại 5 thông tin:
 
@@ -55,10 +55,17 @@ Tổng thời gian khoảng **30–40 phút**. Phần lâu nhất là Render bui
    | Database name | `defaultdb` |
 
 5. Ghép thành **chuỗi JDBC** theo mẫu dưới đây (thay HOST và PORT):
-   ```
-   jdbc:mysql://HOST:PORT/defaultdb?sslMode=REQUIRED&useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Ho_Chi_Minh
-   ```
-   ⚠️ **Không** dùng dòng *Service URI* dạng `mysql://avnadmin:...@...` mà Aiven hiển thị. Java cần chuỗi bắt đầu bằng `jdbc:mysql://`.
+
+   - MySQL:
+     ```
+     jdbc:mysql://HOST:PORT/defaultdb?sslMode=REQUIRED&useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Ho_Chi_Minh
+     ```
+   - PostgreSQL:
+     ```
+     jdbc:postgresql://HOST:PORT/defaultdb?sslmode=require
+     ```
+
+   ⚠️ **Không** dùng dòng *Service URI* dạng `mysql://avnadmin:...@...` hay `postgres://avnadmin:...@...` mà Aiven hiển thị. Java cần chuỗi bắt đầu bằng `jdbc:`, không chứa user và mật khẩu (hai thứ đó đi vào `DB_USER`, `DB_PASSWORD`).
 
 Bạn **không cần** tự tạo bảng. Lần chạy đầu tiên, ứng dụng tự tạo 11 bảng và nạp dữ liệu mẫu.
 
@@ -166,7 +173,7 @@ Render **tự build và deploy lại** sau mỗi lần push (mất 3–6 phút).
 | --- | --- | --- |
 | `Communications link failure` | Sai host/port, Aiven chưa *Running*, hoặc thiếu `sslMode=REQUIRED` | Kiểm tra lại `DB_URL` theo đúng mẫu ở Bước 2 |
 | `Access denied for user 'avnadmin'` | Sai mật khẩu | Copy lại mật khẩu trên Aiven vào `DB_PASSWORD` |
-| `Driver ... claims to not accept jdbcUrl, mysql://...` | Dán nhầm *Service URI* | `DB_URL` phải bắt đầu bằng `jdbc:mysql://` |
+| `Driver ... claims to not accept jdbcUrl, mysql://...` hoặc `Unable to determine Dialect without JDBC metadata` | Dán nhầm *Service URI* của Aiven | `DB_URL` phải bắt đầu bằng `jdbc:mysql://` hoặc `jdbc:postgresql://` |
 | `Could not resolve placeholder 'DB_URL'` | Chưa khai báo biến môi trường | Thêm đủ 3 biến `DB_URL`, `DB_USER`, `DB_PASSWORD` |
 | Build lỗi `failed to compute cache key ... Dockerfile` | `Dockerfile` không nằm ở thư mục gốc của repo | Đảm bảo repo có `Dockerfile` cạnh `pom.xml` |
 | Exit code 137 / `OutOfMemoryError` | Hết 512 MB RAM | `Dockerfile` đã giới hạn bộ nhớ JVM. Nếu vẫn lỗi, thêm biến `JAVA_TOOL_OPTIONS` = `-Xmx300m -XX:+UseSerialGC` |
