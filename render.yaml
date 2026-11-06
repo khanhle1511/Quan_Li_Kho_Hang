@@ -1,0 +1,18 @@
+# Blueprint cho Render: New → Blueprint → chọn repo này.
+# Các biến DB_URL, DB_USER, DB_PASSWORD sẽ được Render hỏi khi tạo (sync: false).
+services:
+  - type: web
+    name: qlkho-web
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /api/public/summary
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false

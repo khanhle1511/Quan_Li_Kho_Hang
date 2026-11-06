@@ -1,0 +1,1673 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quản lý kho</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#17212B;background:#F4F6F8;line-height:1.4}
+button,input,textarea{font:inherit}
+a{color:#1A56C4}
+a.btn{text-decoration:none;color:#17212B}
+:focus-visible{outline:2px solid #1A56C4;outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid #CBD2DA;background:#FFFFFF;color:#17212B;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#F1F4F7}
+.btn-primary{background:#1A56C4;border-color:#1A56C4;color:#FFFFFF}
+.btn-primary:hover{background:#154AAB}
+.btn-sm{min-height:34px;padding:0 12px;font-size:13px}
+.btn-ghost{border-color:transparent;background:transparent}
+.btn-link{color:#1A56C4}
+.pill{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid #CBD2DA;background:#FFFFFF;color:#2B3540;font-size:13px;font-weight:500;cursor:pointer}
+.pill.on{background:#1A56C4;border-color:#1A56C4;color:#FFFFFF}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:#3D4753}
+.input{min-height:40px;padding:0 12px;border:1px solid #CBD2DA;border-radius:8px;font-size:14px;font-weight:400;color:#17212B;background:#FFFFFF;width:100%}
+.input:focus{outline:2px solid #1A56C4;outline-offset:-1px;border-color:#1A56C4}
+.card{background:#FFFFFF;border:1px solid #E1E6EB;border-radius:12px}
+.kpi{padding:18px 20px;text-align:left;display:flex;flex-direction:column;gap:6px;cursor:pointer;color:inherit}
+.kpi:hover{border-color:#AEB9C5}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid #EEF1F4}
+.h2{margin:0;font-size:16px;font-weight:600}
+.lbl{font-size:13px;font-weight:500;color:#3D4753}
+.muted{color:#56606B}
+.small{font-size:12px}
+.scroll{overflow-x:auto}
+.thead{display:grid;gap:12px;padding:10px 20px;background:#F7F9FB;border-bottom:1px solid #E1E6EB;font-size:12px;font-weight:600;color:#56606B}
+.trow{display:grid;gap:12px;padding:12px 20px;border-bottom:1px solid #EEF1F4;align-items:center;font-size:14px}
+.r{text-align:right;font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.layout{display:flex;flex-wrap:wrap;align-items:stretch;min-height:100vh}
+aside{flex:1 1 240px;background:#FFFFFF;border-right:1px solid #E1E6EB;padding:20px 14px;display:flex;flex-direction:column;gap:2px}
+main{flex:999 1 560px;min-width:0;padding:24px 32px 48px;display:flex;flex-direction:column;gap:20px}
+.nav{display:flex;align-items:center;gap:12px;width:100%;min-height:42px;padding:0 12px;border:0;border-radius:8px;font-size:14px;font-weight:500;text-align:left;cursor:pointer;background:transparent;color:#3D4753}
+.nav:hover{box-shadow:inset 0 0 0 1px #D5DBE2}
+.nav.on{background:#E8EEFB;color:#1A4FB8;font-weight:600}
+.navgroup{font-size:12px;font-weight:600;color:#5F6B77;padding:14px 12px 6px}
+.badge{margin-left:auto;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#933A00;color:#FFFFFF;font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+.pick{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;min-height:48px;padding:8px 12px;border:1px solid #E1E6EB;border-radius:8px;background:#FFFFFF;font-size:14px;color:inherit;cursor:pointer;text-align:left}
+.pick:hover{border-color:#1A56C4;background:#F5F8FE}
+.addic{font-size:13px;font-weight:600;color:#1A56C4;white-space:nowrap}
+.line{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E1E6EB;border-radius:8px}
+.empty{padding:20px;border:1px dashed #CBD2DA;border-radius:8px;text-align:center;color:#56606B;font-size:14px}
+.alert-err{padding:10px 14px;border-radius:8px;background:#FDE3E1;color:#8E1B14;font-size:14px}
+.notice{padding:12px 14px;border-radius:8px;background:#EEF3FD;color:#1C3F85;font-size:14px}
+.listrow{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #EEF1F4}
+.col{display:flex;flex-direction:column}
+.g20{gap:20px}.g16{gap:16px}.g10{gap:10px}.g8{gap:8px}
+.wrap{display:flex;flex-wrap:wrap}
+input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
+.toast{position:fixed;right:24px;bottom:24px;max-width:420px;padding:14px 18px;border-radius:10px;color:#FFFFFF;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(15,23,42,.18);z-index:50}
+.logo{border-radius:9px;background:#1A56C4;color:#FFFFFF;display:flex;align-items:center;justify-content:center;flex:none}
+@media (max-width:640px){main{padding:20px 16px 40px}}
+/* ---- login ---- */
+.auth{min-height:100vh;display:flex;flex-wrap:wrap;background:#F4F6F8}
+.auth-brand{flex:1 1 520px;position:relative;overflow:hidden;color:#FFFFFF;background-color:#0F2742;background-image:radial-gradient(circle at 18% 12%,rgba(64,128,240,.38),transparent 55%),radial-gradient(circle at 85% 90%,rgba(242,183,5,.10),transparent 45%),radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:auto,auto,22px 22px;padding:40px 48px 64px;display:flex;flex-direction:column;gap:24px}
+.auth-brand::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;background:repeating-linear-gradient(-45deg,#F2B705 0 14px,#13263D 14px 28px)}
+.auth-title{margin:0;font-size:clamp(28px,3vw,40px);line-height:1.15;font-weight:700;letter-spacing:-.01em;max-width:520px}
+.auth-sub{margin:0;color:#B9C7DA;font-size:15px;line-height:1.6;max-width:480px}
+.scene{position:relative;flex:1;min-height:320px;display:flex;align-items:center;justify-content:center}
+.scene svg{width:100%;max-width:560px;height:auto;filter:drop-shadow(0 28px 32px rgba(0,0,0,.40))}
+.float{position:absolute;background:rgba(255,255,255,.97);color:#17212B;border-radius:12px;padding:10px 14px 10px 10px;box-shadow:0 2px 4px rgba(3,12,28,.20),0 14px 34px rgba(3,12,28,.38);display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.3}
+.float b{font-size:16px}
+.ftile{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.f1{top:4%;left:0}.f2{top:42%;right:0}.f3{bottom:2%;left:8%}
+.feats{display:flex;flex-wrap:wrap;gap:10px 22px;font-size:13px;color:#D5DEEA}
+.feats span{display:inline-flex;align-items:center;gap:8px}
+.auth-form{flex:1 1 440px;display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.auth-card{width:100%;max-width:440px;background:#FFFFFF;border:1px solid #E1E6EB;border-radius:16px;padding:36px;box-shadow:0 1px 2px rgba(16,24,40,.06),0 18px 44px rgba(16,24,40,.11);display:flex;flex-direction:column;gap:18px}
+.ifield{position:relative}
+.ifield .lead{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#7A8591;pointer-events:none}
+.ifield .input{padding-left:42px;min-height:46px;border-radius:10px}
+.ifield .input.has-eye{padding-right:46px}
+.eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:0;border-radius:8px;background:transparent;color:#56606B;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.eye:hover{background:#F1F4F7}
+.linkbtn{border:0;background:none;padding:0;color:#1A56C4;font-size:13px;font-weight:500;cursor:pointer}
+.linkbtn:hover{color:#123F92;text-decoration:underline}
+.divider{display:flex;align-items:center;gap:12px;color:#56606B;font-size:12px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:#E1E6EB}
+.rolecard{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:1px solid #E1E6EB;border-radius:10px;background:#FFFFFF;cursor:pointer;text-align:left;color:inherit;transition:border-color .15s,box-shadow .15s}
+.rolecard:hover{border-color:#AEB9C5}
+.rolecard.on{border-color:#1A56C4;box-shadow:0 0 0 3px rgba(26,86,196,.14)}
+.rtile{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.enter{animation:rise .5s ease-out both}
+.enter.d2{animation-delay:.08s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.enter{animation:none}.rolecard{transition:none}}
+/* ---- homepage ---- */
+.home{position:fixed;inset:0;z-index:20;overflow:hidden;color:#FFFFFF;background-color:#0B2038;background-image:radial-gradient(circle at 15% 10%,rgba(64,128,240,.45),transparent 50%),radial-gradient(circle at 90% 85%,rgba(242,183,5,.12),transparent 45%),radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:auto,auto,22px 22px;display:flex;flex-direction:column;padding:24px 48px 0;transition:transform .65s cubic-bezier(.7,0,.2,1);touch-action:none;user-select:none;cursor:grab}
+.home.dragging{transition:none;cursor:grabbing}
+.home.leaving{transform:translateY(-100%)}
+.home::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;background:repeating-linear-gradient(-45deg,#F2B705 0 14px,#13263D 14px 28px)}
+.home-nav{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.home-main{flex:1;min-height:0;display:flex;align-items:center;gap:32px;flex-wrap:wrap;padding:12px 0}
+.home-copy{flex:1 1 440px;display:flex;flex-direction:column;gap:22px;max-width:620px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);font-size:13px;color:#DCE5F0}
+.eyebrow i{width:8px;height:8px;border-radius:50%;background:#F2B705;box-shadow:0 0 0 4px rgba(242,183,5,.2)}
+.home-title{margin:0;font-size:clamp(38px,5.2vw,68px);line-height:1.04;font-weight:700;letter-spacing:-.025em}
+.home-title em{font-style:normal;color:#F2B705}
+.home-sub{margin:0;font-size:17px;line-height:1.6;color:#B9C7DA;max-width:540px}
+.hfeat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:540px}
+.hfeat span{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);font-size:14px;color:#E6ECF4}
+.hfeat b{display:flex;width:30px;height:30px;border-radius:8px;align-items:center;justify-content:center;background:rgba(242,183,5,.16);color:#F2B705;flex:none}
+.home-art{flex:1 1 460px;position:relative;display:flex;align-items:center;justify-content:center;min-height:0}
+.home-art svg{width:100%;max-width:600px;max-height:62vh;height:auto;filter:drop-shadow(0 30px 34px rgba(0,0,0,.45))}
+.swipe{align-self:center;display:flex;flex-direction:column;align-items:center;gap:6px;margin:0 0 26px;padding:10px 22px;border:0;border-radius:14px;background:transparent;color:#FFFFFF;font-size:14px;font-weight:600;cursor:pointer}
+.swipe:hover{background:rgba(255,255,255,.08)}
+.swipe .chev{display:flex;flex-direction:column;align-items:center;color:#F2B705;animation:nudge 1.6s ease-in-out infinite}
+.swipe .chev svg+svg{margin-top:-10px;opacity:.55}
+.swipe small{font-size:12px;font-weight:400;color:#9FB0C6}
+@keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.rise{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+.rise.d1{animation-delay:.08s}.rise.d2{animation-delay:.16s}.rise.d3{animation-delay:.24s}.rise.d4{animation-delay:.32s}
+.backhome{position:absolute;top:20px;right:24px;z-index:2}
+@media (max-width:760px){.home{padding:18px 20px 0}.home-art{display:none}.hfeat{grid-template-columns:1fr}.home-sub{font-size:15px}}
+@media (max-height:700px){.home-art{display:none}}
+@media (prefers-reduced-motion:reduce){.home{transition:none}.swipe .chev,.rise{animation:none}}
+/* ---- partners ---- */
+.hp{display:flex;align-items:center;gap:10px;border-radius:8px;padding:4px;margin:-4px;cursor:default;outline:none}
+.hp:hover,.hp:focus-visible{background:#F2F6FD}
+.hp:focus-visible{box-shadow:0 0 0 2px #1A56C4}
+.linkchip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;border:1px solid #D9E0E8;background:#FFFFFF;color:#2B3540;font-size:13px;cursor:pointer;white-space:nowrap}
+.linkchip:hover{border-color:#1A56C4;color:#1A4FB8}
+.linkchip.ok{background:#E8F4EE;border-color:#BFE0CC;color:#13643A}
+.linkchip.warn{background:#FFF3D1;border-color:#F3DFA6;color:#8A4B00}
+.drop{position:relative;display:flex;align-items:center;gap:14px;padding:16px;border:2px dashed #CBD2DA;border-radius:12px;background:#FAFBFC;cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:#B42318;background:#FFF6F5}
+.drop:focus-within{outline:2px solid #1A56C4;outline-offset:2px}
+.filerow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #E1E6EB;border-radius:10px;flex-wrap:wrap}
+.pdfic{width:38px;height:46px;border-radius:6px;background:#B42318;color:#FFFFFF;font-size:11px;font-weight:700;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;flex:none;box-shadow:inset 0 10px 0 rgba(255,255,255,.15)}
+.hpop{position:fixed;z-index:60;width:340px;max-width:calc(100vw - 24px);background:#FFFFFF;border:1px solid #E1E6EB;border-radius:14px;box-shadow:0 2px 6px rgba(15,23,42,.08),0 22px 50px rgba(15,23,42,.22);pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .14s ease-out,transform .14s ease-out;font-size:13px;color:#17212B}
+.hpop.show{opacity:1;transform:none}
+.hpop .hp-head{display:flex;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid #EEF1F4}
+.hpop .hp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px 16px}
+.hpop .hp-grid div{padding:8px 10px;border-radius:10px;background:#F7F9FB}
+.hpop .hp-grid b{display:block;font-size:17px}
+.hpop .hp-sec{padding:0 16px 12px;display:flex;flex-direction:column;gap:4px}
+.hpop .hp-foot{padding:10px 16px;background:#F7F9FB;border-top:1px solid #EEF1F4;color:#56606B;font-size:12px;border-radius:0 0 14px 14px}
+@media (prefers-reduced-motion:reduce){.hpop{transition:none}}
+/* ---- warehouse link ---- */
+.whlink{display:flex;align-items:center;gap:10px;padding:6px;margin:-6px;border:0;border-radius:10px;background:transparent;color:inherit;text-align:left;cursor:pointer;width:calc(100% + 12px)}
+.whlink:hover{background:#F2F6FD}
+.whlink:hover b{color:#1A4FB8;text-decoration:underline}
+.whlink-go{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#1A56C4}
+/* ---- keeper picker ---- */
+.keeperbox{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid #CBD2DA;border-radius:12px;background:#FFFFFF;color:inherit;flex-wrap:wrap}
+.keeperbox.empty{border-style:dashed;cursor:pointer;background:#FAFBFC}
+.keeperbox.empty:hover{border-color:#1A56C4;background:#F5F8FE}
+.kpick-row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid #E1E6EB;border-radius:12px;background:#FFFFFF;color:inherit;cursor:pointer;text-align:left;transition:border-color .12s,background .12s}
+.kpick-row:hover{border-color:#1A56C4;background:#F5F8FE}
+.kpick-row.on{border-color:#1A56C4;box-shadow:0 0 0 3px rgba(26,86,196,.14);background:#FAFCFF}
+.kpick-go{font-size:13px;font-weight:600;color:#1A56C4;flex:none}
+.kstatus{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;font-size:12px;font-weight:500;padding:3px 9px;border-radius:999px}
+.kstatus.busy{background:#EEF3FD;color:#1C3F85}
+.kstatus.free{background:#E1F3E8;color:#13643A}
+/* ---- modal ---- */
+.btn-danger{background:#B42318;border-color:#B42318;color:#FFFFFF}
+.btn-danger:hover{background:#951C12}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-muted{color:#8A939E}
+.overlay{position:fixed;inset:0;z-index:40;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadein .18s ease-out}
+.dialog{width:100%;max-width:520px;background:#FFFFFF;border-radius:16px;box-shadow:0 24px 60px rgba(15,23,42,.35);overflow:hidden;animation:pop .22s cubic-bezier(.2,.7,.2,1)}
+.dialog-body{padding:24px;display:flex;flex-direction:column;gap:16px}
+.dialog-foot{padding:16px 24px;background:#F7F9FB;border-top:1px solid #EEF1F4;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.dicon{width:48px;height:48px;border-radius:12px;background:#FDE3E1;color:#B42318;display:flex;align-items:center;justify-content:center;flex:none}
+.keep{border:1px solid #CFE3D7;background:#F1F9F4;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.keep ul{margin:0;padding-left:18px;color:#2B3540}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.overlay,.dialog{animation:none}}
+/* ---- module screens ---- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.stat{display:flex;gap:14px;align-items:center;padding:16px 18px}
+.statbtn{width:100%;text-align:left;color:inherit;cursor:pointer;position:relative;transition:transform .15s,box-shadow .15s,border-color .15s}
+.statbtn:hover{transform:translateY(-2px);border-color:#AEB9C5;box-shadow:0 2px 4px rgba(16,24,40,.06),0 14px 30px rgba(16,24,40,.10)}
+.statbtn.on{border-color:var(--ring);box-shadow:0 0 0 3px var(--ringsoft),0 10px 24px rgba(16,24,40,.08)}
+.statbtn .tick{position:absolute;top:10px;right:12px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--ringsoft);color:var(--ring)}
+@media (prefers-reduced-motion:reduce){.statbtn{transition:none}.statbtn:hover{transform:none}}
+.optgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.optcard{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid #E1E6EB;border-radius:12px;background:#FFFFFF;cursor:pointer;text-align:left;color:inherit;transition:border-color .15s,box-shadow .15s}
+.optcard:hover{border-color:#AEB9C5}
+.optcard.on{border-color:#1A56C4;box-shadow:0 0 0 3px rgba(26,86,196,.14);background:#FAFCFF}
+.avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.step{display:flex;gap:14px;align-items:flex-start}
+.stepn{width:28px;height:28px;border-radius:50%;background:#0F2742;color:#FFFFFF;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 0 0 4px #E8EEF7}
+.steph{font-size:15px;font-weight:600;line-height:28px}
+.slip{border:1px solid #E1E6EB;border-radius:14px;overflow:hidden;background:#FFFFFF;box-shadow:0 2px 4px rgba(16,24,40,.04),0 14px 32px rgba(16,24,40,.09)}
+.sliphead{padding:16px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.slipline{padding:12px 16px;border-top:1px solid #EEF1F4;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.slipfoot{padding:14px 16px;border-top:1px dashed #CBD2DA;background:#F9FAFB;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:14px}
+.stepper{display:inline-flex;align-items:stretch;border:1px solid #CBD2DA;border-radius:8px;overflow:hidden;background:#FFFFFF}
+.stepper button{width:34px;min-height:38px;border:0;background:#F7F9FB;cursor:pointer;color:#3D4753;display:flex;align-items:center;justify-content:center}
+.stepper button:hover{background:#EEF1F4}
+.stepper input{width:72px;border:0;border-left:1px solid #E1E6EB;border-right:1px solid #E1E6EB;text-align:right;padding:0 8px;font-size:14px;color:#17212B;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stepper input:focus{outline:2px solid #1A56C4;outline-offset:-2px}
+.warn{font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.proc{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.procitem{display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:12px;background:#F7F9FB;border:1px solid #EEF1F4}
+.trow.hl{background:#FFF8EC}
+.lvl{position:relative;height:8px;border-radius:4px;background:#EEF1F4}
+.lvl span{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.lvl i{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:#0F2742;border-radius:1px}
+.sessionbar{border-radius:14px;padding:18px 20px;background:linear-gradient(135deg,#FFF7E0,#FFFFFF 60%);border:1px solid #F3DFA6;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(138,90,0,.08)}
+.mini{display:flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:10px;background:#FFFFFF;border:1px solid #EEF1F4;min-width:96px}
+.mini b{font-size:18px}
+.chartwrap svg{width:100%;height:auto;display:block}
+/* ---- dashboard ---- */
+.card{box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 20px rgba(16,24,40,.05)}
+.hero{position:relative;overflow:hidden;border-radius:16px;color:#FFFFFF;background-color:#0F2742;background-image:radial-gradient(circle at 12% 0%,rgba(64,128,240,.45),transparent 55%),radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:auto,22px 22px;padding:28px 32px 36px;display:flex;align-items:center;gap:24px;box-shadow:0 2px 4px rgba(15,39,66,.18),0 18px 40px rgba(15,39,66,.22)}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:8px;background:repeating-linear-gradient(-45deg,#F2B705 0 12px,#13263D 12px 24px)}
+.hero-art{flex:0 0 300px;margin:-12px -8px -20px 0}
+.hero-art svg{width:100%;height:auto;filter:drop-shadow(0 18px 22px rgba(0,0,0,.4))}
+.hbtn{white-space:nowrap;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.08);color:#FFFFFF}
+.hbtn:hover{background:rgba(255,255,255,.16)}
+.hbtn.solid{background:#FFFFFF;color:#0F2742;border-color:#FFFFFF}
+.hbtn.solid:hover{background:#E8EEF7}
+.hstat{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.10);font-size:13px;color:#DCE5F0}
+.hstat b{color:#FFFFFF}
+.kpi2{padding:18px 20px;display:flex;flex-direction:column;gap:12px;text-align:left;cursor:pointer;color:inherit;transition:transform .15s,box-shadow .15s}
+.kpi2:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(16,24,40,.06),0 14px 30px rgba(16,24,40,.10)}
+.ktile{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none}
+.meter{height:6px;border-radius:999px;background:#EEF1F4;overflow:hidden;display:flex}
+.meter span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:#56606B}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:1px}
+.brow{display:grid;grid-template-columns:minmax(120px,190px) 1fr 96px;gap:14px;align-items:center;padding:7px 0;font-size:13px}
+.btrack{position:relative;height:12px;border-radius:6px;background:#EEF1F4}
+.bfill{position:absolute;left:0;top:0;bottom:0;border-radius:6px;transform-origin:left center}
+.bmin{position:absolute;top:-4px;bottom:-4px;width:2px;background:#0F2742;border-radius:1px}
+.grow .bfill,.grow .meter span{animation:growx .7s cubic-bezier(.2,.7,.2,1) both}
+@keyframes growx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.meter span{transform-origin:left center}
+.tl{position:relative;padding:12px 20px 12px 64px;border-bottom:1px solid #EEF1F4}
+.tl::before{content:"";position:absolute;left:37px;top:0;bottom:0;width:2px;background:#EEF1F4}
+.tl:first-child::before{top:24px}
+.tl:last-child::before{bottom:calc(100% - 24px)}
+.tdot{position:absolute;left:24px;top:12px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px #FFFFFF}
+@media (max-width:560px){.brow{grid-template-columns:1fr auto;gap:6px 12px}.brow .btrack{grid-column:1 / -1;grid-row:2}}
+@media (max-width:860px){.hero-art{display:none}.hero{padding:24px 20px 32px}}
+@media (prefers-reduced-motion:reduce){.grow .bfill,.grow .meter span{animation:none}.kpi2{transition:none}}
+@media (max-width:960px){.scene{display:none}.auth-brand{flex-basis:100%;padding:28px 24px 40px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+  'use strict';
+
+  // ---------- helpers ----------
+  const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmt = (n) => Number(n || 0).toLocaleString('vi-VN');
+  const sign = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
+  const pad = (n, k) => String(n).padStart(k, '0');
+  const now = () => { const d = new Date(); return pad(d.getDate(), 2) + '/' + pad(d.getMonth() + 1, 2) + '/' + d.getFullYear() + ' ' + pad(d.getHours(), 2) + ':' + pad(d.getMinutes(), 2); };
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+
+  const ICON = {
+    box: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>',
+    dashboard: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+    in: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+    out: '<path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/>',
+    stocktake: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+    inventory: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>',
+    alerts: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    reports: '<path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-4"/>',
+    products: '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+    partners: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    eyeOff: '<path d="m3 3 18 18"/><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1"/><path d="M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.9 0 3.5-.6 4.9-1.4"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>',
+    suppliers: '<path d="M10 17h4V5H2v12h3"/><path d="M14 8h4l4 4v5h-3"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+    customers: '<path d="M3 9l1.5-5h15L21 9"/><path d="M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v8h14v-8"/><path d="M10 21v-5h4v5"/>',
+    warehouses: '<path d="M3 21V8l9-5 9 5v13"/><path d="M7 21v-8h10v8"/><path d="M7 17h10"/>',
+    pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+    mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
+    chevUp: '<path d="m6 15 6-6 6 6"/>',
+    arrowLeft: '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
+    minus: '<path d="M5 12h14"/>',
+    plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>'
+  };
+
+  // Isometric warehouse illustration (static, built once)
+  const SCENE = (function () {
+    const s = 26, pts = [];
+    const P = (x, y, z) => { const X = (x - y) * s * 0.866, Y = (x + y) * s * 0.5 - z * s; pts.push([X, Y]); return X.toFixed(1) + ',' + Y.toFixed(1); };
+    const poly = (a, fill, extra) => '<polygon points="' + a.join(' ') + '" fill="' + fill + '"' + (extra || '') + '/>';
+    const box = (x, y, z, w, d, h, c) =>
+      poly([P(x, y, z + h), P(x + w, y, z + h), P(x + w, y + d, z + h), P(x, y + d, z + h)], c[0]) +
+      poly([P(x, y + d, z), P(x + w, y + d, z), P(x + w, y + d, z + h), P(x, y + d, z + h)], c[1]) +
+      poly([P(x + w, y, z), P(x + w, y + d, z), P(x + w, y + d, z + h), P(x + w, y, z + h)], c[2]);
+    const CARD = ['#E9BB7B', '#C58C4B', '#A6713A'], BLUE = ['#6A9EF3', '#3471DA', '#2659B4'], WOOD = ['#8F6F4C', '#715539', '#5B442D'];
+    const STEEL = ['#A9BCD0', '#7189A3', '#5B708A'], BOARD = ['#D0DAE5', '#97AABF', '#7C90A7'];
+    let o = '';
+    o += poly([P(-0.6, -0.6, 0), P(9.2, -0.6, 0), P(9.2, 7.2, 0), P(-0.6, 7.2, 0)], '#17324F');
+    for (let i = 0; i <= 9; i++) o += '<line x1="' + P(i, -0.6, 0).split(',')[0] + '" y1="' + P(i, -0.6, 0).split(',')[1] + '" x2="' + P(i, 7.2, 0).split(',')[0] + '" y2="' + P(i, 7.2, 0).split(',')[1] + '" stroke="rgba(255,255,255,.06)"/>';
+    for (let j = 0; j <= 7; j++) o += '<line x1="' + P(-0.6, j, 0).split(',')[0] + '" y1="' + P(-0.6, j, 0).split(',')[1] + '" x2="' + P(9.2, j, 0).split(',')[0] + '" y2="' + P(9.2, j, 0).split(',')[1] + '" stroke="rgba(255,255,255,.06)"/>';
+    const a = P(-0.6, 2.4, 0).split(','), b = P(9.2, 2.4, 0).split(',');
+    o += '<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" stroke="#F2B705" stroke-width="2.5" stroke-dasharray="10 8" opacity=".85"/>';
+    // rack
+    o += box(0, 0, 0, 0.15, 0.15, 4.4, STEEL) + box(5.85, 0, 0, 0.15, 0.15, 4.4, STEEL);
+    const levels = [
+      { z: 0, items: [[0.3, CARD], [1.5, CARD], [2.7, CARD], [4.4, BLUE]] },
+      { z: 1.5, items: [[0.3, CARD], [1.5, BLUE], [3.9, CARD]] },
+      { z: 3.0, items: [[0.5, CARD], [1.7, CARD], [3.2, BLUE], [4.4, CARD]] }
+    ];
+    levels.forEach((L) => {
+      o += box(0, 0, L.z, 6, 1.3, 0.12, BOARD);
+      L.items.forEach((it) => { o += box(it[0], 0.2, L.z + 0.12, 1.05, 0.95, 0.95, it[1]); });
+    });
+    o += box(0, 1.15, 0, 0.15, 0.15, 4.4, STEEL) + box(5.85, 1.15, 0, 0.15, 0.15, 4.4, STEEL);
+    // pallet 1 (full)
+    o += box(0.6, 3.2, 0, 2.2, 1.8, 0.22, WOOD);
+    const p1 = [[0.65, 3.25, 0.22], [0.65, 4.1, 0.22], [1.75, 3.25, 0.22], [1.75, 4.1, 0.22], [0.65, 3.25, 1.07], [0.65, 4.1, 1.07], [1.75, 3.25, 1.07]];
+    p1.sort((u, v) => (u[0] + u[1]) - (v[0] + v[1]) || u[2] - v[2]).forEach((q) => { o += box(q[0], q[1], q[2], 1.0, 0.85, 0.85, CARD); });
+    // pallet 2 (almost empty → low-stock marker)
+    o += box(4.0, 3.2, 0, 2.2, 1.8, 0.22, WOOD);
+    o += poly([P(4.05, 3.25, 0.22), P(6.15, 3.25, 0.22), P(6.15, 4.95, 0.22), P(4.05, 4.95, 0.22)], 'none', ' stroke="#F2B705" stroke-width="2" stroke-dasharray="6 5"');
+    o += box(4.05, 3.25, 0.22, 1.0, 0.85, 0.85, BLUE);
+    const m = P(5.6, 4.4, 1.9).split(',');
+    o += '<circle cx="' + m[0] + '" cy="' + m[1] + '" r="13" fill="#F2B705"/><text x="' + m[0] + '" y="' + (Number(m[1]) + 5.5) + '" text-anchor="middle" font-size="16" font-weight="700" fill="#0F2742" font-family="system-ui,sans-serif">!</text>';
+    const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+    const minX = Math.min.apply(null, xs) - 16, minY = Math.min.apply(null, ys) - 22, w = Math.max.apply(null, xs) - minX + 16, h = Math.max.apply(null, ys) - minY + 16;
+    return '<svg viewBox="' + minX.toFixed(0) + ' ' + minY.toFixed(0) + ' ' + w.toFixed(0) + ' ' + h.toFixed(0) + '" role="img" aria-label="Minh họa kho hàng với kệ và pallet">' + o + '</svg>';
+  })();
+  let loginAnimated = false;
+  const svg = (name, size) => '<svg width="' + (size || 18) + '" height="' + (size || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[name] + '</svg>';
+
+  // ---------- seed data ----------
+  function seed() {
+    return {
+      home: true, loggedIn: false, role: 'manager', meName: '', meUser: '', screen: 'dashboard',
+      login: { user: '0902222222', pass: '123456', err: '', show: false, remember: true },
+      users: [],
+      warehouses: [],
+      products: [],
+      stock: {},
+      suppliers: [],
+      customers: [],
+      receipts: [],
+      history: [],
+      seq: { in: 1, out: 1, kk: 1 }, pub: null,
+      draft: {
+        in: { partner: '', wh: '', note: '', search: '', lines: [] },
+        out: { partner: '', wh: '', note: '', search: '', lines: [] }
+      },
+      err: { in: '', out: '' },
+      kk: { wh: '', active: false, started: '', rows: [], err: '' },
+      kkList: [],
+      inv: { q: '', wh: 'all', low: false, card: null },
+      rep: { wh: 'all' },
+      dash: { wh: 'all' },
+      rcf: { in: 'all', out: 'all' },
+      uq: '', ufilter: 'all',
+      udel: null,
+      uf: { mode: null, id: null, name: '', phone: '', pass: '', role: 'staff', opened: '', status: 'draft', show: false, err: '' },
+      prodQ: '',
+      pf: { open: false, sku: '', name: '', cat: '', unit: '', min: '', price: '', err: '' },
+      ptab: 'sup',
+      wq: '', wfil: 'all', wdel: null, kpick: null,
+      wf: { open: false, mode: 'create', id: null, code: '', name: '', address: '', keeperId: '', phone: '', capacity: '', opened: '', status: 'active', err: '' },
+      pform: { open: false, mode: 'create', id: null, name: '', phone: '', email: '', address: '', note: '', err: '' },
+      pq: '', pfil: 'all', pdetail: null, pnote: '',
+      toast: null
+    };
+  }
+
+  // ---------- state ----------
+  let S = seed();
+  let H = [];
+  let toastTimer = null;
+  const root = document.getElementById('app');
+
+  function upd(fn) { const n = clone(S); fn(n); S = n; render(); }
+  function say(text, tone) {
+    clearTimeout(toastTimer);
+    upd((n) => { n.toast = { text, tone: tone || 'ok' }; });
+    toastTimer = setTimeout(() => upd((n) => { n.toast = null; }), 4200);
+  }
+  const on = (fn) => { H.push(fn); return H.length - 1; };
+  const prod = (id) => S.products.find((p) => p.id === id) || { name: id, unit: '', min: 0, sku: '' };
+  const whName = (id) => { const w = S.warehouses.find((x) => x.id === id); return w ? w.name : id; };
+  const have = (pid, wh) => S.stock[pid + '|' + wh] || 0;
+  const partnerName = (id) => { const x = S.suppliers.concat(S.customers).find((p) => p.id === id); return x ? x.name : id; };
+  const ROLE = { admin: 'Quản trị viên', manager: 'Quản lý kho', staff: 'Nhân viên kho' };
+  const ST = { pending: { t: 'Chờ duyệt', bg: '#FFF1DB', fg: '#8A4B00' }, approved: { t: 'Đã duyệt', bg: '#E1F3E8', fg: '#13643A' }, cancelled: { t: 'Đã từ chối', bg: '#ECEEF1', fg: '#454F5B' } };
+  const level = (v, min) => (v === 0 ? { t: 'Hết hàng', bg: '#FDE3E1', fg: '#A01F17' } : v <= min ? { t: 'Tồn thấp', bg: '#FFE8D4', fg: '#933A00' } : { t: 'Đủ hàng', bg: '#E1F3E8', fg: '#13643A' });
+  const deltaColor = (d) => (d > 0 ? '#13643A' : d < 0 ? '#A01F17' : '#56606B');
+  const chip = (c) => '<span class="chip" style="background:' + c.bg + ';color:' + c.fg + '">' + esc(c.t) + '</span>';
+  const canApprove = () => S.role !== 'staff';
+  const isAdmin = () => S.role === 'admin';
+  const lowList = () => { const low = []; S.products.forEach((p) => S.warehouses.filter((w) => w.status !== 'paused').forEach((w) => { const v = have(p.id, w.id); if (v <= p.min) low.push({ p, w, v }); })); return low; };
+  const sugg = (x) => Math.max(x.p.min * 2 - x.v, 1);
+
+  // ---------- API (Spring Boot) ----------
+  async function api(method, url, body) {
+    const opt = { method, headers: {}, credentials: 'same-origin' };
+    if (body instanceof FormData) opt.body = body;
+    else if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    let res;
+    try { res = await fetch(url, opt); } catch (e) { throw new Error('Không kết nối được máy chủ. Hãy kiểm tra ứng dụng Java đang chạy (http://localhost:8080).'); }
+    let data = null;
+    try { data = await res.json(); } catch (e) { data = null; }
+    if (res.status === 401 && S.loggedIn) { sessionExpired(data && data.error); throw new Error((data && data.error) || 'Phiên đăng nhập đã hết hạn.'); }
+    if (!res.ok) throw new Error((data && data.error) || ('Lỗi máy chủ (' + res.status + ').'));
+    return data;
+  }
+  let FILES = {};
+  /** Tải toàn bộ dữ liệu từ máy chủ và gộp vào trạng thái giao diện. */
+  async function sync() {
+    const d = await api('GET', '/api/state');
+    FILES = {};
+    (d.files || []).forEach((f) => { (FILES[f.partnerId] = FILES[f.partnerId] || []).push({ id: f.id, name: f.name, size: f.size, date: f.date, by: f.by, url: '/api/files/' + encodeURIComponent(f.id) }); });
+    upd((n) => {
+      ['users', 'warehouses', 'products', 'stock', 'suppliers', 'customers', 'receipts', 'history', 'kkList'].forEach((k) => { n[k] = d[k]; });
+      n.seq = d.seq; n.role = d.me.role; n.meName = d.me.name; n.meUser = d.me.id; n.loggedIn = true; n.home = false;
+      const act = n.warehouses.filter((w) => w.status !== 'paused'); const first = (act[0] || n.warehouses[0] || {}).id || '';
+      ['in', 'out'].forEach((t) => {
+        if (!act.some((w) => w.id === n.draft[t].wh)) n.draft[t].wh = first;
+        const parts = t === 'in' ? n.suppliers : n.customers;
+        if (!parts.some((x) => x.id === n.draft[t].partner)) n.draft[t].partner = (parts[0] || {}).id || '';
+      });
+      if (!act.some((w) => w.id === n.kk.wh) && !n.kk.active) n.kk.wh = first;
+    });
+  }
+  async function loadPublic() {
+    try { const pub = await api('GET', '/api/public/summary'); upd((n) => { n.pub = pub; }); } catch (e) { upd((n) => { n.pub = null; }); }
+  }
+  function sessionExpired(msg) {
+    upd((n) => { n.loggedIn = false; n.home = false; n.login.err = msg || 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'; });
+  }
+  const fail = (e) => say(e.message, 'err');
+  const DEMO = { U1: { phone: '0901111111', pass: '123456' }, U2: { phone: '0902222222', pass: '123456' }, U3: { phone: '0903333333', pass: '123456' } };
+
+  // ---------- actions ----------
+  function go(k) { upd((n) => { if (n.screen !== k) { n.pfil = 'all'; n.pq = ''; n.pform.open = false; n.wf.open = false; n.kpick = null; } n.screen = k; n.ptab = k === 'customers' ? 'cus' : 'sup'; }); window.scrollTo(0, 0); }
+  const normPhone = (v) => String(v || '').replace(/[\s.\-]/g, '');
+  const fmtPhone = (v) => { const d = normPhone(v); return d.length === 10 ? d.slice(0, 4) + ' ' + d.slice(4, 7) + ' ' + d.slice(7) : d; };
+  const PHONE_RE = /^0[35789]\d{8}$/;
+  const isoToday = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2); };
+  const isoToVn = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : '—'; };
+  async function doLogin() {
+    const ph = normPhone(S.login.user);
+    if (!ph || !S.login.pass) return upd((n) => { n.login.err = 'Vui lòng nhập số điện thoại và mật khẩu.'; });
+    if (!PHONE_RE.test(ph)) return upd((n) => { n.login.err = 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 03, 05, 07, 08 hoặc 09).'; });
+    try {
+      const me = await api('POST', '/api/auth/login', { phone: ph, password: S.login.pass });
+      upd((n) => { n.login.err = ''; n.login.pass = ''; n.login.show = false; n.screen = 'dashboard'; });
+      await sync();
+      say('Xin chào ' + me.name + '!', 'info');
+    } catch (e) { upd((n) => { n.login.err = e.message; }); }
+  }
+  function createIn(pid, wh, qty) {
+    upd((n) => { n.draft.in.wh = wh; n.draft.in.lines = [{ pid, qty: String(qty) }]; n.draft.in.note = 'Bổ sung hàng tồn thấp'; n.err.in = ''; n.screen = 'in'; });
+    window.scrollTo(0, 0);
+  }
+  function addLine(t, pid) {
+    upd((n) => { const d = n.draft[t]; const ex = d.lines.find((l) => l.pid === pid); if (ex) ex.qty = String((Number(ex.qty) || 0) + 1); else d.lines.push({ pid, qty: '1' }); n.err[t] = ''; });
+  }
+  async function submit(t) {
+    const d = S.draft[t];
+    const err = (m) => upd((n) => { n.err[t] = m; });
+    if (!d.lines.length) return err('Phiếu chưa có mặt hàng nào. Hãy chọn hàng hóa ở danh sách bên trái.');
+    for (const l of d.lines) {
+      const v = Number(l.qty); const p = prod(l.pid);
+      if (!Number.isInteger(v) || v <= 0) return err('Số lượng của “' + p.name + '” phải là số nguyên lớn hơn 0.');
+    }
+    try {
+      const r = await api('POST', '/api/receipts', { type: t, partnerId: d.partner, warehouseId: d.wh, note: d.note, lines: d.lines.map((l) => ({ productId: l.pid, qty: Number(l.qty) })) });
+      upd((n) => { n.draft[t].lines = []; n.draft[t].note = ''; n.draft[t].search = ''; n.err[t] = ''; });
+      await sync();
+      say('Đã tạo phiếu ' + r.code + ' – đang chờ Quản lý kho duyệt.', 'ok');
+    } catch (e) { err(e.message); }
+  }
+  async function approve(id) {
+    try {
+      const r = await api('POST', '/api/receipts/' + encodeURIComponent(id) + '/approve');
+      await sync();
+      if (r.low && r.low.length) say('Đã duyệt ' + r.code + '. Cảnh báo: ' + r.low.join(', ') + ' đã xuống mức tồn thấp.', 'warn');
+      else say('Đã duyệt ' + r.code + '. Tồn kho đã được ' + (r.type === 'in' ? 'cộng thêm.' : 'trừ đi.'), 'ok');
+    } catch (e) { fail(e); sync().catch(() => {}); }
+  }
+  async function reject(id) {
+    try { const r = await api('POST', '/api/receipts/' + encodeURIComponent(id) + '/reject'); await sync(); say('Đã từ chối phiếu ' + r.code + '.', 'info'); }
+    catch (e) { fail(e); sync().catch(() => {}); }
+  }
+  function kkStart() {
+    const wh = S.kk.wh; const started = now();
+    upd((n) => { n.kk.active = true; n.kk.started = started; n.kk.err = ''; n.kk.rows = n.products.map((p) => { const v = n.stock[p.id + '|' + wh] || 0; return { pid: p.id, system: v, actual: String(v) }; }); });
+  }
+  async function kkApply() {
+    const kk = S.kk;
+    for (const r of kk.rows) { const v = Number(r.actual); if (r.actual === '' || !Number.isInteger(v) || v < 0) return upd((n) => { n.kk.err = 'Số thực tế của “' + prod(r.pid).name + '” phải là số nguyên ≥ 0.'; }); }
+    try {
+      const r = await api('POST', '/api/stocktakes', { warehouseId: kk.wh, rows: kk.rows.map((x) => ({ productId: x.pid, actual: Number(x.actual) })) });
+      upd((n) => { n.kk.active = false; n.kk.rows = []; n.kk.err = ''; });
+      await sync();
+      say('Đã hoàn tất ' + r.code + ': điều chỉnh ' + r.diff + ' mặt hàng tại ' + r.warehouse + '.', r.diff ? 'warn' : 'ok');
+    } catch (e) { upd((n) => { n.kk.err = e.message; }); }
+  }
+  async function saveProduct() {
+    const f = S.pf;
+    try {
+      const r = await api('POST', '/api/products', { sku: f.sku, name: f.name, category: f.cat, unit: f.unit, minStock: f.min === '' ? null : Number(f.min), price: f.price === '' ? 0 : Number(f.price) });
+      upd((n) => { n.pf = { open: false, sku: '', name: '', cat: '', unit: '', min: '', price: '', err: '' }; });
+      await sync();
+      say('Đã thêm “' + r.name + '”. Tồn ban đầu = 0 nên mặt hàng đang ở trạng thái cảnh báo.', 'ok');
+    } catch (e) { upd((n) => { n.pf.err = e.message; }); }
+  }
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const PPHONE_RE = /^0\d{9,10}$/;
+  const blankPF = () => ({ open: false, mode: 'create', id: null, name: '', phone: '', email: '', address: '', note: '', err: '' });
+  async function savePartner() {
+    const f = S.pform; const isSup = S.ptab === 'sup';
+    const body = { type: isSup ? 'sup' : 'cus', name: f.name, phone: normPhone(f.phone), email: f.email.trim(), address: f.address, note: f.note };
+    try {
+      if (f.mode === 'edit') {
+        await api('PUT', '/api/partners/' + encodeURIComponent(f.id), body);
+        upd((n) => { n.pform = blankPF(); });
+        await sync();
+        return say('Đã cập nhật thông tin ' + f.name.trim() + '.', 'ok');
+      }
+      const r = await api('POST', '/api/partners', body);
+      upd((n) => { n.pform = blankPF(); n.pdetail = { id: r.id, tab: isSup ? 'instock' : 'done' }; n.pnote = f.note.trim(); });
+      await sync();
+      say('Đã thêm ' + (isSup ? 'nhà cung cấp ' : 'khách hàng ') + r.id + '. Bạn có thể tải hồ sơ PDF trong phần chi tiết.', 'ok');
+    } catch (e) { upd((n) => { n.pform.err = e.message; }); }
+  }
+  async function saveNote(x) {
+    try {
+      await api('PUT', '/api/partners/' + encodeURIComponent(x.id) + '/note', { note: S.pnote });
+      await sync();
+      const y = S.suppliers.concat(S.customers).find((z) => z.id === x.id);
+      upd((n) => { n.pnote = y ? y.note : ''; });
+      say('Đã lưu ghi chú cho ' + x.name + '.', 'ok');
+    } catch (e) { fail(e); }
+  }
+
+  // ---------- partner files (PDF, lưu trên máy chủ: thư mục uploads) ----------
+  const fmtSize = (b) => b >= 1048576 ? (b / 1048576).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+  async function addFiles(pid, list) {
+    const files = Array.from(list || []); if (!files.length) return;
+    let ok = 0; const bad = [];
+    for (const f of files) {
+      const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+      if (!isPdf) { bad.push(f.name + ' (không phải PDF)'); continue; }
+      if (f.size > 10 * 1048576) { bad.push(f.name + ' (vượt 10 MB)'); continue; }
+      const fd = new FormData(); fd.append('file', f);
+      try { await api('POST', '/api/partners/' + encodeURIComponent(pid) + '/files', fd); ok++; } catch (e) { bad.push(f.name + ' (' + e.message + ')'); }
+    }
+    await sync().catch(() => {});
+    if (bad.length) say((ok ? 'Đã tải lên ' + ok + ' file. ' : '') + 'Bỏ qua: ' + bad.join(', ') + '.', 'err');
+    else say('Đã tải lên ' + ok + ' file PDF.', 'ok');
+  }
+  async function removeFile(pid, fileId) {
+    const f = (FILES[pid] || []).find((x) => x.id === fileId); if (!f) return;
+    if (!window.confirm('Xóa file “' + f.name + '” khỏi hồ sơ đối tác?')) return;
+    try { await api('DELETE', '/api/files/' + encodeURIComponent(fileId)); await sync(); say('Đã xóa file ' + f.name + '.', 'info'); } catch (e) { fail(e); }
+  }
+
+  // ---------- partner stats ----------
+  function partnerStats(pid) {
+    const type = pid.indexOf('NCC') === 0 ? 'in' : 'out';
+    const rs = S.receipts.filter((r) => r.partner === pid && r.type === type);
+    const appr = rs.filter((r) => r.status === 'approved'), pend = rs.filter((r) => r.status === 'pending');
+    const agg = {};
+    appr.forEach((r) => r.lines.forEach((l) => { const k = l.pid + '|' + r.wh; agg[k] = agg[k] || { pid: l.pid, wh: r.wh, qty: 0, last: r.date, refs: [] }; agg[k].qty += l.qty; agg[k].refs.push(r.code); }));
+    const items = Object.keys(agg).map((k) => Object.assign(agg[k], { stock: have(agg[k].pid, agg[k].wh) }));
+    const inStock = items.filter((x) => x.stock > 0);
+    const pendLines = []; pend.forEach((r) => r.lines.forEach((l) => pendLines.push({ code: r.code, date: r.date, wh: r.wh, pid: l.pid, qty: l.qty, creator: r.creator, type: r.type })));
+    const sum = (a) => a.reduce((x, y) => x + y.qty, 0);
+    return { type, receipts: rs, approved: appr, pending: pend, items, inStock, pendLines, apprQty: sum(items), pendQty: sum(pendLines), last: rs[0] || null,
+      products: new Set(items.map((x) => x.pid)).size, stockProducts: new Set(inStock.map((x) => x.pid)).size, files: (FILES[pid] || []).length };
+  }
+  const canEditPartner = () => S.role !== 'staff';
+  // Vai trò KHÔNG được xem SĐT/email/địa chỉ liên hệ và hồ sơ PDF của Khách hàng, Kho
+  // Phân quyền xem thông tin liên hệ (SĐT, email) và hồ sơ PDF, theo từng tab
+  const HIDE_CONTACT_ROLES = { sup: ['manager', 'staff'], cus: ['staff'], wh: ['staff'] };
+  const hideContact = (kind) => (HIDE_CONTACT_ROLES[kind] || []).indexOf(S.role) >= 0;
+  const allowedRoles = (kind) => ['admin', 'manager', 'staff'].filter((r) => (HIDE_CONTACT_ROLES[kind] || []).indexOf(r) < 0).map((r) => ROLE[r]).join(' và ');
+  const lockNote = (what, kind) => '<div class="notice" style="display:flex;gap:10px;align-items:center">' + svg('lock', 16) + '<span>' + what + ' chỉ hiển thị với ' + allowedRoles(kind) + '.</span></div>';
+
+  // ---------- view helpers ----------
+  const btn = (label, fn, cls, extra) => '<button type="button" class="btn ' + (cls || '') + '" data-c="' + on(fn) + '"' + (extra || '') + '>' + label + '</button>';
+  const pills = (items) => '<div class="wrap g8">' + items.map((x) => '<button type="button" class="pill' + (x.on ? ' on' : '') + '" aria-pressed="' + (x.on ? 'true' : 'false') + '" data-c="' + on(x.pick) + '">' + esc(x.label) + '</button>').join('') + '</div>';
+  const input = (fid, value, fn, attrs) => '<input class="input" data-fid="' + fid + '" data-i="' + on(fn) + '" value="' + esc(value) + '" ' + (attrs || '') + '>';
+  const val = (setter) => (e) => setter(e.target.value);
+  const table = (cols, head, rows, minW, emptyText) =>
+    '<div class="scroll"><div style="min-width:' + minW + 'px"><div class="thead" style="grid-template-columns:' + cols + '">' + head.map((h) => '<span' + (h.r ? ' class="r"' : '') + '>' + esc(h.t || h) + '</span>').join('') + '</div>' +
+    rows.map((cells) => '<div class="trow' + (cells.cls ? ' ' + cells.cls : '') + '" style="grid-template-columns:' + cols + '">' + cells.join('') + '</div>').join('') +
+    (rows.length === 0 && emptyText ? '<div style="padding:20px" class="muted">' + esc(emptyText) + '</div>' : '') + '</div></div>';
+  const cell = (html, style, cls) => '<span' + (cls ? ' class="' + cls + '"' : '') + (style ? ' style="' + style + '"' : '') + '>' + html + '</span>';
+
+  // ---------- screens ----------
+  const PAGES = {
+    dashboard: ['Tổng quan', 'Tình hình kho hôm nay và các việc cần xử lý'],
+    in: ['Nhập kho', 'Lập phiếu nhập, Quản lý kho duyệt để cộng tồn (FR-07, FR-08)'],
+    out: ['Xuất kho', 'Lập phiếu xuất có kiểm tra tồn, duyệt để trừ tồn (FR-09, FR-10)'],
+    stocktake: ['Kiểm kê', 'Đối chiếu tồn hệ thống với thực tế và điều chỉnh chênh lệch (FR-12, FR-13)'],
+    inventory: ['Tồn kho', 'Tra cứu tồn theo mặt hàng, theo kho và xem thẻ kho (FR-11, FR-15)'],
+    alerts: ['Cảnh báo tồn thấp', 'Các mặt hàng có tồn ≤ mức tối thiểu (FR-14)'],
+    reports: ['Báo cáo', 'Báo cáo nhập – xuất – tồn theo kỳ và xuất file (FR-16, FR-17)'],
+    products: ['Hàng hóa', 'Quản lý danh mục hàng hóa và mức tồn tối thiểu (FR-03)'],
+    suppliers: ['Nhà cung cấp', 'Liên hệ, hàng đã nhập, phiếu chờ duyệt, hồ sơ PDF và ghi chú (FR-04)'],
+    customers: ['Khách hàng', 'Liên hệ, hàng đã xuất, phiếu chờ duyệt, hồ sơ PDF và ghi chú (FR-05)'],
+    warehouses: ['Kho', 'Thêm, sửa, tạm ngưng và xóa kho; theo dõi sức chứa và tồn (FR-06)'],
+    users: ['Người dùng', 'Quản lý tài khoản và phân quyền (FR-01, FR-02)']
+  };
+
+
+  // ---------- homepage ----------
+  let leavingHome = false;
+  function leaveHome() {
+    if (leavingHome || !S.home) return;
+    leavingHome = true;
+    const el = document.getElementById('home');
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (el && !reduce) { el.classList.remove('dragging'); el.style.transform = ''; el.classList.add('leaving'); }
+    setTimeout(() => { leavingHome = false; upd((n) => { n.home = false; }); const u = root.querySelector('[data-fid="login-user"]'); if (u) u.focus(); }, reduce ? 0 : 640);
+  }
+  function viewHome() {
+    const pub = S.pub || { low: 0, pending: 0, total: 0, warehouses: 0 };
+    const low = pub.low, pending = pub.pending, total = pub.total;
+    const feats = [['in', 'Nhập – xuất có duyệt'], ['stocktake', 'Kiểm kê đối chiếu'], ['alerts', 'Cảnh báo tồn thấp'], ['reports', 'Báo cáo nhập – xuất – tồn']];
+    return '<div class="home" id="home" role="region" aria-label="Trang chủ">' +
+      '<div class="home-nav rise"><div style="display:flex;align-items:center;gap:12px"><div class="logo" style="width:40px;height:40px;background:#FFFFFF;color:#0F2742">' + svg('box', 22) + '</div>' +
+      '<div><div style="font-weight:700;font-size:17px">Quản lý kho</div><div style="font-size:12px;color:#9FB0C6">Warehouse Management System</div></div></div>' +
+      '<button type="button" class="hbtn solid" data-home="go">Đăng nhập</button></div>' +
+      '<div class="home-main"><div class="home-copy">' +
+      '<span class="eyebrow rise d1"><i></i>Đồ án Phân tích và Thiết kế Yêu cầu</span>' +
+      '<h1 class="home-title rise d2">Kho hàng rõ ràng<br>đến <em>từng con số.</em></h1>' +
+      '<p class="home-sub rise d3">Lập phiếu nhập, xuất có người duyệt, kiểm kê đối chiếu số thực tế và nhận cảnh báo trước khi hàng hết. Mọi biến động đều được ghi vào thẻ kho.</p>' +
+      '<div class="hfeat rise d4">' + feats.map((f) => '<span><b>' + svg(f[0], 16) + '</b>' + f[1] + '</span>').join('') + '</div></div>' +
+      '<div class="home-art rise d2">' + SCENE +
+      '<div class="float f1"><div class="ftile" style="background:#FFF3D1;color:#8A5A00">' + svg('alerts', 18) + '</div><div><b>' + low + '</b> mặt hàng<br><span class="muted small">dưới mức tồn tối thiểu</span></div></div>' +
+      '<div class="float f2"><div class="ftile" style="background:#E6EFFF;color:#1A4FB8">' + svg('stocktake', 18) + '</div><div><b>' + pending + '</b> phiếu<br><span class="muted small">đang chờ duyệt</span></div></div>' +
+      '<div class="float f3"><div class="ftile" style="background:#E1F3E8;color:#13643A">' + svg('inventory', 18) + '</div><div><b>' + fmt(total) + '</b> đơn vị<br><span class="muted small">tồn tại ' + (S.pub ? S.pub.warehouses : 0) + ' kho</span></div></div>' +
+      '</div></div>' +
+      '<button type="button" class="swipe rise d4" data-home="go" aria-label="Vào trang đăng nhập"><span class="chev">' + svg('chevUp', 26) + svg('chevUp', 26) + '</span>Vuốt lên để bắt đầu<small>hoặc nhấn vào bất kỳ đâu</small></button>' +
+      '</div>';
+  }
+  function bindHome() {
+    const el = document.getElementById('home'); if (!el) return;
+    let y0 = null, dy = 0, moved = false;
+    const start = (y) => { y0 = y; dy = 0; moved = false; el.classList.add('dragging'); };
+    const move = (y) => { if (y0 === null) return; dy = Math.min(0, y - y0); if (Math.abs(dy) > 6) moved = true; el.style.transform = 'translateY(' + (dy * 0.85) + 'px)'; };
+    const end = () => {
+      if (y0 === null) return; y0 = null; el.classList.remove('dragging');
+      if (dy < -70) leaveHome(); else { el.style.transform = ''; if (!moved) leaveHome(); }
+    };
+    el.addEventListener('touchstart', (e) => start(e.touches[0].clientY), { passive: true });
+    el.addEventListener('touchmove', (e) => move(e.touches[0].clientY), { passive: true });
+    el.addEventListener('touchend', end);
+    el.addEventListener('mousedown', (e) => { if (e.button === 0) start(e.clientY); });
+    window.onmousemove = (e) => { if (S.home) move(e.clientY); };
+    window.onmouseup = () => { if (S.home) end(); };
+    el.addEventListener('wheel', (e) => { if (e.deltaY > 20) leaveHome(); }, { passive: true });
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); leaveHome(); } });
+  }
+
+  function viewLogin() {
+    const pub = S.pub || { low: 0, pending: 0, total: 0, warehouses: 0 };
+    const low = pub.low, pending = pub.pending, total = pub.total;
+    const anim = (loginAnimated || S.home) ? '' : ' enter'; if (!S.home) loginAnimated = true;
+    const roles = [
+      ['U1', 'Quản trị viên', 'Quản lý tài khoản và phân quyền', 'users', '#ECEDFE', '#3B3FB6'],
+      ['U2', 'Quản lý kho', 'Duyệt phiếu, xác nhận kiểm kê, báo cáo', 'stocktake', '#E6EFFF', '#1A4FB8'],
+      ['U3', 'Nhân viên kho', 'Lập phiếu nhập, xuất và đếm kiểm kê', 'box', '#FFF3D1', '#7A5300']
+    ];
+    const tick = '<span style="color:#F2B705;display:inline-flex">' + svg('check', 16) + '</span>';
+    const brand =
+      '<section class="auth-brand">' +
+      '<div style="display:flex;align-items:center;gap:12px"><div class="logo" style="width:40px;height:40px;background:#FFFFFF;color:#0F2742">' + svg('box', 22) + '</div>' +
+      '<div><div style="font-weight:700;font-size:17px">Quản lý kho</div><div style="font-size:12px;color:#9FB0C6">Warehouse Management System</div></div></div>' +
+      '<div class="col" style="gap:14px;margin-top:12px"><h1 class="auth-title">Kiểm soát từng thùng hàng, từ lúc nhập đến lúc xuất.</h1>' +
+      '<p class="auth-sub">Phiếu nhập, xuất được duyệt trước khi thay đổi tồn. Kiểm kê đối chiếu số thực tế và hệ thống tự cảnh báo khi hàng sắp hết.</p></div>' +
+      '<div class="scene">' + SCENE +
+      '<div class="float f1"><div class="ftile" style="background:#FFF3D1;color:#8A5A00">' + svg('alerts', 18) + '</div><div><b>' + low + '</b> mặt hàng<br><span class="muted small">dưới mức tồn tối thiểu</span></div></div>' +
+      '<div class="float f2"><div class="ftile" style="background:#E6EFFF;color:#1A4FB8">' + svg('stocktake', 18) + '</div><div><b>' + pending + '</b> phiếu<br><span class="muted small">đang chờ duyệt</span></div></div>' +
+      '<div class="float f3"><div class="ftile" style="background:#E1F3E8;color:#13643A">' + svg('inventory', 18) + '</div><div><b>' + fmt(total) + '</b> đơn vị<br><span class="muted small">tồn tại ' + (S.pub ? S.pub.warehouses : 0) + ' kho</span></div></div>' +
+      '</div>' +
+      '<div class="feats"><span>' + tick + 'Nhập, xuất có duyệt</span><span>' + tick + 'Kiểm kê đối chiếu</span><span>' + tick + 'Cảnh báo tồn thấp</span><span>' + tick + 'Thẻ kho đầy đủ</span></div>' +
+      '</section>';
+    const form =
+      '<section class="auth-form" style="position:relative"><button type="button" class="btn btn-sm btn-ghost backhome" data-c="' + on(() => upd((n) => { n.home = true; })) + '">' + svg('arrowLeft', 16) + 'Trang chủ</button><div class="auth-card' + anim + '">' +
+      '<div class="col" style="gap:6px"><h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-.01em">Chào mừng trở lại</h2><p class="muted" style="margin:0;font-size:14px">Đăng nhập bằng tài khoản được Quản trị viên cấp.</p></div>' +
+      '<label class="field">Số điện thoại<span class="ifield"><span class="lead">' + svg('phone', 18) + '</span>' +
+      input('login-user', S.login.user, val((v) => upd((n) => { n.login.user = v; n.login.err = ''; })), 'type="tel" inputmode="tel" autocomplete="tel" placeholder="Ví dụ: 0902 222 222"') + '</span></label>' +
+      '<label class="field">Mật khẩu<span class="ifield"><span class="lead">' + svg('lock', 18) + '</span>' +
+      input('login-pass', S.login.pass, val((v) => upd((n) => { n.login.pass = v; n.login.err = ''; })), 'type="' + (S.login.show ? 'text' : 'password') + '" autocomplete="current-password" placeholder="Nhập mật khẩu"').replace('class="input"', 'class="input has-eye"') +
+      '<button type="button" class="eye" aria-label="' + (S.login.show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu') + '" data-c="' + on(() => upd((n) => { n.login.show = !n.login.show; })) + '">' + svg(S.login.show ? 'eyeOff' : 'eye', 18) + '</button></span></label>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
+      '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#3D4753"><input type="checkbox" data-ch="' + on((e) => { const v = e.target.checked; upd((n) => { n.login.remember = v; }); }) + '"' + (S.login.remember ? ' checked' : '') + '>Ghi nhớ đăng nhập</label>' +
+      '<button type="button" class="linkbtn" data-c="' + on(() => say('Vui lòng liên hệ Quản trị viên để được đặt lại mật khẩu.', 'info')) + '">Quên mật khẩu?</button></div>' +
+      (S.login.err ? '<div class="alert-err" role="alert">' + esc(S.login.err) + '</div>' : '') +
+      btn('Đăng nhập', doLogin, 'btn-primary', ' style="width:100%;min-height:48px;border-radius:10px;font-size:15px;font-weight:600;box-shadow:0 6px 16px rgba(26,86,196,.28)"') +
+      '<div class="divider">Tài khoản demo, bấm để điền nhanh</div>' +
+      '<div class="col g8">' + roles.map((r) => {
+        const du = DEMO[r[0]];
+        const sel = normPhone(S.login.user) === du.phone;
+        return '<button type="button" class="rolecard' + (sel ? ' on' : '') + '" aria-pressed="' + sel + '" data-c="' + on(() => upd((n) => { n.login.user = du.phone; n.login.pass = du.pass; n.login.err = ''; })) + '">' +
+          '<span class="rtile" style="background:' + r[4] + ';color:' + r[5] + '">' + svg(r[3], 18) + '</span>' +
+          '<span class="col" style="gap:1px;flex:1;min-width:0"><span style="font-size:14px;font-weight:600">' + r[1] + '</span><span class="muted small">' + r[2] + '</span></span>' +
+          '<span class="muted small" style="font-family:ui-monospace,Consolas,monospace;white-space:nowrap">' + esc(fmtPhone(du.phone)) + '</span></button>';
+      }).join('') + '</div>' +
+      '<p class="muted small" style="margin:0;text-align:center">Đồ án môn Phân tích và Thiết kế Yêu cầu</p>' +
+      '</div></section>';
+    return '<div class="auth">' + brand + form + '</div>';
+  }
+
+  function viewSidebar(screen, low) {
+    const item = (k, label, extra) => '<button type="button" class="nav' + (k === screen ? ' on' : '') + '"' + (k === screen ? ' aria-current="page"' : '') + ' data-c="' + on(() => go(k)) + '">' + svg(k) + '<span>' + label + '</span>' + (extra || '') + '</button>';
+    return '<aside>' +
+      '<div style="display:flex;align-items:center;gap:10px;padding:4px 8px 12px"><div class="logo" style="width:36px;height:36px">' + svg('box', 20) + '</div><div><div style="font-weight:700;font-size:16px">Quản lý kho</div><div class="muted small">Warehouse Management</div></div></div>' +
+      item('dashboard', 'Tổng quan') +
+      '<div class="navgroup">Nghiệp vụ</div>' + item('in', 'Nhập kho') + item('out', 'Xuất kho') + item('stocktake', 'Kiểm kê') +
+      '<div class="navgroup">Theo dõi</div>' + item('inventory', 'Tồn kho') + item('alerts', 'Cảnh báo tồn thấp', low.length ? '<span class="badge">' + low.length + '</span>' : '') + item('reports', 'Báo cáo') +
+      '<div class="navgroup">Danh mục</div>' + item('products', 'Hàng hóa') + item('suppliers', 'Nhà cung cấp') + item('customers', 'Khách hàng') + item('warehouses', 'Kho') +
+      (isAdmin() ? '<div class="navgroup">Hệ thống</div>' + item('users', 'Người dùng') : '') +
+      '</aside>';
+  }
+
+  function viewTop(pg) {
+    const initials = (S.meName || '?').split(' ').filter(Boolean).slice(-2).map((w) => w[0]).join('').toUpperCase();
+    return '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">' +
+      '<div><h1 style="margin:0;font-size:24px;font-weight:700">' + esc(pg[0]) + '</h1><p class="muted" style="margin:4px 0 0;font-size:14px">' + esc(pg[1]) + '</p></div>' +
+      '<div style="display:flex;align-items:center;gap:12px"><div style="display:flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;background:#FFFFFF;border:1px solid #E1E6EB;border-radius:999px">' +
+      '<div style="width:32px;height:32px;border-radius:50%;background:#E8EEFB;color:#1A4FB8;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">' + esc(initials) + '</div>' +
+      '<div style="line-height:1.25"><div style="font-size:14px;font-weight:600">' + esc(S.meName) + '</div><div class="muted small">' + ROLE[S.role] + '</div></div></div>' +
+      btn('Đăng xuất', () => { loginAnimated = false; api('POST', '/api/auth/logout').catch(() => {}); loadPublic(); upd((n) => { n.loggedIn = false; n.login.pass = ''; n.login.show = false; n.screen = 'dashboard'; }); }) + '</div></div>';
+  }
+
+  let prevScreen = null;
+  const money = (v) => v >= 1e9 ? (v / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' tỷ đ' : v >= 1e6 ? (v / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' triệu đ' : fmt(v) + ' đ';
+  function viewDashboard(low) {
+    const grow = prevScreen !== 'dashboard' ? ' grow' : '';
+    const d = new Date(); const hr = d.getHours();
+    const greet = hr < 11 ? 'Chào buổi sáng' : hr < 14 ? 'Chào buổi trưa' : hr < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+    const WD = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    const dateText = WD[d.getDay()] + ', ' + pad(d.getDate(), 2) + '/' + pad(d.getMonth() + 1, 2) + '/' + d.getFullYear();
+    const pending = S.receipts.filter((r) => r.status === 'pending');
+    const pIn = pending.filter((r) => r.type === 'in').length, pOut = pending.length - pIn;
+    const whs = S.warehouses;
+    const whTotals = whs.map((w) => S.products.reduce((a, p) => a + have(p.id, w.id), 0));
+    const totalQty = whTotals.reduce((a, b) => a + b, 0);
+    const value = S.products.reduce((a, p) => a + whs.reduce((b, w) => b + have(p.id, w.id), 0) * p.price, 0);
+    const cats = new Set(S.products.map((p) => p.cat)).size;
+    const slots = S.products.length * whs.length;
+    let zero = 0; low.forEach((x) => { if (x.v === 0) zero++; });
+    const lowOnly = low.length - zero, okSlots = slots - low.length;
+    const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+    const WHC = ['#1A56C4', '#7FA6E8'];
+
+    const summary = (pending.length || low.length)
+      ? 'Hôm nay có ' + (pending.length ? pending.length + ' phiếu chờ duyệt' : '') + (pending.length && low.length ? ' và ' : '') + (low.length ? low.length + ' vị trí hàng dưới mức tối thiểu' : '') + '.'
+      : 'Mọi thứ đều ổn: không có phiếu chờ duyệt và không có hàng tồn thấp.';
+    const hero = '<section class="hero"><div class="col g16" style="flex:1;min-width:0;position:relative;z-index:1">' +
+      '<div class="col" style="gap:6px"><span style="font-size:13px;color:#9FB0C6">' + dateText + '</span>' +
+      '<h2 style="margin:0;font-size:clamp(22px,2.4vw,30px);font-weight:700;letter-spacing:-.01em">' + greet + ', ' + esc(S.meName) + '</h2>' +
+      '<p style="margin:0;color:#C9D5E4;font-size:15px;max-width:560px">' + esc(summary) + '</p></div>' +
+      '<div class="wrap g8"><span class="hstat">' + svg('inventory', 16) + '<span><b>' + fmt(totalQty) + '</b> đơn vị tồn</span></span><span class="hstat">' + svg('partners', 16) + '<span><b>' + whs.filter((w) => w.status !== 'paused').length + '</b> kho đang hoạt động</span></span></div>' +
+      '<div class="wrap g10">' +
+      '<button type="button" class="hbtn solid" data-c="' + on(() => go('in')) + '">' + svg('in', 16) + 'Lập phiếu nhập</button>' +
+      '<button type="button" class="hbtn" data-c="' + on(() => go('out')) + '">' + svg('out', 16) + 'Lập phiếu xuất</button>' +
+      '<button type="button" class="hbtn" data-c="' + on(() => go('stocktake')) + '">' + svg('stocktake', 16) + 'Kiểm kê</button></div></div>' +
+      '<div class="hero-art">' + SCENE + '</div></section>';
+
+    const kpi = (opt) => '<button type="button" class="card kpi2" data-c="' + on(() => go(opt.go)) + '">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;width:100%"><div class="col" style="gap:4px"><span class="muted" style="font-size:13px;font-weight:500">' + opt.label + '</span>' +
+      '<span style="font-size:28px;font-weight:700;letter-spacing:-.01em;color:' + (opt.color || '#17212B') + '">' + opt.value + '</span></div>' +
+      '<span class="ktile" style="background:' + opt.tbg + ';color:' + opt.tfg + '">' + svg(opt.icon, 20) + '</span></div>' +
+      '<div class="meter">' + opt.segs.map((g) => '<span style="width:' + g[0] + '%;background:' + g[1] + '"></span>').join('') + '</div>' +
+      '<div class="legend">' + opt.legend + '</div></button>';
+    const kpis = '<div class="' + grow.trim() + '" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">' +
+      kpi({ label: 'Giá trị tồn kho', value: money(value), icon: 'reports', tbg: '#E6EFFF', tfg: '#1A4FB8', go: 'reports',
+        segs: [[pct(okSlots, slots), '#2E9E62']], legend: '<span>' + S.products.length + ' mặt hàng, ' + cats + ' danh mục</span><span>' + pct(okSlots, slots) + '% vị trí đủ hàng</span>' }) +
+      kpi({ label: 'Tổng số lượng tồn', value: fmt(totalQty), icon: 'inventory', tbg: '#E8F4EE', tfg: '#13643A', go: 'inventory',
+        segs: whTotals.map((t, i) => [pct(t, totalQty), WHC[i % 2]]), legend: whs.map((w, i) => '<span><i style="background:' + WHC[i % 2] + '"></i>' + esc(w.name) + ' ' + fmt(whTotals[i]) + '</span>').join('') }) +
+      kpi({ label: 'Phiếu chờ duyệt', value: fmt(pending.length), color: pending.length ? '#8A4B00' : '#17212B', icon: 'stocktake', tbg: '#FFF3D1', tfg: '#8A5A00', go: pOut > pIn ? 'out' : 'in',
+        segs: pending.length ? [[pct(pIn, pending.length), '#2E9E62'], [pct(pOut, pending.length), '#D9534F']] : [], legend: '<span><i style="background:#2E9E62"></i>Nhập ' + pIn + '</span><span><i style="background:#D9534F"></i>Xuất ' + pOut + '</span>' }) +
+      kpi({ label: 'Cảnh báo tồn thấp', value: fmt(low.length), color: low.length ? '#933A00' : '#13643A', icon: 'alerts', tbg: '#FFE8D4', tfg: '#933A00', go: 'alerts',
+        segs: [[pct(lowOnly, slots), '#E58A2E'], [pct(zero, slots), '#C0392B']], legend: '<span>' + low.length + ' trên ' + slots + ' vị trí hàng</span>' + (zero ? '<span>' + zero + ' hết hàng</span>' : '') }) +
+      '</div>';
+
+    // Stock vs minimum chart
+    const dw = S.dash.wh; const ids = dw === 'all' ? whs.map((w) => w.id) : [dw];
+    const rows = S.products.map((p) => { const q = ids.reduce((a, w) => a + have(p.id, w), 0); const mn = p.min * ids.length; return { p, q, mn }; })
+      .sort((a, b) => (a.q / Math.max(a.mn, 1)) - (b.q / Math.max(b.mn, 1)));
+    const scale = Math.max.apply(null, rows.map((r) => Math.max(r.q, r.mn))) * 1.08 || 1;
+    const whOpts = [{ id: 'all', name: 'Tất cả kho' }].concat(whs);
+    const chart = '<section class="card" style="flex:2 1 520px;min-width:0"><div class="cardhead"><div class="col" style="gap:2px"><h2 class="h2">Mức tồn so với ngưỡng tối thiểu</h2><span class="muted small">Sắp xếp từ mặt hàng thiếu nhiều nhất</span></div>' +
+      pills(whOpts.map((w) => ({ label: w.name, on: w.id === dw, pick: () => upd((n) => { n.dash.wh = w.id; }) }))) + '</div>' +
+      '<div class="' + grow.trim() + '" style="padding:12px 20px 8px">' + rows.map((r) => {
+        const isLow = r.q <= r.mn; const c = r.q === 0 ? '#C0392B' : isLow ? '#E58A2E' : '#1A56C4';
+        return '<div class="brow"><span style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + esc(r.p.name) + '">' + esc(r.p.name) + '</span>' +
+          '<div class="btrack" role="img" aria-label="' + esc(r.p.name + ': tồn ' + r.q + ', tối thiểu ' + r.mn) + '"><span class="bfill" style="width:' + (r.q / scale * 100).toFixed(1) + '%;background:' + c + '"></span><span class="bmin" style="left:calc(' + (r.mn / scale * 100).toFixed(1) + '% - 1px)"></span></div>' +
+          '<span class="r" style="font-weight:600;color:' + (isLow ? c : '#17212B') + '">' + fmt(r.q) + ' <span class="muted" style="font-weight:400">/ ' + fmt(r.mn) + '</span></span></div>';
+      }).join('') + '</div>' +
+      '<div class="legend" style="padding:4px 20px 16px"><span><i style="background:#1A56C4"></i>Đủ hàng</span><span><i style="background:#E58A2E"></i>Tồn thấp</span><span><i style="background:#C0392B"></i>Hết hàng</span><span><i style="background:#0F2742;width:2px;height:12px;vertical-align:-2px"></i>Mức tối thiểu</span></div></section>';
+
+    // Donut
+    const R = 54, C = 2 * Math.PI * R; let off = 0;
+    const segs = [[okSlots, '#2E9E62', 'Đủ hàng'], [lowOnly, '#E58A2E', 'Tồn thấp'], [zero, '#C0392B', 'Hết hàng']];
+    const arcs = segs.map((g) => { const len = slots ? g[0] / slots * C : 0; const a = '<circle cx="70" cy="70" r="' + R + '" fill="none" stroke="' + g[1] + '" stroke-width="18" stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 70 70)"/>'; off += len; return a; }).join('');
+    const donut = '<section class="card" style="flex:1 1 280px;min-width:0"><div class="cardhead"><div class="col" style="gap:2px"><h2 class="h2">Tình trạng tồn kho</h2><span class="muted small">Theo vị trí hàng (mặt hàng × kho)</span></div></div>' +
+      '<div style="padding:20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:24px">' +
+      '<svg width="160" height="160" viewBox="0 0 140 140" role="img" aria-label="' + okSlots + ' đủ hàng, ' + lowOnly + ' tồn thấp, ' + zero + ' hết hàng"><circle cx="70" cy="70" r="' + R + '" fill="none" stroke="#EEF1F4" stroke-width="18"/>' + arcs +
+      '<text x="70" y="68" text-anchor="middle" font-size="26" font-weight="700" fill="#17212B" font-family="inherit">' + pct(okSlots, slots) + '%</text><text x="70" y="88" text-anchor="middle" font-size="11" fill="#56606B" font-family="inherit">đủ hàng</text></svg>' +
+      '<div class="col g10" style="min-width:150px">' + segs.map((g) => '<div style="display:flex;align-items:center;gap:10px;font-size:14px"><span style="width:12px;height:12px;border-radius:3px;background:' + g[1] + '"></span><span style="flex:1">' + g[2] + '</span><b>' + g[0] + '</b></div>').join('') +
+      '<button type="button" class="btn btn-sm" style="margin-top:6px" data-c="' + on(() => go('alerts')) + '">Xem cảnh báo</button></div></div></section>';
+
+    // Low stock list
+    const lowCard = '<section class="card" style="flex:1 1 320px;min-width:0"><div class="cardhead"><h2 class="h2">Cần nhập bổ sung</h2>' + btn('Xem tất cả', () => go('alerts'), 'btn-sm btn-ghost btn-link') + '</div>' +
+      (low.length ? '' : '<div style="padding:20px" class="muted">Không có mặt hàng nào dưới mức tối thiểu.</div>') +
+      '<div class="' + grow.trim() + '">' + low.slice(0, 5).map((x) => '<div class="listrow" style="align-items:center"><div style="flex:1;min-width:0" class="col g8"><div style="display:flex;justify-content:space-between;gap:8px"><span style="font-weight:500;font-size:14px">' + esc(x.p.name) + '</span><span style="font-size:13px;font-weight:600;color:#933A00;white-space:nowrap">' + fmt(x.v) + ' / ' + fmt(x.p.min) + '</span></div>' +
+        '<div class="meter"><span style="width:' + Math.min(100, pct(x.v, x.p.min)) + '%;background:' + (x.v === 0 ? '#C0392B' : '#E58A2E') + '"></span></div><span class="muted small">' + esc(x.p.sku + ', ' + x.w.name) + '</span></div>' +
+        btn('Nhập', () => createIn(x.p.id, x.w.id, sugg(x)), 'btn-sm') + '</div>').join('') + '</div></section>';
+
+    // Pending approvals
+    const pendCard = '<section class="card" style="flex:1 1 320px;min-width:0"><div class="cardhead"><h2 class="h2">Phiếu chờ duyệt</h2><span class="chip" style="background:#FFF1DB;color:#8A4B00">' + pending.length + ' phiếu</span></div>' +
+      (pending.length ? '' : '<div style="padding:20px" class="muted">Không có phiếu nào đang chờ duyệt.</div>') +
+      pending.slice(0, 5).map((r) => '<div class="listrow"><span class="ktile" style="width:36px;height:36px;background:' + (r.type === 'in' ? '#E8F4EE' : '#FDECEC') + ';color:' + (r.type === 'in' ? '#13643A' : '#A01F17') + '">' + svg(r.type, 18) + '</span>' +
+        '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">' + esc(r.code) + ' <span class="muted" style="font-weight:400">' + (r.type === 'in' ? 'Phiếu nhập' : 'Phiếu xuất') + '</span></div><div class="muted small">' + esc(partnerName(r.partner)) + '</div><div class="muted small">' + esc(whName(r.wh) + ', ' + r.date) + '</div></div>' +
+        (canApprove() && r.creatorId !== S.meUser ? btn('Duyệt', () => approve(r.id), 'btn-sm btn-primary') : btn('Mở', () => go(r.type), 'btn-sm')) + '</div>').join('') + '</section>';
+
+    // Activity timeline
+    const KIND = { 'Nhập': ['in', '#E8F4EE', '#13643A'], 'Xuất': ['out', '#FDECEC', '#A01F17'], 'Kiểm kê': ['stocktake', '#EFEAFE', '#5B3FB6'] };
+    const hist = S.history.slice(0, 6);
+    const actCard = '<section class="card" style="flex:1 1 320px;min-width:0"><div class="cardhead"><h2 class="h2">Hoạt động gần đây</h2>' + btn('Tồn kho', () => go('inventory'), 'btn-sm btn-ghost btn-link') + '</div><div>' +
+      hist.map((h) => { const k = KIND[h.kind] || KIND['Kiểm kê']; return '<div class="tl"><span class="tdot" style="background:' + k[1] + ';color:' + k[2] + '">' + svg(k[0], 15) + '</span>' +
+        '<div style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:500;font-size:14px">' + esc(prod(h.pid).name) + '</span><span style="font-weight:600;font-size:14px;color:' + deltaColor(h.delta) + '">' + sign(h.delta) + '</span></div>' +
+        '<div class="muted small">' + esc(h.kind + ' tại ' + whName(h.wh) + ', ' + h.ref) + '</div><div class="muted small">' + esc(h.t) + '</div></div>'; }).join('') +
+      (hist.length ? '' : '<div style="padding:20px" class="muted">Chưa có hoạt động.</div>') + '</div></section>';
+
+    return '<div class="col g20">' + hero + kpis +
+      '<div class="wrap" style="gap:16px;align-items:stretch">' + chart + donut + '</div>' +
+      '<div class="wrap" style="gap:16px;align-items:flex-start">' + lowCard + pendCard + actCard + '</div></div>';
+  }
+
+  // ---------- shared UI pieces ----------
+  const statTiles = (items) => '<div class="stats">' + items.map((it) =>
+    (it.go
+      ? '<button type="button" class="card stat statbtn' + (it.on ? ' on' : '') + '" aria-pressed="' + (it.on ? 'true' : 'false') + '" title="Lọc theo ' + esc(it.label.toLowerCase()) + '" style="--ring:' + it.fg + ';--ringsoft:' + it.bg + '" data-c="' + on(it.go) + '">' + (it.on ? '<span class="tick">Đang lọc</span>' : '')
+      : '<div class="card stat">') + '<span class="ktile" style="background:' + it.bg + ';color:' + it.fg + '">' + svg(it.icon, 20) + '</span>' +
+    '<div class="col" style="gap:2px;min-width:0"><span class="muted" style="font-size:13px">' + it.label + '</span>' +
+    '<span style="font-size:22px;font-weight:700;letter-spacing:-.01em;color:' + (it.color || '#17212B') + '">' + it.value + '</span>' +
+    (it.sub ? '<span class="muted small">' + it.sub + '</span>' : '') + '</div>' + (it.go ? '</button>' : '</div>')).join('') + '</div>';
+  const scrollToId = (id) => setTimeout(() => { const el = document.getElementById(id); if (el) { const r = el.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight - 120) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, 0);
+  const head = (icon, bg, fg, title, sub, right) => '<div class="cardhead"><div style="display:flex;align-items:center;gap:12px;min-width:0"><span class="ktile" style="width:36px;height:36px;background:' + bg + ';color:' + fg + '">' + svg(icon, 18) + '</span><div class="col" style="gap:2px;min-width:0"><h2 class="h2">' + title + '</h2>' + (sub ? '<span class="muted small">' + sub + '</span>' : '') + '</div></div>' + (right || '') + '</div>';
+  const stepInput = (fid, value, setter, dec, inc, label) => '<span class="stepper"><button type="button" aria-label="Giảm" data-c="' + on(dec) + '">' + svg('minus', 14) + '</button>' +
+    '<input type="number" min="0" data-fid="' + fid + '" data-i="' + on(val(setter)) + '" value="' + esc(value) + '" aria-label="' + esc(label) + '">' +
+    '<button type="button" aria-label="Tăng" data-c="' + on(inc) + '">' + svg('plus', 14) + '</button></span>';
+  const AV = [['#E6EFFF', '#1A4FB8'], ['#E8F4EE', '#13643A'], ['#FFF3D1', '#7A5300'], ['#EFEAFE', '#5B3FB6'], ['#FDECEC', '#A01F17']];
+  const initialsOf = (name) => name.replace(/Công ty|TNHH|CP|–|-/g, ' ').split(/\s+/).filter(Boolean).slice(-2).map((w) => w[0]).join('').toUpperCase();
+  const tl = (icon, bg, fg, title, right, rightColor, meta1, meta2) => '<div class="tl"><span class="tdot" style="background:' + bg + ';color:' + fg + '">' + svg(icon, 15) + '</span>' +
+    '<div style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:500;font-size:14px">' + title + '</span><span style="font-weight:600;font-size:14px;color:' + rightColor + '">' + right + '</span></div>' +
+    '<div class="muted small">' + meta1 + '</div>' + (meta2 ? '<div class="muted small">' + meta2 + '</div>' : '') + '</div>';
+
+  function viewReceipts(t) {
+    const isIn = t === 'in';
+    const ac = isIn ? { bg: '#E8F4EE', fg: '#13643A', head: 'linear-gradient(135deg,#E8F4EE,#FFFFFF 70%)' } : { bg: '#FDECEC', fg: '#A01F17', head: 'linear-gradient(135deg,#FDECEC,#FFFFFF 70%)' };
+    const d = S.draft[t]; const parts = isIn ? S.suppliers : S.customers;
+    const all = S.receipts.filter((r) => r.type === t);
+    const cnt = { pending: 0, approved: 0, cancelled: 0 }; all.forEach((r) => { cnt[r.status]++; });
+    const doneQty = all.filter((r) => r.status === 'approved').reduce((a, r) => a + r.lines.reduce((b, l) => b + l.qty, 0), 0);
+    const nextCode = (isIn ? 'PN-' : 'PX-') + pad(S.seq[t], 4);
+    const partner = parts.find((x) => x.id === d.partner) || parts[0];
+    const stats = statTiles([
+      { key: 'pending', label: 'Phiếu chờ duyệt', value: fmt(cnt.pending), icon: 'stocktake', bg: '#FFF3D1', fg: '#8A5A00', color: cnt.pending ? '#8A4B00' : null, sub: canApprove() ? 'Bạn có thể duyệt' : 'Chờ Quản lý kho' },
+      { key: 'approved', label: 'Đã duyệt', value: fmt(cnt.approved), icon: 'check', bg: '#E8F4EE', fg: '#13643A', sub: 'đã cập nhật tồn' },
+      { key: 'cancelled', label: 'Đã từ chối', value: fmt(cnt.cancelled), icon: 'x', bg: '#ECEEF1', fg: '#454F5B', sub: 'không ảnh hưởng tồn' },
+      { label: isIn ? 'Tổng số lượng đã nhập' : 'Tổng số lượng đã xuất', value: fmt(doneQty), icon: t, bg: ac.bg, fg: ac.fg, sub: 'từ phiếu đã duyệt' }
+    ].map((it) => it.key ? Object.assign(it, { on: S.rcf[t] === it.key, go: () => { upd((n) => { n.rcf[t] = (n.rcf[t] === it.key ? 'all' : it.key); }); scrollToId('rc-list'); } }) : it));
+
+    // step 1
+    const step1 = '<div class="step"><span class="stepn">1</span><div class="col g16" style="flex:1;min-width:0">' +
+      '<div class="steph">' + (isIn ? 'Chọn nhà cung cấp và kho nhận' : 'Chọn đơn vị nhận và kho xuất') + '</div>' +
+      '<div class="col g8"><span class="lbl">' + (isIn ? 'Nhà cung cấp' : 'Khách hàng / đơn vị nhận') + '</span><div class="optgrid">' +
+      parts.map((x, i) => { const on1 = x.id === d.partner; const c = AV[i % AV.length];
+        return '<button type="button" class="optcard' + (on1 ? ' on' : '') + '" aria-pressed="' + on1 + '" data-c="' + on(() => upd((n) => { n.draft[t].partner = x.id; })) + '"><span class="avatar" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(initialsOf(x.name)) + '</span>' +
+          '<span class="col" style="gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">' + esc(x.name) + '</span><span class="muted small">' + esc(x.id + (!hideContact(isIn ? 'sup' : 'cus') && x.phone ? ', ' + fmtPhone(x.phone) : '')) + '</span></span></button>'; }).join('') + '</div></div>' +
+      '<div class="col g8"><span class="lbl">' + (isIn ? 'Nhập vào kho' : 'Xuất từ kho') + '</span><div class="optgrid">' +
+      S.warehouses.filter((w) => w.status !== 'paused' || w.id === d.wh).map((w) => { const on1 = w.id === d.wh; const tot = S.products.reduce((a, p) => a + have(p.id, w.id), 0);
+        return '<button type="button" class="optcard' + (on1 ? ' on' : '') + '" aria-pressed="' + on1 + '" data-c="' + on(() => upd((n) => { n.draft[t].wh = w.id; n.err[t] = ''; })) + '"><span class="avatar" style="background:#0F2742;color:#FFFFFF">' + svg('partners', 18) + '</span>' +
+          '<span class="col" style="gap:2px;min-width:0"><span style="font-weight:600;font-size:14px">' + esc(w.name) + '</span><span class="muted small">' + fmt(tot) + ' đơn vị đang tồn</span></span></button>'; }).join('') + '</div></div></div></div>';
+
+    // step 2: picker
+    const sq = (d.search || '').trim().toLowerCase();
+    const picks = S.products.filter((p) => !sq || (p.name + ' ' + p.sku + ' ' + p.cat).toLowerCase().includes(sq));
+    const step2 = '<div class="step" style="flex:1 1 320px;min-width:0"><span class="stepn">2</span><div class="col g10" style="flex:1;min-width:0">' +
+      '<div class="steph">Chọn hàng hóa</div>' +
+      '<div class="ifield"><span class="lead">' + svg('search', 18) + '</span>' + input('rc-search-' + t, d.search, val((v) => upd((n) => { n.draft[t].search = v; })), 'placeholder="Tìm theo tên, mã SKU hoặc danh mục…" aria-label="Tìm hàng hóa"') + '</div>' +
+      '<div class="col" style="gap:6px;max-height:430px;overflow:auto;padding:2px">' +
+      picks.map((p) => { const q = have(p.id, d.wh); const lv = level(q, p.min); const inSlip = d.lines.some((l) => l.pid === p.id);
+        return '<button type="button" class="pick" data-c="' + on(() => addLine(t, p.id)) + '"' + (inSlip ? ' style="border-color:#B8CBEF;background:#F5F8FE"' : '') + '><span class="col" style="gap:3px;min-width:0"><span style="font-weight:500">' + esc(p.name) + '</span>' +
+          '<span class="muted small">' + esc(p.sku + ', tồn ' + fmt(q) + ' ' + p.unit) + '</span></span><span style="display:flex;align-items:center;gap:10px">' + (lv.t !== 'Đủ hàng' ? chip(lv) : '') + '<span class="addic">' + (inSlip ? 'Thêm 1' : '+ Thêm') + '</span></span></button>'; }).join('') +
+      (picks.length ? '' : '<div class="empty">Không tìm thấy hàng hóa phù hợp.</div>') + '</div></div></div>';
+
+    // step 3: slip preview
+    let totQty = 0, totVal = 0;
+    const lines = d.lines.map((l, i) => {
+      const p = prod(l.pid); const q = have(l.pid, d.wh); const n = Number(l.qty) || 0; totQty += n; totVal += n * (p.price || 0);
+      const after = isIn ? q + n : q - n;
+      let note;
+      if (!isIn && n > q) note = '<span class="warn" style="color:#A01F17">' + svg('alerts', 14) + 'Vượt tồn ' + fmt(n - q) + ' ' + esc(p.unit) + '</span>';
+      else if (!isIn && after <= p.min) note = '<span class="warn" style="color:#933A00">' + svg('alerts', 14) + 'Sau xuất sẽ dưới mức tối thiểu (' + fmt(p.min) + ')</span>';
+      else if (isIn && q <= p.min && after > p.min) note = '<span class="warn" style="color:#13643A">' + svg('check', 14) + 'Hết cảnh báo tồn thấp sau khi nhập</span>';
+      else note = '';
+      const setQ = (v) => upd((m) => { m.draft[t].lines[i].qty = v; m.err[t] = ''; });
+      return '<div class="slipline"><div class="col" style="gap:3px;flex:1 1 200px;min-width:0"><span style="font-weight:600;font-size:14px">' + esc(p.name) + '</span>' +
+        '<span class="muted small">' + esc(p.sku) + ', tồn ' + fmt(q) + ' → <b style="color:' + (after < 0 ? '#A01F17' : after <= p.min ? '#933A00' : '#13643A') + '">' + fmt(after) + '</b> ' + esc(p.unit) + '</span>' + note + '</div>' +
+        stepInput('rc-qty-' + t + '-' + i, l.qty, setQ, () => setQ(String(Math.max(1, n - 1))), () => setQ(String(n + 1)), 'Số lượng ' + p.name) +
+        '<span class="muted" style="font-size:13px;min-width:34px">' + esc(p.unit) + '</span>' +
+        btn(svg('x', 16), () => upd((m) => { m.draft[t].lines.splice(i, 1); }), 'btn-sm btn-ghost', ' aria-label="Xóa ' + esc(p.name) + '"') + '</div>';
+    }).join('');
+    const step3 = '<div class="step" style="flex:1 1 380px;min-width:0"><span class="stepn">3</span><div class="col g10" style="flex:1;min-width:0">' +
+      '<div class="steph">Kiểm tra và lưu phiếu</div>' +
+      '<div class="slip"><div class="sliphead" style="background:' + ac.head + '"><div class="col" style="gap:4px"><span style="font-size:12px;font-weight:600;color:' + ac.fg + '">' + (isIn ? 'PHIẾU NHẬP KHO' : 'PHIẾU XUẤT KHO') + '</span>' +
+      '<span style="font-size:20px;font-weight:700">' + nextCode + '</span><span class="muted small">Mã dự kiến, cấp chính thức khi lưu</span></div>' +
+      '<div class="col" style="gap:3px;text-align:right;font-size:13px"><span><span class="muted">' + (isIn ? 'Từ: ' : 'Đến: ') + '</span><b>' + esc(partner ? partner.name : '') + '</b></span><span><span class="muted">' + (isIn ? 'Vào: ' : 'Từ: ') + '</span><b>' + esc(whName(d.wh)) + '</b></span><span class="muted">Người lập: ' + esc(S.meName) + '</span></div></div>' +
+      (d.lines.length ? lines : '<div class="slipline" style="justify-content:center"><span class="muted" style="font-size:14px;padding:18px 0">Chưa có mặt hàng. Chọn ở bước 2.</span></div>') +
+      '<div class="slipfoot"><span>' + d.lines.length + ' mặt hàng, tổng <b>' + fmt(totQty) + '</b> đơn vị</span><span>Giá trị ước tính <b>' + money(totVal) + '</b></span></div></div>' +
+      '<label class="field">Ghi chú' + input('rc-note-' + t, d.note, val((v) => upd((n) => { n.draft[t].note = v; })), 'placeholder="Ví dụ: Giao theo đơn đặt hàng số …"') + '</label>' +
+      (S.err[t] ? '<div class="alert-err" role="alert">' + esc(S.err[t]) + '</div>' : '') +
+      '<div class="wrap g10" style="justify-content:flex-end">' + btn('Làm lại', () => upd((n) => { n.draft[t].lines = []; n.draft[t].note = ''; n.draft[t].search = ''; n.err[t] = ''; })) +
+      btn('Lưu phiếu và gửi duyệt', () => submit(t), 'btn-primary', ' style="box-shadow:0 6px 16px rgba(26,86,196,.25)"') + '</div></div></div>';
+
+    const form = '<section class="card">' + head(t, ac.bg, ac.fg, isIn ? 'Lập phiếu nhập kho' : 'Lập phiếu xuất kho', isIn ? 'Phiếu được Quản lý kho duyệt thì tồn mới được cộng' : 'Hệ thống kiểm tra tồn khi lập và kiểm tra lại khi duyệt') +
+      '<div class="col" style="gap:28px;padding:22px 20px">' + step1 + '<div class="wrap" style="gap:28px;align-items:flex-start">' + step2 + step3 + '</div></div></section>';
+
+    // list with filter
+    const f = S.rcf[t];
+    const shown = all.filter((r) => f === 'all' || r.status === f);
+    const fopts = [['all', 'Tất cả', all.length], ['pending', 'Chờ duyệt', cnt.pending], ['approved', 'Đã duyệt', cnt.approved], ['cancelled', 'Đã từ chối', cnt.cancelled]];
+    const cols = '150px 140px minmax(170px,1.2fr) 110px minmax(220px,2fr) 110px 180px';
+    const list = '<section class="card" id="rc-list" style="scroll-margin-top:16px">' + head('reports', '#E6EFFF', '#1A4FB8', isIn ? 'Danh sách phiếu nhập' : 'Danh sách phiếu xuất', canApprove() ? 'Bạn có quyền duyệt phiếu' : 'Phiếu do Quản lý kho duyệt',
+      pills(fopts.map((o) => ({ label: o[1] + ' (' + o[2] + ')', on: o[0] === f, pick: () => upd((n) => { n.rcf[t] = o[0]; }) })))) +
+      table(cols, ['Mã phiếu', 'Ngày lập', isIn ? 'Nhà cung cấp' : 'Đơn vị nhận', 'Kho', 'Hàng hóa', 'Trạng thái', 'Thao tác'],
+        shown.map((r) => {
+          const mine = r.creatorId === S.meUser;
+          const canAct = canApprove() && r.status === 'pending' && !mine;
+          const info = r.status === 'pending' ? (canApprove() && mine ? 'Phiếu do bạn lập, cần người khác duyệt' : 'Chờ Quản lý kho') : (r.status === 'approved' ? 'Duyệt: ' : 'Bởi: ') + r.approver;
+          const q = r.lines.reduce((a, l) => a + l.qty, 0);
+          return [cell('<span style="display:flex;align-items:center;gap:10px"><span class="ktile" style="width:32px;height:32px;background:' + ac.bg + ';color:' + ac.fg + '">' + svg(t, 16) + '</span><span class="col"><b>' + esc(r.code) + '</b><span class="muted small">' + fmt(q) + ' đơn vị</span></span></span>'),
+            cell('<span style="display:block">' + esc(r.date) + '</span><span class="muted small">Lập: ' + esc(r.creator) + '</span>'), cell(esc(partnerName(r.partner))), cell(esc(whName(r.wh))),
+            cell(esc(r.lines.map((l) => prod(l.pid).name + ' × ' + fmt(l.qty)).join('; ')), 'font-size:13px'), cell(chip(ST[r.status])),
+            cell(canAct ? btn('Duyệt', () => approve(r.id), 'btn-sm btn-primary') + btn('Từ chối', () => reject(r.id), 'btn-sm') : '<span class="muted small">' + esc(info) + '</span>', 'display:flex;gap:6px;flex-wrap:wrap;align-items:center')];
+        }), 1060, 'Không có phiếu nào ở trạng thái này.') + '</section>';
+
+    return '<div class="col g20">' + stats + form + list + '</div>';
+  }
+
+  function viewStocktake() {
+    const kk = S.kk;
+    if (!kk.active) {
+      const proc = '<div class="proc">' + [
+        ['1', 'Chốt tồn hệ thống', 'Số tồn hiện tại của từng mặt hàng được ghi lại khi bắt đầu phiên.'],
+        ['2', 'Đếm và nhập số thực tế', 'Nhân viên kho đếm hàng trên kệ và nhập vào cột Thực tế.'],
+        ['3', 'Xác nhận điều chỉnh', 'Quản lý kho duyệt, chênh lệch được ghi vào thẻ kho.']
+      ].map((x) => '<div class="procitem"><span class="stepn">' + x[0] + '</span><div class="col" style="gap:4px"><b style="font-size:14px">' + x[1] + '</b><span class="muted" style="font-size:13px">' + x[2] + '</span></div></div>').join('') + '</div>';
+      const whCards = '<div class="optgrid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">' + S.warehouses.filter((w) => w.status !== 'paused').map((w) => {
+        const on1 = w.id === kk.wh; const tot = S.products.reduce((a, p) => a + have(p.id, w.id), 0);
+        const last = S.kkList.find((k) => k.wh === w.id);
+        return '<button type="button" class="optcard' + (on1 ? ' on' : '') + '" aria-pressed="' + on1 + '" style="align-items:flex-start;padding:16px" data-c="' + on(() => upd((n) => { n.kk.wh = w.id; })) + '">' +
+          '<span class="avatar" style="width:44px;height:44px;background:#0F2742;color:#FFFFFF">' + svg('partners', 20) + '</span><span class="col" style="gap:3px;min-width:0"><span style="font-weight:700;font-size:15px">' + esc(w.name) + '</span>' +
+          '<span class="muted small">' + esc(w.address) + '</span><span style="font-size:13px;margin-top:4px">' + S.products.length + ' mặt hàng, ' + fmt(tot) + ' đơn vị</span>' +
+          '<span class="muted small">' + (last ? 'Kiểm kê gần nhất: ' + esc(last.code + ', ' + last.date.split(' ')[0]) : 'Chưa kiểm kê lần nào') + '</span></span></button>';
+      }).join('') + '</div>';
+      return '<div class="col g20"><section class="card">' + head('stocktake', '#EFEAFE', '#5B3FB6', 'Bắt đầu phiên kiểm kê', 'Đối chiếu tồn hệ thống với số đếm thực tế') +
+        '<div class="col g20" style="padding:20px">' + proc + '<div class="col g8"><span class="lbl">Chọn kho cần kiểm kê</span>' + whCards + '</div>' +
+        '<div>' + btn(svg('stocktake', 16) + 'Bắt đầu kiểm kê ' + esc(whName(kk.wh)), kkStart, 'btn-primary', ' style="min-height:44px;box-shadow:0 6px 16px rgba(26,86,196,.25)"') + '</div></div></section>' + stocktakeHistory() + '</div>';
+    }
+    let match = 0, over = 0, under = 0, dv = 0;
+    kk.rows.forEach((r) => { const a = Number(r.actual); if (r.actual === '' || !Number.isInteger(a)) return; const d = a - r.system; if (d === 0) match++; else if (d > 0) over++; else under++; dv += d * (prod(r.pid).price || 0); });
+    const bar = '<div class="sessionbar"><div class="col" style="gap:4px"><span style="display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#8A5A00"><span style="width:8px;height:8px;border-radius:50%;background:#E5A100"></span>ĐANG KIỂM KÊ</span>' +
+      '<span style="font-size:20px;font-weight:700">' + esc(whName(kk.wh)) + '</span><span class="muted small">Bắt đầu lúc ' + esc(kk.started) + '</span></div>' +
+      '<div class="wrap g10"><div class="mini"><span class="muted small">Mặt hàng</span><b>' + kk.rows.length + '</b></div><div class="mini"><span class="muted small">Khớp</span><b style="color:#13643A">' + match + '</b></div>' +
+      '<div class="mini"><span class="muted small">Thừa</span><b style="color:#1A4FB8">' + over + '</b></div><div class="mini"><span class="muted small">Thiếu</span><b style="color:#A01F17">' + under + '</b></div>' +
+      '<div class="mini"><span class="muted small">Giá trị chênh lệch</span><b style="color:' + deltaColor(dv) + '">' + (dv === 0 ? '0 đ' : (dv > 0 ? '+' : '−') + money(Math.abs(dv))) + '</b></div></div></div>';
+    const cols = '100px minmax(200px,2fr) 70px 120px 190px 140px';
+    const tbl = table(cols, ['SKU', 'Hàng hóa', 'ĐVT', { t: 'Tồn hệ thống', r: 1 }, { t: 'Thực tế', r: 1 }, { t: 'Chênh lệch', r: 1 }],
+      kk.rows.map((r, i) => {
+        const p = prod(r.pid); const a = Number(r.actual); const ok = r.actual !== '' && Number.isInteger(a); const d = ok ? a - r.system : 0;
+        const setA = (v) => upd((n) => { n.kk.rows[i].actual = v; n.kk.err = ''; });
+        const dchip = !ok ? chip({ t: 'Chưa hợp lệ', bg: '#FDE3E1', fg: '#A01F17' }) : d === 0 ? chip({ t: 'Khớp', bg: '#E1F3E8', fg: '#13643A' }) : chip({ t: sign(d), bg: d > 0 ? '#E6EFFF' : '#FDE3E1', fg: d > 0 ? '#1A4FB8' : '#A01F17' });
+        const rowCells = [cell(esc(p.sku), '', 'muted'), cell(esc(p.name), 'font-weight:500'), cell(esc(p.unit)), cell(fmt(r.system), '', 'r'),
+          cell(stepInput('kk-' + i, r.actual, setA, () => setA(String(Math.max(0, (Number(r.actual) || 0) - 1))), () => setA(String((Number(r.actual) || 0) + 1)), 'Số thực tế ' + p.name), 'display:flex;justify-content:flex-end'),
+          cell(dchip, 'display:flex;justify-content:flex-end')];
+        if (!ok || d !== 0) rowCells.cls = 'hl';
+        return rowCells;
+      }), 820);
+    return '<div class="col g20">' + bar +
+      '<section class="card">' + head('stocktake', '#EFEAFE', '#5B3FB6', 'Bảng đối chiếu', 'Dòng tô vàng là mặt hàng có chênh lệch. Dùng nút −/+ để đếm nhanh.') + tbl +
+      '<div class="col g10" style="padding:16px 20px">' + (kk.err ? '<div class="alert-err" role="alert">' + esc(kk.err) + '</div>' : '') +
+      (canApprove()
+        ? '<div class="wrap g10" style="justify-content:flex-end">' + btn('Hủy phiên', () => upd((n) => { n.kk.active = false; n.kk.rows = []; n.kk.err = ''; })) + btn('Xác nhận và điều chỉnh tồn', kkApply, 'btn-primary', ' style="box-shadow:0 6px 16px rgba(26,86,196,.25)"') + '</div>'
+        : '<div class="notice">Số liệu thực tế đã được lưu trong phiên. Quản lý kho cần đăng nhập để xác nhận điều chỉnh tồn.</div>') +
+      '</div></section>' + stocktakeHistory() + '</div>';
+  }
+  function stocktakeHistory() {
+    return '<section class="card">' + head('reports', '#E6EFFF', '#1A4FB8', 'Lịch sử kiểm kê', S.kkList.length + ' phiên đã hoàn tất') +
+      table('120px 170px 140px 130px 170px minmax(160px,1fr)', ['Mã', 'Thời gian', 'Kho', { t: 'Số mặt hàng', r: 1 }, 'Kết quả', 'Người xác nhận'],
+        S.kkList.map((k) => [cell('<b>' + esc(k.code) + '</b>'), cell(esc(k.date)), cell(esc(whName(k.wh))), cell(fmt(k.checked), '', 'r'),
+          cell(k.diff ? chip({ t: k.diff + ' mặt hàng lệch', bg: '#FFE8D4', fg: '#933A00' }) : chip({ t: 'Khớp hoàn toàn', bg: '#E1F3E8', fg: '#13643A' })), cell(esc(k.by))]), 760) + '</section>';
+  }
+
+  function viewInventory() {
+    const iv = S.inv; const iq = iv.q.trim().toLowerCase();
+    const rows = []; let sq = 0, sv = 0, sl = 0; const skus = new Set();
+    S.products.forEach((p) => {
+      if (iq && !(p.name + ' ' + p.sku + ' ' + p.cat).toLowerCase().includes(iq)) return;
+      S.warehouses.forEach((w) => {
+        if (iv.wh !== 'all' && iv.wh !== w.id) return;
+        const v = have(p.id, w.id); if (iv.low && v > p.min) return;
+        skus.add(p.id); sq += v; sv += v * p.price; if (v <= p.min) sl++;
+        const lv = level(v, p.min); const pctW = Math.min(100, p.min ? v / (p.min * 2) * 100 : 100);
+        const col = v === 0 ? '#C0392B' : v <= p.min ? '#E58A2E' : '#1A56C4';
+        rows.push([cell(esc(p.sku), '', 'muted'), cell('<span class="col"><b style="font-weight:500">' + esc(p.name) + '</b><span class="muted small">' + esc(p.cat) + '</span></span>'), cell(esc(w.name)),
+          cell('<div class="lvl" role="img" aria-label="' + esc('Tồn ' + v + ', tối thiểu ' + p.min) + '"><span style="width:' + pctW.toFixed(0) + '%;background:' + col + '"></span><i></i></div>'),
+          cell('<b>' + fmt(v) + '</b> <span class="muted">/ ' + fmt(p.min) + '</span>', '', 'r'), cell(chip(lv)),
+          cell(btn('Thẻ kho', () => { upd((n) => { n.inv.card = p.id; }); window.scrollTo(0, 0); }, 'btn-sm'))]);
+      });
+    });
+    const stats = statTiles([
+      { label: 'Mặt hàng đang hiển thị', value: fmt(skus.size), icon: 'products', bg: '#E6EFFF', fg: '#1A4FB8', sub: rows.length + ' dòng hàng × kho' },
+      { label: 'Tổng số lượng', value: fmt(sq), icon: 'inventory', bg: '#E8F4EE', fg: '#13643A', sub: 'theo bộ lọc hiện tại' },
+      { label: 'Giá trị tồn', value: money(sv), icon: 'reports', bg: '#EFEAFE', fg: '#5B3FB6', sub: 'tính theo giá vốn' },
+      { label: 'Vị trí tồn thấp', value: fmt(sl), icon: 'alerts', bg: '#FFE8D4', fg: '#933A00', color: sl ? '#933A00' : null, sub: iv.low ? 'bấm lần nữa để bỏ lọc' : (sl ? 'bấm để lọc riêng' : 'tất cả đủ hàng'), on: iv.low, go: () => upd((n) => { n.inv.low = !n.inv.low; }) }
+    ]);
+    let card = '';
+    const p = iv.card ? S.products.find((x) => x.id === iv.card) : null;
+    if (p) {
+      const hs = S.history.filter((h) => h.pid === p.id);
+      const tin = hs.filter((h) => h.kind === 'Nhập').reduce((a, h) => a + h.delta, 0), tout = hs.filter((h) => h.kind === 'Xuất').reduce((a, h) => a - h.delta, 0);
+      const KIND = { 'Nhập': ['in', '#E8F4EE', '#13643A'], 'Xuất': ['out', '#FDECEC', '#A01F17'], 'Kiểm kê': ['stocktake', '#EFEAFE', '#5B3FB6'] };
+      card = '<section class="card" style="box-shadow:0 2px 4px rgba(16,24,40,.06),0 18px 40px rgba(16,24,40,.12)">' +
+        head('reports', '#0F2742', '#FFFFFF', 'Thẻ kho: ' + esc(p.name), esc(p.sku + ', ' + p.cat + ', đơn vị ' + p.unit), btn('Đóng', () => upd((n) => { n.inv.card = null; }), 'btn-sm')) +
+        '<div class="wrap g10" style="padding:16px 20px;border-bottom:1px solid #EEF1F4">' +
+        S.warehouses.map((w) => { const v = have(p.id, w.id); return '<div class="mini"><span class="muted small">' + esc(w.name) + '</span><b>' + fmt(v) + '</b>' + chip(level(v, p.min)) + '</div>'; }).join('') +
+        '<div class="mini"><span class="muted small">Tổng nhập</span><b style="color:#13643A">+' + fmt(tin) + '</b></div><div class="mini"><span class="muted small">Tổng xuất</span><b style="color:#A01F17">−' + fmt(tout) + '</b></div>' +
+        '<div class="mini"><span class="muted small">Mức tối thiểu / kho</span><b>' + fmt(p.min) + '</b></div></div>' +
+        (hs.length ? '<div>' + hs.map((h) => { const k = KIND[h.kind] || KIND['Kiểm kê']; return tl(k[0], k[1], k[2], esc(h.kind + ' tại ' + whName(h.wh)), sign(h.delta), deltaColor(h.delta), esc('Chứng từ ' + h.ref + ', tồn sau ' + fmt(h.after) + ' ' + p.unit), esc(h.t)); }).join('') + '</div>'
+          : '<div style="padding:20px" class="muted">Mặt hàng này chưa có biến động nào.</div>') + '</section>';
+    }
+    const whOpts = [{ id: 'all', name: 'Tất cả kho' }].concat(S.warehouses);
+    const fromW = iv.from && iv.wh === iv.from ? S.warehouses.find((w) => w.id === iv.from) : null;
+    const banner = fromW ? '<div class="notice" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:10px">' + svg('warehouses', 18) + '<span>Đang xem tồn kho của <b>' + esc(fromW.name) + '</b> (' + esc(fromW.code) + '), ' + fmt(S.products.reduce((a, p) => a + have(p.id, fromW.id), 0)) + ' đơn vị.</span></span>' +
+      '<span class="wrap g8">' + btn('Xem tất cả kho', () => upd((n) => { n.inv.wh = 'all'; n.inv.from = null; }), 'btn-sm') + btn('← Quay lại danh sách kho', () => go('warehouses'), 'btn-sm') + '</span></div>' : '';
+    return '<div class="col g20">' + banner + stats +
+      '<div class="card wrap g16" style="padding:16px 20px;align-items:flex-end">' +
+      '<label class="field" style="flex:1 1 260px">Tìm kiếm<span class="ifield"><span class="lead">' + svg('search', 18) + '</span>' + input('inv-q', iv.q, val((v) => upd((n) => { n.inv.q = v; })), 'placeholder="Tên hàng, mã SKU hoặc danh mục…"') + '</span></label>' +
+      '<div class="col" style="gap:6px"><span class="lbl">Kho</span>' + pills(whOpts.map((w) => ({ label: w.name, on: w.id === iv.wh, pick: () => upd((n) => { n.inv.wh = w.id; }) }))) + '</div>' +
+      '<label style="display:flex;align-items:center;gap:8px;min-height:40px;font-size:14px"><input type="checkbox" data-ch="' + on((e) => { const v = e.target.checked; upd((n) => { n.inv.low = v; }); }) + '"' + (iv.low ? ' checked' : '') + '>Chỉ hiện tồn thấp</label></div>' +
+      card +
+      '<section class="card">' + head('inventory', '#E8F4EE', '#13643A', 'Tồn kho theo mặt hàng và kho', 'Vạch đậm trên thanh là mức tồn tối thiểu') +
+      table('100px minmax(200px,2fr) 120px minmax(140px,1fr) 120px 110px 100px', ['SKU', 'Hàng hóa', 'Kho', 'Mức tồn', { t: 'Tồn / tối thiểu', r: 1 }, 'Trạng thái', ''], rows, 960, 'Không có dòng nào khớp bộ lọc.') +
+      '</section></div>';
+  }
+
+  function viewReports() {
+    const rw = S.rep.wh; const whIds = rw === 'all' ? S.warehouses.map((w) => w.id) : [rw];
+    const tot = { begin: 0, inn: 0, out: 0, adj: 0, end: 0, value: 0 };
+    const catVal = {};
+    const data = S.products.map((p) => {
+      const end = whIds.reduce((a, w) => a + have(p.id, w), 0); let inn = 0, out = 0, adj = 0;
+      S.history.forEach((h) => { if (h.pid !== p.id || whIds.indexOf(h.wh) < 0) return; if (h.kind === 'Nhập') inn += h.delta; else if (h.kind === 'Xuất') out += -h.delta; else adj += h.delta; });
+      const begin = end - inn + out - adj; const value = end * p.price;
+      tot.begin += begin; tot.inn += inn; tot.out += out; tot.adj += adj; tot.end += end; tot.value += value;
+      catVal[p.cat] = (catVal[p.cat] || 0) + value;
+      return { p, begin, inn, out, adj, end, value };
+    });
+    const maxVal = Math.max.apply(null, data.map((x) => x.value)) || 1;
+    const stats = statTiles([
+      { label: 'Tồn đầu kỳ', value: fmt(tot.begin), icon: 'inventory', bg: '#ECEEF1', fg: '#2B3540', sub: 'đơn vị, đầu tháng 11' },
+      { label: 'Nhập trong kỳ', value: '+' + fmt(tot.inn), icon: 'in', bg: '#E8F4EE', fg: '#13643A', color: '#13643A', sub: 'từ phiếu nhập đã duyệt' },
+      { label: 'Xuất trong kỳ', value: '−' + fmt(tot.out), icon: 'out', bg: '#FDECEC', fg: '#A01F17', color: '#A01F17', sub: 'từ phiếu xuất đã duyệt' },
+      { label: 'Giá trị tồn cuối kỳ', value: money(tot.value), icon: 'reports', bg: '#E6EFFF', fg: '#1A4FB8', sub: fmt(tot.end) + ' đơn vị' }
+    ]);
+
+    // waterfall
+    const W = 560, Hh = 270, pl = 44, pr = 12, pt = 26, pb = 40;
+    const stepsW = [['Tồn đầu kỳ', tot.begin, 'base'], ['Nhập', tot.inn, 'd'], ['Xuất', -tot.out, 'd'], ['Điều chỉnh', tot.adj, 'd'], ['Tồn cuối kỳ', tot.end, 'base']];
+    let run = 0; const segs = stepsW.map((st) => { let a, b; if (st[2] === 'base') { a = 0; b = st[1]; run = st[1]; } else { a = run; b = run + st[1]; run = b; } return { label: st[0], v: st[1], a, b, base: st[2] === 'base' }; });
+    const top = Math.max.apply(null, segs.map((g) => Math.max(g.a, g.b))) * 1.15 || 1;
+    const nice = Math.pow(10, Math.floor(Math.log10(top))); const stepT = top / nice > 5 ? nice * 2 : top / nice > 2 ? nice : nice / 2;
+    const yv = (v) => pt + (1 - v / top) * (Hh - pt - pb);
+    const bw = 62, gapW = (W - pl - pr - 5 * bw) / 4;
+    let g = '';
+    for (let v = 0; v <= top; v += stepT) g += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + yv(v).toFixed(1) + '" y2="' + yv(v).toFixed(1) + '" stroke="#EEF1F4"/><text x="' + (pl - 8) + '" y="' + (yv(v) + 4).toFixed(1) + '" text-anchor="end" font-size="11" fill="#56606B">' + fmt(v) + '</text>';
+    segs.forEach((sg, i) => {
+      const x = pl + i * (bw + gapW); const y1 = yv(Math.max(sg.a, sg.b)), y2 = yv(Math.min(sg.a, sg.b)); const h = Math.max(2, y2 - y1);
+      const col = sg.base ? '#0F2742' : sg.label === 'Điều chỉnh' ? '#7B61D1' : sg.v >= 0 ? '#2E9E62' : '#D9534F';
+      g += '<rect x="' + x.toFixed(1) + '" y="' + y1.toFixed(1) + '" width="' + bw + '" height="' + h.toFixed(1) + '" rx="5" fill="' + col + '"/>';
+      g += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y1 - 8).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="' + (sg.base ? '#17212B' : col) + '">' + (sg.base ? fmt(sg.v) : (sg.v === 0 ? '0' : sign(sg.v))) + '</text>';
+      g += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (Hh - pb + 20) + '" text-anchor="middle" font-size="12" fill="#3D4753">' + sg.label + '</text>';
+      if (i < segs.length - 1) { const yy = yv(sg.b).toFixed(1); g += '<line x1="' + (x + bw).toFixed(1) + '" x2="' + (x + bw + gapW).toFixed(1) + '" y1="' + yy + '" y2="' + yy + '" stroke="#97A3B0" stroke-dasharray="4 4"/>'; }
+    });
+    const wf = '<section class="card" style="flex:3 1 480px;min-width:0">' + head('reports', '#E6EFFF', '#1A4FB8', 'Biến động tồn trong kỳ', 'Từ tồn đầu kỳ đến tồn cuối kỳ, đơn vị: số lượng') +
+      '<div class="chartwrap" style="padding:16px 20px"><svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="' + esc('Tồn đầu ' + tot.begin + ', nhập ' + tot.inn + ', xuất ' + tot.out + ', điều chỉnh ' + tot.adj + ', tồn cuối ' + tot.end) + '" font-family="inherit">' + g + '</svg></div></section>';
+
+    const cats = Object.keys(catVal).map((k) => [k, catVal[k]]).sort((a, b) => b[1] - a[1]);
+    const cmax = cats.length ? cats[0][1] : 1; const CC = ['#1A56C4', '#2E9E62', '#E58A2E', '#7B61D1', '#0F2742'];
+    const catCard = '<section class="card" style="flex:2 1 320px;min-width:0">' + head('products', '#EFEAFE', '#5B3FB6', 'Giá trị tồn theo danh mục', 'Tồn cuối kỳ × giá vốn') +
+      '<div class="col g16" style="padding:18px 20px">' + cats.map((c, i) => '<div class="col" style="gap:6px"><div style="display:flex;justify-content:space-between;gap:10px;font-size:14px"><span style="font-weight:500">' + esc(c[0]) + '</span><span><b>' + money(c[1]) + '</b> <span class="muted small">' + (tot.value ? Math.round(c[1] / tot.value * 100) : 0) + '%</span></span></div>' +
+        '<div class="meter" style="height:10px"><span style="width:' + (c[1] / cmax * 100).toFixed(1) + '%;background:' + CC[i % CC.length] + '"></span></div></div>').join('') + '</div></section>';
+
+    const cols = '84px minmax(170px,2fr) 96px 76px 76px 92px 100px 140px';
+    const rows = data.map((x) => [cell(esc(x.p.sku), '', 'muted'), cell('<span class="col"><b style="font-weight:500">' + esc(x.p.name) + '</b><span class="muted small">' + esc(x.p.unit) + '</span></span>'), cell(fmt(x.begin), '', 'r'),
+      cell(x.inn ? '+' + fmt(x.inn) : '0', x.inn ? 'color:#13643A;font-weight:600' : '', 'r'), cell(x.out ? '−' + fmt(x.out) : '0', x.out ? 'color:#A01F17;font-weight:600' : '', 'r'),
+      cell(x.adj === 0 ? '0' : sign(x.adj), x.adj ? 'color:#5B3FB6;font-weight:600' : '', 'r'), cell(fmt(x.end), 'font-weight:700', 'r'),
+      cell('<span class="col" style="gap:4px;align-items:flex-end"><span>' + fmt(x.value) + ' đ</span><span class="meter" style="width:100%;height:4px"><span style="width:' + (x.value / maxVal * 100).toFixed(0) + '%;background:#7FA6E8"></span></span></span>')]);
+    const totalRow = '<div class="trow" style="grid-template-columns:' + cols + ';background:#0F2742;color:#FFFFFF;font-weight:700;border-bottom:0"><span></span><span>Tổng cộng</span><span class="r">' + fmt(tot.begin) + '</span><span class="r">+' + fmt(tot.inn) + '</span><span class="r">−' + fmt(tot.out) + '</span><span class="r">' + (tot.adj === 0 ? '0' : sign(tot.adj)) + '</span><span class="r">' + fmt(tot.end) + '</span><span class="r">' + fmt(tot.value) + ' đ</span></div>';
+    const tbl = table(cols, ['SKU', 'Hàng hóa', { t: 'Tồn đầu kỳ', r: 1 }, { t: 'Nhập', r: 1 }, { t: 'Xuất', r: 1 }, { t: 'Điều chỉnh', r: 1 }, { t: 'Tồn cuối kỳ', r: 1 }, { t: 'Giá trị tồn', r: 1 }], rows, 960).replace(/<\/div><\/div>$/, totalRow + '</div></div>');
+    const whOpts = [{ id: 'all', name: 'Tất cả kho' }].concat(S.warehouses);
+    return '<div class="col g20">' +
+      '<div class="card wrap g16" style="padding:16px 20px;align-items:flex-end;justify-content:space-between"><div class="wrap" style="gap:20px;align-items:flex-end">' +
+      '<div class="col" style="gap:6px"><span class="lbl">Kỳ báo cáo</span><span class="pill on" style="display:inline-flex;align-items:center;gap:8px;cursor:default">' + svg('reports', 14) + 'Tháng 11/2026</span></div>' +
+      '<div class="col" style="gap:6px"><span class="lbl">Kho</span>' + pills(whOpts.map((w) => ({ label: w.name, on: w.id === rw, pick: () => upd((n) => { n.rep.wh = w.id; }) }))) + '</div></div>' +
+      '<div class="wrap g10">' + btn('Xuất Excel', () => say('Đã tạo BaoCao_NXT_T11-2026.xlsx (mô phỏng trên prototype).', 'info')) + btn('Xuất PDF', () => say('Đã tạo BaoCao_NXT_T11-2026.pdf (mô phỏng trên prototype).', 'info')) + '</div></div>' +
+      stats +
+      '<div class="wrap" style="gap:16px;align-items:stretch">' + wf + catCard + '</div>' +
+      '<section class="card" style="overflow:hidden">' + head('reports', '#0F2742', '#FFFFFF', 'Báo cáo nhập – xuất – tồn chi tiết', 'Tồn đầu kỳ = Tồn cuối − Nhập + Xuất − Điều chỉnh') + tbl + '</section></div>';
+  }
+
+  function viewAlerts(low) {
+    return '<div class="col g20"><div class="notice">Quy tắc cảnh báo: một mặt hàng tại một kho bị cảnh báo khi số tồn nhỏ hơn hoặc bằng mức tồn tối thiểu. Số lượng đề xuất nhập = 2 × mức tối thiểu − tồn hiện tại.</div>' +
+      '<section class="card"><div class="cardhead"><h2 class="h2">Mặt hàng dưới mức tối thiểu</h2><span class="muted" style="font-size:13px">' + low.length + ' cảnh báo</span></div>' +
+      table('100px minmax(200px,2fr) 120px 90px 100px 90px 120px 160px', ['SKU', 'Hàng hóa', 'Kho', { t: 'Tồn', r: 1 }, { t: 'Tối thiểu', r: 1 }, { t: 'Thiếu', r: 1 }, { t: 'Đề xuất nhập', r: 1 }, ''],
+        low.map((x) => [cell(esc(x.p.sku), '', 'muted'), cell(esc(x.p.name), 'font-weight:500'), cell(esc(x.w.name)), cell(fmt(x.v), 'font-weight:600;color:#933A00', 'r'), cell(fmt(x.p.min), '', 'r muted'), cell(fmt(x.p.min - x.v), '', 'r'), cell(fmt(sugg(x)) + ' ' + esc(x.p.unit), '', 'r'),
+          cell(btn('Tạo phiếu nhập', () => createIn(x.p.id, x.w.id, sugg(x)), 'btn-sm btn-primary'), 'display:flex;justify-content:flex-end')]), 900, 'Tất cả mặt hàng đều đủ tồn.') +
+      '</section></div>';
+  }
+
+  function viewProducts() {
+    const pq = S.prodQ.trim().toLowerCase(); const f = S.pf;
+    const setF = (k) => val((v) => upd((n) => { n.pf[k] = v; n.pf.err = ''; }));
+    const rows = S.products.filter((p) => !pq || (p.name + ' ' + p.sku + ' ' + p.cat).toLowerCase().includes(pq))
+      .map((p) => [cell(esc(p.sku), '', 'muted'), cell(esc(p.name), 'font-weight:500'), cell(esc(p.cat)), cell(esc(p.unit)), cell(fmt(p.price) + ' đ', '', 'r'), cell(fmt(p.min), '', 'r'), cell(fmt(S.warehouses.reduce((a, w) => a + have(p.id, w.id), 0)), 'font-weight:600', 'r')]);
+    return '<div class="col g20">' +
+      '<div class="wrap" style="gap:12px;align-items:flex-end;justify-content:space-between"><label class="field" style="flex:1 1 280px;max-width:420px">Tìm hàng hóa' + input('pr-q', S.prodQ, val((v) => upd((n) => { n.prodQ = v; })), 'placeholder="Tên, mã SKU hoặc danh mục…"') + '</label>' +
+      (canEditPartner() ? btn('+ Thêm hàng hóa', () => upd((n) => { n.pf = { open: true, sku: 'SP-' + pad(n.products.length + 1, 4), name: '', cat: '', unit: '', min: '', price: '', err: '' }; }), 'btn-primary') : '<span class="muted small">Chỉ Quản lý kho và Quản trị viên được thêm hàng hóa</span>') + '</div>' +
+      (f.open ? '<section class="card"><div class="cardhead"><h2 class="h2">Thêm hàng hóa mới</h2></div><div class="col g16" style="padding:20px">' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">' +
+        '<label class="field">Mã SKU' + input('pf-sku', f.sku, setF('sku')) + '</label>' +
+        '<label class="field">Tên hàng hóa' + input('pf-name', f.name, setF('name'), 'placeholder="Ví dụ: Băng keo trong 5cm"') + '</label>' +
+        '<label class="field">Danh mục' + input('pf-cat', f.cat, setF('cat'), 'placeholder="Ví dụ: Văn phòng phẩm"') + '</label>' +
+        '<label class="field">Đơn vị tính' + input('pf-unit', f.unit, setF('unit'), 'placeholder="Cái, Hộp, Ram…"') + '</label>' +
+        '<label class="field">Tồn tối thiểu' + input('pf-min', f.min, setF('min'), 'type="number" min="0"') + '</label>' +
+        '<label class="field">Giá vốn (đ)' + input('pf-price', f.price, setF('price'), 'type="number" min="0"') + '</label></div>' +
+        (f.err ? '<div class="alert-err" role="alert">' + esc(f.err) + '</div>' : '') +
+        '<div class="wrap g10" style="justify-content:flex-end">' + btn('Hủy', () => upd((n) => { n.pf.open = false; n.pf.err = ''; })) + btn('Lưu hàng hóa', saveProduct, 'btn-primary') + '</div></div></section>' : '') +
+      '<section class="card"><div class="cardhead"><h2 class="h2">Danh mục hàng hóa</h2><span class="muted" style="font-size:13px">' + S.products.length + ' mặt hàng</span></div>' +
+      table('100px minmax(200px,2fr) 160px 80px 130px 110px 110px', ['SKU', 'Tên hàng hóa', 'Danh mục', 'ĐVT', { t: 'Giá vốn', r: 1 }, { t: 'Tối thiểu', r: 1 }, { t: 'Tổng tồn', r: 1 }], rows, 900, 'Không tìm thấy hàng hóa.') +
+      '</section></div>';
+  }
+
+  function openPartner(id, tab) {
+    const all = S.suppliers.concat(S.customers); const x = all.find((y) => y.id === id); if (!x) return;
+    upd((n) => { n.ptab = id.indexOf('NCC') === 0 ? 'sup' : 'cus'; n.screen = n.ptab === 'sup' ? 'suppliers' : 'customers'; n.pdetail = { id, tab }; n.pnote = x.note || ''; n.pform = blankPF(); });
+    scrollToId('p-detail');
+  }
+  function viewPartnerDetail(x) {
+    const st = partnerStats(x.id); const isSup = st.type === 'in'; const hide = hideContact(isSup ? 'sup' : 'cus'); const tab = S.pdetail.tab; const c = AV[(parseInt(x.id.slice(-2), 10) - 1) % AV.length];
+    const setTab = (t) => () => upd((n) => { n.pdetail.tab = t; });
+    const tiles = statTiles([
+      isSup ? { key: 'instock', label: 'Còn trong kho', value: fmt(st.stockProducts) + ' mặt hàng', icon: 'inventory', bg: '#E8F4EE', fg: '#13643A', sub: fmt(st.inStock.reduce((a, y) => a + y.stock, 0)) + ' đơn vị đang tồn' } : null,
+      { key: 'done', label: isSup ? 'Đã nhập thành công' : 'Đã xuất thành công', value: fmt(st.products) + ' mặt hàng', icon: isSup ? 'in' : 'out', bg: '#E6EFFF', fg: '#1A4FB8', sub: fmt(st.apprQty) + ' đơn vị, ' + st.approved.length + ' phiếu' },
+      { key: 'pending', label: 'Đang chờ duyệt', value: fmt(st.pending.length) + ' phiếu', icon: 'stocktake', bg: '#FFF3D1', fg: '#8A5A00', color: st.pending.length ? '#8A4B00' : null, sub: fmt(st.pendQty) + ' đơn vị chờ ' + (isSup ? 'nhập' : 'xuất') },
+      { key: 'history', label: 'Lịch sử phiếu', value: fmt(st.receipts.length) + ' phiếu', icon: 'reports', bg: '#EFEAFE', fg: '#5B3FB6', sub: st.last ? 'Gần nhất ' + st.last.date.split(' ')[0] : 'Chưa có giao dịch' }
+    ].filter(Boolean).map((it) => Object.assign(it, { on: tab === it.key, go: setTab(it.key) })));
+    let body;
+    if (tab === 'pending') {
+      body = table('110px 140px 110px minmax(200px,2fr) 100px 150px 110px', ['Mã phiếu', 'Ngày lập', 'Kho', 'Hàng hóa', { t: 'Số lượng', r: 1 }, 'Người lập', ''],
+        st.pendLines.map((l) => { const p = prod(l.pid); return [cell('<b>' + esc(l.code) + '</b>'), cell(esc(l.date)), cell(esc(whName(l.wh))), cell('<span class="col"><span style="font-weight:500">' + esc(p.name) + '</span><span class="muted small">' + esc(p.sku) + '</span></span>'), cell(fmt(l.qty) + ' ' + esc(p.unit), 'font-weight:600', 'r'), cell(esc(l.creator)),
+          cell(btn('Mở phiếu', () => { upd((n) => { n.screen = l.type; n.rcf[l.type] = 'pending'; }); scrollToId('rc-list'); }, 'btn-sm'))]; }), 900, 'Không có hàng hóa nào đang chờ duyệt.');
+    } else if (tab === 'history') {
+      body = table('110px 150px 110px minmax(220px,2fr) 120px', ['Mã phiếu', 'Ngày lập', 'Kho', 'Hàng hóa', 'Trạng thái'],
+        st.receipts.map((r) => [cell('<b>' + esc(r.code) + '</b>'), cell(esc(r.date)), cell(esc(whName(r.wh))), cell(esc(r.lines.map((l) => prod(l.pid).name + ' × ' + fmt(l.qty)).join('; ')), 'font-size:13px'), cell(chip(ST[r.status]))]), 760, 'Chưa có phiếu nào với đối tác này.');
+    } else {
+      const rows = (tab === 'instock' ? st.inStock : st.items);
+      body = table('100px minmax(200px,2fr) 110px 120px 120px 120px 150px', ['SKU', 'Hàng hóa', 'Kho', { t: isSup ? 'Đã nhập' : 'Đã xuất', r: 1 }, { t: 'Tồn hiện tại', r: 1 }, 'Tình trạng', 'Chứng từ'],
+        rows.map((y) => { const p = prod(y.pid); return [cell(esc(p.sku), '', 'muted'), cell(esc(p.name), 'font-weight:500'), cell(esc(whName(y.wh))), cell(fmt(y.qty) + ' ' + esc(p.unit), 'font-weight:600', 'r'), cell(fmt(y.stock), '', 'r'), cell(chip(y.stock > 0 ? (y.stock <= p.min ? { t: 'Tồn thấp', bg: '#FFE8D4', fg: '#933A00' } : { t: 'Còn trong kho', bg: '#E1F3E8', fg: '#13643A' }) : { t: 'Đã hết', bg: '#ECEEF1', fg: '#454F5B' })), cell(esc(y.refs.join(', ')), 'font-size:13px', 'muted')]; }),
+        900, tab === 'instock' ? 'Không có hàng nào từ nhà cung cấp này còn trong kho.' : 'Chưa có phiếu nào được duyệt.');
+    }
+    const tabs = (isSup ? [['instock', 'Còn trong kho', st.inStock.length]] : []).concat([['done', isSup ? 'Đã nhập thành công' : 'Đã xuất thành công', st.items.length], ['pending', 'Đang chờ duyệt', st.pendLines.length], ['history', 'Lịch sử phiếu', st.receipts.length]]);
+    const files = FILES[x.id] || []; const edit = canEditPartner();
+    const contact = (icon, label, value, href) => '<div class="mini" style="flex:1 1 200px;flex-direction:row;align-items:center;gap:10px"><span class="ktile" style="width:32px;height:32px;background:#F2F5F9;color:#3D4753">' + svg(icon, 16) + '</span><span class="col" style="gap:1px;min-width:0"><span class="muted small">' + label + '</span>' +
+      (value ? (href ? '<a href="' + href + '" style="font-weight:600;font-size:14px;text-decoration:none;overflow-wrap:anywhere">' + esc(value) + '</a>' : '<b style="font-size:14px">' + esc(value) + '</b>') : '<span class="muted">Chưa có</span>') + '</span></div>';
+    const docs = '<section class="card" style="flex:1 1 380px;min-width:0" id="p-docs">' + head('reports', '#FDECEC', '#A01F17', 'Hồ sơ PDF', 'Hợp đồng, báo giá, giấy phép kinh doanh…', '<span class="chip" style="background:#F2F5F9;color:#2B3540">' + files.length + ' file</span>') +
+      '<div class="col g10" style="padding:16px 20px">' +
+      (edit ? '<label class="drop" data-drop="' + x.id + '"><input type="file" accept="application/pdf,.pdf" multiple data-file="' + x.id + '" style="position:absolute;width:1px;height:1px;opacity:0">' +
+        '<span class="ktile" style="width:40px;height:40px;background:#FDECEC;color:#A01F17">' + svg('in', 20) + '</span><span class="col" style="gap:2px"><b style="font-size:14px">Kéo thả file PDF vào đây hoặc bấm để chọn</b><span class="muted small">Chỉ nhận PDF, tối đa 10 MB mỗi file</span></span></label>' : '') +
+      (files.length ? files.map((f) => '<div class="filerow"><span class="pdfic">PDF</span><span class="col" style="gap:2px;flex:1;min-width:0"><span style="font-weight:500;font-size:14px;overflow-wrap:anywhere">' + esc(f.name) + '</span><span class="muted small">' + fmtSize(f.size) + ', tải lên ' + esc(f.date) + ' bởi ' + esc(f.by) + '</span></span>' +
+        '<a class="btn btn-sm" href="' + f.url + '" target="_blank" rel="noopener">Xem</a><a class="btn btn-sm" href="' + f.url + '?download=1">Tải về</a>' +
+        (edit ? btn(svg('trash', 15), () => removeFile(x.id, f.id), 'btn-sm btn-ghost', ' aria-label="Xóa ' + esc(f.name) + '" style="color:#B42318"') : '') + '</div>').join('') : '<div class="empty">Chưa có hồ sơ nào.</div>') +
+      '</div></section>';
+    const dirty = (S.pnote || '') !== (x.note || '');
+    const notes = '<section class="card" style="flex:1 1 320px;min-width:0">' + head('edit', '#FFF3D1', '#7A5300', 'Ghi chú', x.noteAt ? 'Cập nhật ' + esc(x.noteAt) + ' bởi ' + esc(x.noteBy) : 'Chưa có ghi chú') +
+      '<div class="col g10" style="padding:16px 20px">' +
+      (edit ? '<textarea class="input" data-fid="p-note" data-i="' + on(val((v) => upd((n) => { n.pnote = v; }))) + '" rows="6" placeholder="Điều khoản giao hàng, chiết khấu, người liên hệ, lưu ý khi làm việc…" style="padding:10px 12px;min-height:140px;resize:vertical;line-height:1.5">' + esc(S.pnote) + '</textarea>' +
+        '<div class="wrap g10" style="justify-content:space-between;align-items:center"><span class="muted small">' + (S.pnote || '').length + ' ký tự' + (dirty ? ', chưa lưu' : '') + '</span>' +
+        '<span class="wrap g10">' + (dirty ? btn('Hoàn tác', () => upd((n) => { n.pnote = x.note || ''; }), 'btn-sm') : '') + btn('Lưu ghi chú', () => saveNote(x), 'btn-sm btn-primary', dirty ? '' : ' disabled') + '</span></div>'
+        : '<p style="margin:0;font-size:14px;line-height:1.6;white-space:pre-wrap">' + (x.note ? esc(x.note) : '<span class="muted">Chưa có ghi chú.</span>') + '</p>') +
+      '</div></section>';
+    return '<div class="col g16" id="p-detail" style="scroll-margin-top:16px">' +
+      '<section class="card" style="box-shadow:0 2px 4px rgba(16,24,40,.06),0 18px 40px rgba(16,24,40,.12)">' +
+      '<div class="cardhead"><div style="display:flex;align-items:center;gap:14px;min-width:0"><span class="avatar" style="width:48px;height:48px;font-size:16px;background:' + c[0] + ';color:' + c[1] + '">' + esc(initialsOf(x.name)) + '</span>' +
+      '<div class="col" style="gap:3px;min-width:0"><h2 class="h2" style="font-size:18px">' + esc(x.name) + '</h2><span class="muted small">' + esc(x.id) + ', ' + (isSup ? 'Nhà cung cấp' : 'Khách hàng / đơn vị nhận') + '</span></div></div>' +
+      '<div class="wrap g10">' + (edit ? btn(svg('edit', 15) + 'Sửa thông tin', () => upd((n) => { n.pform = Object.assign(blankPF(), { open: true, mode: 'edit', id: x.id, name: x.name, phone: x.phone, email: x.email, address: x.address }); }), 'btn-sm') : '') + btn('Đóng', () => upd((n) => { n.pdetail = null; }), 'btn-sm') + '</div></div>' +
+      (hide ? '<div style="padding:16px 20px;border-bottom:1px solid #EEF1F4">' + lockNote('Thông tin liên hệ (SĐT, email) và hồ sơ PDF của ' + (isSup ? 'nhà cung cấp' : 'khách hàng'), isSup ? 'sup' : 'cus') + '</div>' : '<div class="wrap g10" style="padding:16px 20px;border-bottom:1px solid #EEF1F4">' + contact('phone', 'Điện thoại', x.phone ? fmtPhone(x.phone) : '', x.phone ? 'tel:' + x.phone : '') + contact('mail', 'Email', x.email, x.email ? 'mailto:' + x.email : '') + contact('partners', 'Địa chỉ', x.address, '') + '</div>') +
+      '<div style="padding:16px 20px 0">' + tiles + '</div>' +
+      '<div style="padding:16px 20px 12px">' + pills(tabs.map((t) => ({ label: t[1] + ' (' + t[2] + ')', on: tab === t[0], pick: setTab(t[0]) }))) + '</div>' + body + '</section>' +
+      '<div class="wrap" style="gap:16px;align-items:flex-start">' + (hide ? '' : docs) + notes + '</div></div>';
+  }
+
+  function viewPartners() {
+    const tab = S.screen === 'customers' ? 'cus' : 'sup'; S.ptab = tab; const f = S.pform; const isSup = tab === 'sup'; const edit = canEditPartner(); const hide = hideContact(isSup ? 'sup' : 'cus');
+    const setF = (k) => val((v) => upd((n) => { n.pform[k] = v; n.pform.err = ''; }));
+    const top = edit ? '<div class="wrap" style="justify-content:flex-end">' + btn(isSup ? '+ Thêm nhà cung cấp' : '+ Thêm khách hàng', () => upd((n) => { n.pform = Object.assign(blankPF(), { open: true }); n.pdetail = null; }), 'btn-primary', ' style="box-shadow:0 6px 16px rgba(26,86,196,.25)"') + '</div>' : '';
+    const list = isSup ? S.suppliers : S.customers;
+    const stats = {}; list.forEach((x) => { stats[x.id] = partnerStats(x.id); });
+    const cntStock = list.filter((x) => isSup ? stats[x.id].inStock.length : stats[x.id].items.length).length;
+    const cntPend = list.filter((x) => stats[x.id].pending.length).length;
+    const pendTotal = list.reduce((a, x) => a + stats[x.id].pending.length, 0);
+    const fileTotal = list.reduce((a, x) => a + stats[x.id].files, 0);
+    const cntDocs = list.filter((x) => stats[x.id].files).length;
+    const setFil = (k) => () => { upd((n) => { n.pfil = (n.pfil === k ? 'all' : k); }); scrollToId('p-list'); };
+    const tiles = statTiles([
+      { key: 'all', label: isSup ? 'Nhà cung cấp' : 'Khách hàng', value: fmt(list.length), icon: 'partners', bg: '#E6EFFF', fg: '#1A4FB8', sub: 'đang hợp tác' },
+      { key: 'stock', label: isSup ? 'Có hàng còn trong kho' : 'Đã nhận hàng', value: fmt(cntStock), icon: isSup ? 'inventory' : 'out', bg: '#E8F4EE', fg: '#13643A', sub: isSup ? 'từ phiếu nhập đã duyệt' : 'từ phiếu xuất đã duyệt' },
+      { key: 'pending', label: 'Có phiếu chờ duyệt', value: fmt(cntPend), icon: 'stocktake', bg: '#FFF3D1', fg: '#8A5A00', color: cntPend ? '#8A4B00' : null, sub: pendTotal + ' phiếu đang chờ' },
+      hide ? null : { key: 'docs', label: 'Có hồ sơ PDF', value: fmt(cntDocs), icon: 'reports', bg: '#FDECEC', fg: '#A01F17', sub: fileTotal + ' file đã lưu' }
+    ].filter(Boolean).map((it) => Object.assign(it, { on: it.key !== 'all' && S.pfil === it.key, go: setFil(it.key) })));
+    let form = '';
+    if (f.open) {
+      const isEdit = f.mode === 'edit';
+      form = '<section class="card" style="box-shadow:0 2px 4px rgba(16,24,40,.06),0 18px 40px rgba(16,24,40,.12)">' + head(isEdit ? 'edit' : 'partners', '#0F2742', '#FFFFFF', isEdit ? 'Sửa thông tin ' + esc(f.id) : (isSup ? 'Thêm nhà cung cấp' : 'Thêm khách hàng'), isEdit && hide ? 'Số điện thoại và email được ẩn theo phân quyền nên không sửa ở đây' : 'Cần ít nhất một thông tin liên hệ: số điện thoại hoặc email') +
+        '<div class="col g16" style="padding:20px"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">' +
+        '<label class="field">Tên ' + (isSup ? 'công ty' : 'khách hàng / đơn vị') + input('pf2-name', f.name, setF('name'), 'placeholder="Ví dụ: Công ty TNHH Thiết bị Nam Việt"') + '</label>' +
+        (isEdit && hide ? '' : '<label class="field">Số điện thoại<span class="ifield"><span class="lead">' + svg('phone', 18) + '</span>' + input('pf2-phone', f.phone, setF('phone'), 'type="tel" inputmode="tel" placeholder="Ví dụ: 0283 999 888"') + '</span></label>' +
+        '<label class="field">Email<span class="ifield"><span class="lead">' + svg('mail', 18) + '</span>' + input('pf2-email', f.email, setF('email'), 'type="email" inputmode="email" placeholder="Ví dụ: kinhdoanh@congty.vn"') + '</span></label>') +
+        '<label class="field">Địa chỉ' + input('pf2-address', f.address, setF('address'), 'placeholder="Quận/huyện, tỉnh/thành"') + '</label></div>' +
+        (isEdit ? '' : '<label class="field">Ghi chú<textarea class="input" data-fid="pf2-note" data-i="' + on(setF('note')) + '" rows="3" placeholder="Điều khoản, lưu ý khi làm việc…" style="padding:10px 12px;resize:vertical;line-height:1.5">' + esc(f.note) + '</textarea></label>' +
+          '<p class="muted small" style="margin:0">Hồ sơ PDF (hợp đồng, báo giá…) tải lên trong phần chi tiết sau khi lưu.</p>') +
+        (f.err ? '<div class="alert-err" role="alert">' + esc(f.err) + '</div>' : '') +
+        '<div class="wrap g10" style="justify-content:flex-end">' + btn('Hủy', () => upd((n) => { n.pform = blankPF(); })) + btn(isEdit ? 'Lưu thay đổi' : 'Lưu', savePartner, 'btn-primary') + '</div></div></section>';
+    }
+    const detailX = S.pdetail && list.find((x) => x.id === S.pdetail.id);
+    const q = S.pq.trim().toLowerCase(); const qd = normPhone(q);
+    const shown = list.filter((x) => {
+      const st = stats[x.id];
+      if (S.pfil === 'stock' && !(isSup ? st.inStock.length : st.items.length)) return false;
+      if (S.pfil === 'pending' && !st.pending.length) return false;
+      if (S.pfil === 'docs' && !st.files) return false;
+      return !q || (x.name + ' ' + x.id + ' ' + (hide ? '' : (x.email || ''))).toLowerCase().includes(q) || (!hide && qd && (x.phone || '').includes(qd));
+    });
+    const fopts = [['all', 'Tất cả', list.length], ['stock', isSup ? 'Có hàng trong kho' : 'Đã nhận hàng', cntStock], ['pending', 'Có phiếu chờ duyệt', cntPend]].concat(hide ? [] : [['docs', 'Có hồ sơ PDF', cntDocs]]);
+    const cols = hide ? 'minmax(260px,2fr) 200px 170px 100px' : 'minmax(250px,2fr) minmax(210px,1.4fr) 170px 150px 90px 100px';
+    const rows = shown.map((x, i) => {
+      const st = stats[x.id]; const c = AV[(parseInt(x.id.slice(-2), 10) - 1) % AV.length];
+      const r = [cell('<span class="hp" tabindex="0" data-hp="' + x.id + '"><span class="avatar" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(initialsOf(x.name)) + '</span><span class="col" style="gap:1px;min-width:0"><b style="font-weight:600">' + esc(x.name) + '</b><span class="muted small">' + esc(x.id) + (x.note ? ', có ghi chú' : '') + '</span></span></span>'),
+        cell('<span class="col" style="gap:3px;font-size:13px">' + (x.phone ? '<span style="display:flex;align-items:center;gap:6px">' + svg('phone', 13) + esc(fmtPhone(x.phone)) + '</span>' : '') + (x.email ? '<span class="muted" style="display:flex;align-items:center;gap:6px;overflow-wrap:anywhere">' + svg('mail', 13) + esc(x.email) + '</span>' : '') + '</span>'),
+        cell(isSup
+          ? '<button type="button" class="linkchip' + (st.stockProducts ? ' ok' : '') + '" data-c="' + on(() => openPartner(x.id, 'instock')) + '"><b>' + st.stockProducts + '</b> còn trong kho</button><span class="muted small" style="display:block;margin-top:3px">' + st.products + ' mặt hàng đã nhập</span>'
+          : '<button type="button" class="linkchip' + (st.products ? ' ok' : '') + '" data-c="' + on(() => openPartner(x.id, 'done')) + '"><b>' + st.products + '</b> mặt hàng đã nhận</button><span class="muted small" style="display:block;margin-top:3px">' + fmt(st.apprQty) + ' đơn vị</span>'),
+        cell(st.pending.length ? '<button type="button" class="linkchip warn" data-c="' + on(() => openPartner(x.id, 'pending')) + '"><b>' + st.pending.length + '</b> phiếu chờ duyệt</button><span class="muted small" style="display:block;margin-top:3px">' + fmt(st.pendQty) + ' đơn vị</span>' : '<span class="muted small">Không có</span>'),
+        cell(st.files ? '<button type="button" class="linkchip" data-c="' + on(() => { openPartner(x.id, isSup ? 'instock' : 'done'); scrollToId('p-docs'); }) + '">' + st.files + ' PDF</button>' : '<span class="muted small">—</span>'),
+        cell(btn('Chi tiết', () => openPartner(x.id, isSup ? 'instock' : 'done'), 'btn-sm'))];
+      if (hide) { r.splice(4, 1); r.splice(1, 1); }
+      if (detailX && detailX.id === x.id) r.cls = 'hl';
+      return r;
+    });
+    return '<div class="col g20">' + top + tiles + form + (detailX ? viewPartnerDetail(detailX) : '') +
+      '<section class="card" id="p-list" style="scroll-margin-top:16px">' + head('partners', '#E6EFFF', '#1A4FB8', isSup ? 'Danh sách nhà cung cấp' : 'Danh sách khách hàng', hide ? 'Rê chuột vào tên để xem nhanh thống kê. Thông tin liên hệ và hồ sơ được ẩn theo phân quyền.' : 'Rê chuột vào tên để xem nhanh thông tin và thống kê') +
+      '<div class="wrap g16" style="padding:14px 20px;border-bottom:1px solid #EEF1F4;align-items:flex-end"><label class="field" style="flex:1 1 240px;max-width:340px">Tìm đối tác<span class="ifield"><span class="lead">' + svg('search', 18) + '</span>' + input('pq', S.pq, val((v) => upd((n) => { n.pq = v; })), 'placeholder="' + (hide ? (isSup ? 'Tên hoặc mã nhà cung cấp…' : 'Tên hoặc mã khách hàng…') : 'Tên, mã, SĐT hoặc email…') + '"') + '</span></label>' +
+      '<div class="col" style="gap:6px"><span class="lbl">Lối tắt</span>' + pills(fopts.map((o) => ({ label: o[1] + ' (' + o[2] + ')', on: S.pfil === o[0], pick: () => upd((n) => { n.pfil = o[0]; }) }))) + '</div></div>' +
+      table(cols, hide ? [isSup ? 'Nhà cung cấp' : 'Khách hàng', isSup ? 'Hàng đã nhập' : 'Hàng đã xuất', 'Chờ duyệt', ''] : ['Đối tác', 'Liên hệ', isSup ? 'Hàng đã nhập' : 'Hàng đã xuất', 'Chờ duyệt', 'Hồ sơ', ''], rows, hide ? 760 : 1000, 'Không có đối tác nào khớp bộ lọc.') + '</section></div>';
+  }
+
+  // ---------- warehouses CRUD ----------
+  const WST = { active: { t: 'Hoạt động', bg: '#E1F3E8', fg: '#13643A' }, paused: { t: 'Tạm ngưng', bg: '#FFF1DB', fg: '#8A4B00' } };
+  const blankWF = () => ({ open: false, mode: 'create', id: null, code: '', name: '', address: '', keeperId: '', phone: '', capacity: '', opened: '', status: 'active', err: '' });
+  const canEditWh = () => isAdmin();
+  const keeperOf = (w) => (w.keeperId ? S.users.find((u) => u.id === w.keeperId) : null);
+  const keeperCandidates = (curId) => S.users.filter((u) => (u.role === 'manager' || u.role === 'staff') && (u.status === 'active' || u.id === curId));
+  function whUsage(id) {
+    const qty = S.products.reduce((a, p) => a + have(p.id, id), 0);
+    const items = S.products.filter((p) => have(p.id, id) > 0).length;
+    const rs = S.receipts.filter((r) => r.wh === id);
+    const pend = rs.filter((r) => r.status === 'pending').length;
+    const hist = S.history.filter((h) => h.wh === id).length + S.kkList.filter((k) => k.wh === id).length;
+    const wst = (S.warehouses.find((w) => w.id === id) || {}).status;
+    const low = wst === 'paused' ? 0 : S.products.filter((p) => have(p.id, id) <= p.min).length;
+    return { qty, items, receipts: rs.length, pend, hist, low, docs: rs.length + hist };
+  }
+  async function saveWarehouse() {
+    const f = S.wf;
+    const body = { code: f.code.trim().toUpperCase(), name: f.name, address: f.address, keeperId: f.keeperId || null, phone: normPhone(f.phone), capacity: f.capacity === '' ? 0 : Number(f.capacity), opened: f.opened, status: f.status };
+    try {
+      const r = f.mode === 'edit' ? await api('PUT', '/api/warehouses/' + encodeURIComponent(f.id), body) : await api('POST', '/api/warehouses', body);
+      upd((n) => { n.wf = blankWF(); n.kpick = null; }); await sync();
+      say(f.mode === 'edit' ? 'Đã cập nhật ' + r.name + '.' : 'Đã thêm ' + r.name + ' (' + body.code + '). Kho mới chưa có hàng.', 'ok');
+    } catch (e) { upd((n) => { n.wf.err = e.message; }); }
+  }
+  function pickKeeper(uid) {
+    upd((n) => {
+      const prev = n.users.find((x) => x.id === n.wf.keeperId); const nu = n.users.find((x) => x.id === uid);
+      if (nu && (!normPhone(n.wf.phone) || (prev && normPhone(n.wf.phone) === prev.phone))) n.wf.phone = nu.phone;
+      if (!nu && prev && normPhone(n.wf.phone) === prev.phone) n.wf.phone = '';
+      n.wf.keeperId = uid; n.wf.err = ''; n.kpick = null;
+    });
+  }
+  function viewKeeperPicker() {
+    const f = S.wf; const q = S.kpick.q.trim().toLowerCase(); const qd = normPhone(q);
+    const cands = keeperCandidates(f.keeperId);
+    const list = cands.filter((u) => !q || u.name.toLowerCase().includes(q) || (qd && u.phone.includes(qd)));
+    const close = () => upd((n) => { n.kpick = null; });
+    const rows = list.map((u) => {
+      const c = RCOL[u.role]; const sel = u.id === f.keeperId;
+      const whs = S.warehouses.filter((w) => w.keeperId === u.id);
+      const st = whs.length
+        ? '<span class="kstatus busy">' + svg('warehouses', 13) + 'Đang phụ trách: ' + whs.map((w) => esc(w.name) + (w.id === f.id ? ' (kho này)' : '')).join(', ') + '</span>'
+        : '<span class="kstatus free">' + svg('check', 13) + 'Chưa phụ trách kho nào</span>';
+      return '<button type="button" class="kpick-row' + (sel ? ' on' : '') + '" aria-pressed="' + sel + '" data-c="' + on(() => pickKeeper(u.id)) + '">' +
+        '<span class="avatar" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(initialsOf(u.name)) + '</span>' +
+        '<span class="col" style="gap:4px;min-width:0;flex:1"><span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:14px">' + esc(u.name) + '</b>' + chip({ t: ROLE[u.role], bg: c[0], fg: c[1] }) + (u.status !== 'active' ? chip(USTAT[u.status]) : '') + '</span>' +
+        '<span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#3D4753">' + svg('phone', 13) + esc(fmtPhone(u.phone)) + '</span>' + st + '</span>' +
+        (sel ? '<span style="color:#1A56C4;flex:none">' + svg('check', 20) + '</span>' : '<span class="kpick-go">Chọn</span>') + '</button>';
+    }).join('');
+    return '<div class="overlay" data-overlay="1"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="kp-title" style="max-width:560px;display:flex;flex-direction:column;max-height:min(680px,calc(100vh - 40px))">' +
+      '<div style="padding:20px 24px 14px;border-bottom:1px solid #EEF1F4;display:flex;flex-direction:column;gap:14px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div class="col" style="gap:4px"><h2 id="kp-title" style="margin:0;font-size:19px;font-weight:700">Chọn thủ kho phụ trách</h2><span class="muted small">Quản lý kho và Nhân viên kho đang hoạt động (' + cands.length + ' người)</span></div>' +
+      btn(svg('x', 18), close, 'btn-sm btn-ghost', ' aria-label="Đóng"') + '</div>' +
+      '<div class="ifield"><span class="lead">' + svg('search', 18) + '</span>' + input('kp-q', S.kpick.q, val((v) => upd((n) => { n.kpick.q = v; })), 'placeholder="Tìm theo tên hoặc số điện thoại…" autocomplete="off"') + '</div></div>' +
+      '<div class="col" style="gap:8px;padding:14px 16px;overflow:auto;flex:1">' + (rows || '<div class="empty">Không tìm thấy nhân viên nào khớp “' + esc(S.kpick.q) + '”.</div>') + '</div>' +
+      '<div class="dialog-foot" style="justify-content:space-between;align-items:center"><span class="muted small">' + list.length + ' kết quả</span><span class="wrap g10">' + (f.keeperId ? btn('Bỏ chọn', () => pickKeeper(''), '') : '') + btn('Đóng', close, '', ' data-fid="kp-close"') + '</span></div>' +
+      '</div></div>';
+  }
+  async function setWhStatus(w, st) {
+    if (st === 'paused' && S.kk.active && S.kk.wh === w.id) return say('Không thể tạm ngưng ' + w.name + ' khi đang có phiên kiểm kê.', 'err');
+    try {
+      await api('PUT', '/api/warehouses/' + encodeURIComponent(w.id) + '/status', { status: st }); await sync();
+      say((st === 'paused' ? 'Đã tạm ngưng ' : 'Đã mở lại ') + w.name + (st === 'paused' ? '. Kho sẽ không xuất hiện khi lập phiếu và kiểm kê.' : '.'), 'info');
+    } catch (e) { fail(e); }
+  }
+  function askDeleteWh(w) {
+    const u = whUsage(w.id);
+    if (w.status !== 'paused') return say('Hãy tạm ngưng ' + w.name + ' trước, sau đó mới có thể xóa.', 'err');
+    if (u.qty > 0) return say('Không thể xóa ' + w.name + ': kho còn ' + fmt(u.qty) + ' đơn vị hàng. Hãy xuất hết hàng trước.', 'err');
+    upd((n) => { n.wdel = { id: w.id, ack: false }; });
+  }
+  async function confirmDeleteWh() {
+    const d = S.wdel; if (!d || !d.ack) return;
+    try {
+      const r = await api('DELETE', '/api/warehouses/' + encodeURIComponent(d.id));
+      upd((n) => { n.wdel = null; if (n.inv.wh === d.id) n.inv.wh = 'all'; if (n.rep.wh === d.id) n.rep.wh = 'all'; if (n.dash.wh === d.id) n.dash.wh = 'all'; }); await sync();
+      say('Đã xóa ' + r.name + '. Chứng từ cũ của kho vẫn được giữ nguyên.', 'info');
+    } catch (e) { upd((n) => { n.wdel = null; }); fail(e); }
+  }
+  function viewWhDeleteDialog() {
+    const d = S.wdel; const w = d && S.warehouses.find((x) => x.id === d.id); if (!w) return '';
+    const u = whUsage(w.id); const close = () => upd((n) => { n.wdel = null; });
+    return '<div class="overlay" data-overlay="1"><div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="wdel-title">' +
+      '<div class="dialog-body"><div style="display:flex;gap:14px;align-items:flex-start"><span class="dicon">' + svg('trash', 24) + '</span>' +
+      '<div class="col" style="gap:6px"><h2 id="wdel-title" style="margin:0;font-size:20px;font-weight:700">Xóa ' + esc(w.name) + ' (' + esc(w.code) + ')?</h2>' +
+      '<p class="muted" style="margin:0;font-size:14px;line-height:1.55">Kho sẽ bị xóa khỏi danh mục và không thể chọn khi lập phiếu, kiểm kê hay lọc báo cáo.</p></div></div>' +
+      '<div class="keep"><b style="display:flex;align-items:center;gap:8px;color:#13643A">' + svg('check', 16) + 'Đủ điều kiện xóa</b><ul><li>Kho đang ở trạng thái Tạm ngưng</li><li>Không còn hàng tồn (0 đơn vị)</li><li>Không có phiếu chờ duyệt</li></ul>' +
+      '<span class="muted" style="font-size:13px">' + (u.docs ? 'Kho có ' + u.docs + ' chứng từ và dòng thẻ kho cũ. Các chứng từ này vẫn được giữ để tra cứu lịch sử.' : 'Kho chưa phát sinh chứng từ nào.') + '</span></div>' +
+      '<label style="display:flex;align-items:flex-start;gap:10px;font-size:14px;cursor:pointer"><input type="checkbox" style="margin-top:2px" data-fid="wdel-ack" data-ch="' + on((e) => { const v = e.target.checked; upd((n) => { n.wdel.ack = v; }); }) + '"' + (d.ack ? ' checked' : '') + '><span>Tôi xác nhận xóa kho này.</span></label></div>' +
+      '<div class="dialog-foot">' + btn('Hủy', close, '', ' data-fid="del-cancel"') + btn('Xóa kho', confirmDeleteWh, 'btn-danger', d.ack ? '' : ' disabled') + '</div></div></div>';
+  }
+  function viewWarehouses() {
+    const f = S.wf; const edit = canEditWh();
+    const setF = (k) => val((v) => upd((n) => { n.wf[k] = v; n.wf.err = ''; }));
+    const all = S.warehouses.map((w) => ({ w, u: whUsage(w.id) }));
+    const act = all.filter((x) => x.w.status !== 'paused').length, paused = all.length - act;
+    const totQty = all.reduce((a, x) => a + x.u.qty, 0), totCap = all.reduce((a, x) => a + (x.w.capacity || 0), 0);
+    const lowW = all.filter((x) => x.u.low).length;
+    const setFil = (k) => () => upd((n) => { n.wfil = n.wfil === k ? 'all' : k; });
+    const tiles = statTiles([
+      { key: 'all', label: 'Tổng số kho', value: fmt(all.length), icon: 'warehouses', bg: '#E6EFFF', fg: '#1A4FB8', sub: act + ' hoạt động, ' + paused + ' tạm ngưng' },
+      { key: 'active', label: 'Đang hoạt động', value: fmt(act), icon: 'check', bg: '#E8F4EE', fg: '#13643A', sub: 'dùng được khi lập phiếu' },
+      { key: 'paused', label: 'Tạm ngưng', value: fmt(paused), icon: 'pause', bg: '#FFF1DB', fg: '#8A4B00', color: paused ? '#8A4B00' : null, sub: 'ẩn khỏi lập phiếu, kiểm kê' },
+      { key: 'low', label: 'Kho có hàng tồn thấp', value: fmt(lowW), icon: 'alerts', bg: '#FFE8D4', fg: '#933A00', sub: fmt(totQty) + (totCap ? ' / ' + fmt(totCap) + ' sức chứa' : ' đơn vị') }
+    ].map((it) => Object.assign(it, { on: it.key !== 'all' && S.wfil === it.key, go: setFil(it.key) })));
+    let form = '';
+    if (f.open) {
+      const isE = f.mode === 'edit';
+      form = '<section class="card" style="box-shadow:0 2px 4px rgba(16,24,40,.06),0 18px 40px rgba(16,24,40,.12)">' + head(isE ? 'edit' : 'warehouses', '#0F2742', '#FFFFFF', isE ? 'Sửa kho ' + esc(f.code) : 'Thêm kho mới', isE ? 'Mã kho và ngày đưa vào sử dụng không thay đổi được' : 'Mã kho là duy nhất, dùng trên chứng từ') +
+        '<div class="col g16" style="padding:20px"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">' +
+        (isE ? '' : '<label class="field">Mã kho' + input('wf-code', f.code, setF('code'), 'placeholder="Ví dụ: KHO-DN" style="text-transform:uppercase"') + '</label>') +
+        '<label class="field">Tên kho' + input('wf-name', f.name, setF('name'), 'placeholder="Ví dụ: Kho Đà Nẵng"') + '</label>' +
+        '<label class="field">Địa chỉ' + input('wf-address', f.address, setF('address'), 'placeholder="Quận/huyện, tỉnh/thành"') + '</label>' +
+
+        '<label class="field">Điện thoại kho<span class="ifield"><span class="lead">' + svg('phone', 18) + '</span>' + input('wf-phone', f.phone, setF('phone'), 'type="tel" inputmode="tel" placeholder="Ví dụ: 0236 555 444"') + '</span></label>' +
+        '<label class="field">Sức chứa tối đa (đơn vị)' + input('wf-cap', f.capacity, setF('capacity'), 'type="number" min="0" placeholder="Để trống nếu không giới hạn"') + '</label>' +
+        (isE ? '' : '<label class="field">Ngày đưa vào sử dụng' + input('wf-opened', f.opened, setF('opened'), 'type="date"') + '</label>') + '</div>' +
+        (function () {
+          const k = f.keeperId ? S.users.find((u) => u.id === f.keeperId) : null;
+          const openPick = () => upd((n) => { n.kpick = { q: '' }; });
+          if (!k) return '<div class="col g8"><span class="lbl">Thủ kho phụ trách</span>' +
+            '<button type="button" class="keeperbox empty" data-c="' + on(openPick) + '"><span class="avatar" style="background:#F2F5F9;color:#56606B">' + svg('users', 18) + '</span><span class="col" style="gap:2px;text-align:left"><b style="font-size:14px">Chọn thủ kho</b><span class="muted small">Tìm theo tên hoặc số điện thoại trong danh sách nhân viên</span></span><span style="margin-left:auto;color:#1A56C4">' + svg('search', 18) + '</span></button></div>';
+          const c = RCOL[k.role];
+          return '<div class="col g8"><span class="lbl">Thủ kho phụ trách</span><div class="keeperbox"><span class="avatar" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(initialsOf(k.name)) + '</span>' +
+            '<span class="col" style="gap:3px;min-width:0"><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:14px">' + esc(k.name) + '</b>' + chip({ t: ROLE[k.role], bg: c[0], fg: c[1] }) + (k.status !== 'active' ? chip(USTAT[k.status]) : '') + '</span>' +
+            '<span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#3D4753">' + svg('phone', 13) + esc(fmtPhone(k.phone)) + '</span></span>' +
+            '<span class="wrap g8" style="margin-left:auto">' + btn('Đổi', openPick, 'btn-sm') + btn('Bỏ chọn', () => pickKeeper(''), 'btn-sm btn-ghost') + '</span></div></div>';
+        })() +
+        '<div class="col g8"><span class="lbl">Trạng thái</span>' + pills(['active', 'paused'].map((st) => ({ label: WST[st].t, on: f.status === st, pick: () => upd((n) => { n.wf.status = st; }) }))) + '</div>' +
+        (f.err ? '<div class="alert-err" role="alert">' + esc(f.err) + '</div>' : '') +
+        '<div class="wrap g10" style="justify-content:flex-end">' + btn('Hủy', () => upd((n) => { n.wf = blankWF(); })) + btn(isE ? 'Lưu thay đổi' : 'Thêm kho', saveWarehouse, 'btn-primary') + '</div></div></section>';
+    }
+    const q = S.wq.trim().toLowerCase();
+    const shown = all.filter((x) => (S.wfil === 'all' || (S.wfil === 'active' && x.w.status !== 'paused') || (S.wfil === 'paused' && x.w.status === 'paused') || (S.wfil === 'low' && x.u.low)) &&
+      (!q || (x.w.code + ' ' + x.w.name + ' ' + x.w.address + ' ' + ((keeperOf(x.w) || {}).name || '') + ' ' + (hideContact('wh') ? '' : ((keeperOf(x.w) || {}).phone || ''))).toLowerCase().includes(q)));
+    const cols = 'minmax(180px,1.4fr) minmax(140px,1fr) 150px 140px 96px 104px 236px';
+    const rows = shown.map(({ w, u }) => {
+      const pct = w.capacity ? Math.min(100, u.qty / w.capacity * 100) : 0; const col = pct >= 90 ? '#C0392B' : pct >= 70 ? '#E58A2E' : '#1A56C4';
+      const acts = [];
+      if (edit) {
+        acts.push(btn(svg('edit', 15) + 'Sửa', () => upd((n) => { n.wf = Object.assign(blankWF(), { open: true, mode: 'edit', id: w.id, code: w.code, name: w.name, address: w.address, keeperId: w.keeperId || '', phone: w.phone || '', capacity: w.capacity ? String(w.capacity) : '', status: w.status }); }), 'btn-sm'));
+        acts.push(w.status === 'paused' ? btn('Mở lại', () => setWhStatus(w, 'active'), 'btn-sm') : btn('Tạm ngưng', () => setWhStatus(w, 'paused'), 'btn-sm'));
+        acts.push(w.status === 'paused' && u.qty === 0
+          ? btn(svg('trash', 15) + 'Xóa', () => askDeleteWh(w), 'btn-sm', ' aria-label="Xóa ' + esc(w.name) + '" style="color:#B42318;border-color:#F1B5AE"')
+          : btn(svg('trash', 15), () => askDeleteWh(w), 'btn-sm btn-ghost btn-muted', ' aria-label="Xóa ' + esc(w.name) + ' (cần tạm ngưng và hết hàng)" title="Cần tạm ngưng và hết hàng trước khi xóa"'));
+      }
+      const goInv = () => { upd((n) => { n.screen = 'inventory'; n.inv = { q: '', wh: w.id, low: false, card: null, from: w.id }; }); window.scrollTo(0, 0); };
+      return [cell('<button type="button" class="whlink" title="Xem tồn kho của ' + esc(w.name) + '" data-c="' + on(goInv) + '"><span class="avatar" style="background:#0F2742;color:#FFFFFF">' + svg('warehouses', 18) + '</span><span class="col" style="gap:1px;min-width:0"><b style="font-weight:600">' + esc(w.name) + '</b><span class="muted small">' + esc(w.code) + ', từ ' + isoToVn(w.opened) + '</span><span class="whlink-go">Xem tồn kho ' + svg('chevUp', 12).replace('<svg', '<svg style="transform:rotate(90deg)"') + '</span></span></button>'),
+        cell('<span class="col" style="gap:2px;font-size:13px"><span>' + esc(w.address) + '</span>' + (w.phone && !hideContact('wh') ? '<span class="muted" style="display:flex;gap:6px;align-items:center">' + svg('phone', 13) + esc(fmtPhone(w.phone)) + '</span>' : '') + '</span>'),
+        cell((function () { const k = keeperOf(w); if (!k) return '<span class="col" style="gap:2px;font-size:13px"><span class="muted">' + (w.keeperId ? 'Tài khoản đã xóa' : 'Chưa phân công') + '</span>' + (w.keeperId ? '<span class="small" style="color:#933A00">Cần chọn thủ kho mới</span>' : '') + '</span>';
+          return '<span class="col" style="gap:2px;font-size:13px"><span style="font-weight:500">' + esc(k.name) + '</span>' + (hideContact('wh') ? '' : '<a href="tel:' + k.phone + '" style="display:flex;gap:6px;align-items:center;text-decoration:none">' + svg('phone', 13) + esc(fmtPhone(k.phone)) + '</a>') +
+            (k.status !== 'active' ? '<span class="small" style="color:#933A00">Tài khoản ' + USTAT[k.status].t.toLowerCase() + '</span>' : '<span class="muted small">' + ROLE[k.role] + '</span>') + '</span>'; })()),
+        cell(w.capacity ? '<span class="col" style="gap:5px"><span style="font-size:13px"><b>' + fmt(u.qty) + '</b> / ' + fmt(w.capacity) + ' <span class="muted">(' + Math.round(pct) + '%)</span></span><span class="meter"><span style="width:' + pct.toFixed(0) + '%;background:' + col + '"></span></span></span>' : '<span style="font-size:13px"><b>' + fmt(u.qty) + '</b> <span class="muted">đơn vị, không giới hạn</span></span>'),
+        cell('<span class="col" style="gap:2px;font-size:13px"><span><b>' + u.items + '</b> mặt hàng</span>' + (w.status === 'paused' ? '<span class="muted">không cảnh báo</span>' : u.low ? '<span style="color:#933A00">' + u.low + ' tồn thấp</span>' : '<span class="muted">đủ hàng</span>') + '</span>'),
+        cell(chip(WST[w.status]) + (u.pend ? '<span class="muted small" style="display:block;margin-top:3px">' + u.pend + ' phiếu chờ</span>' : '')),
+        cell(acts.length ? acts.join('') : '<span class="muted small">Chỉ xem</span>', 'display:flex;gap:6px;flex-wrap:wrap;align-items:center')];
+    });
+    return '<div class="col g20">' + tiles +
+      '<div class="card wrap g16" style="padding:16px 20px;align-items:flex-end;justify-content:space-between"><label class="field" style="flex:1 1 260px;max-width:380px">Tìm kho<span class="ifield"><span class="lead">' + svg('search', 18) + '</span>' + input('wq', S.wq, val((v) => upd((n) => { n.wq = v; })), 'placeholder="Mã, tên, địa chỉ hoặc thủ kho…"') + '</span></label>' +
+      (edit ? btn('+ Thêm kho', () => upd((n) => { n.wf = Object.assign(blankWF(), { open: true, opened: isoToday() }); }), 'btn-primary', ' style="box-shadow:0 6px 16px rgba(26,86,196,.25)"') : '') + '</div>' + form +
+      '<section class="card">' + head('warehouses', '#E6EFFF', '#1A4FB8', 'Danh sách kho', edit ? 'Muốn xóa kho: tạm ngưng trước và kho phải hết hàng.' : 'Chỉ Quản trị viên được thêm, sửa hoặc xóa kho.' + (hideContact('wh') ? ' Số điện thoại được ẩn theo phân quyền.' : '')) +
+      table(cols, ['Kho', hideContact('wh') ? 'Địa chỉ' : 'Địa chỉ, ĐT kho', 'Thủ kho', 'Sức chứa đã dùng', 'Hàng hóa', 'Trạng thái', 'Thao tác'], rows, 1090, 'Không có kho nào khớp bộ lọc.') + '</section></div>';
+  }
+
+  // ---------- users CRUD ----------
+  const USTAT = { active: { t: 'Hoạt động', bg: '#E1F3E8', fg: '#13643A' }, draft: { t: 'Nháp', bg: '#E6EFFF', fg: '#1A4FB8' }, locked: { t: 'Đã khóa', bg: '#ECEEF1', fg: '#454F5B' } };
+  const RCOL = { admin: ['#ECEDFE', '#3B3FB6'], manager: ['#E6EFFF', '#1A4FB8'], staff: ['#FFF3D1', '#7A5300'] };
+  const blankUF = () => ({ mode: null, id: null, name: '', phone: '', pass: '', role: 'staff', opened: '', status: 'draft', show: false, err: '' });
+  async function saveUser() {
+    const f = S.uf;
+    try {
+      if (f.mode === 'create') {
+        const r = await api('POST', '/api/users', { name: f.name, phone: normPhone(f.phone), password: f.pass, role: f.role, opened: f.opened, status: f.status });
+        upd((n) => { n.uf = blankUF(); }); await sync();
+        say('Đã tạo tài khoản ' + r.name + ' (' + fmtPhone(f.phone) + '), trạng thái ' + USTAT[f.status].t + '.', 'ok');
+      } else {
+        const r = await api('PUT', '/api/users/' + encodeURIComponent(f.id), { phone: normPhone(f.phone), password: f.pass });
+        upd((n) => { n.uf = blankUF(); }); await sync();
+        say('Đã cập nhật tài khoản ' + r.name + '.', 'ok');
+      }
+    } catch (e) { upd((n) => { n.uf.err = e.message; }); }
+  }
+  async function setStatus(u, st) {
+    try {
+      await api('PUT', '/api/users/' + encodeURIComponent(u.id) + '/status', { status: st }); await sync();
+      say({ active: (u.status === 'draft' ? 'Đã kích hoạt ' : 'Đã mở khóa '), locked: 'Đã khóa ' }[st] + 'tài khoản ' + u.name + '.', 'info');
+    } catch (e) { fail(e); }
+  }
+  function docsOf(u) {
+    const r = S.receipts.filter((x) => x.creator === u.name || x.approver === u.name);
+    return { pn: r.filter((x) => x.type === 'in').length, px: r.filter((x) => x.type === 'out').length, kk: S.kkList.filter((k) => k.by === u.name).length };
+  }
+  function deleteUser(u) {
+    if (u.status !== 'locked') return say('Hãy khóa tài khoản ' + u.name + ' trước, sau đó mới có thể xóa.', 'err');
+    upd((n) => { n.udel = { id: u.id, ack: false }; });
+  }
+  async function confirmDelete() {
+    const d = S.udel; if (!d || !d.ack) return;
+    try {
+      const r = await api('DELETE', '/api/users/' + encodeURIComponent(d.id));
+      upd((n) => { n.udel = null; if (n.uf.id === d.id) n.uf = blankUF(); }); await sync();
+      say('Đã xóa tài khoản ' + r.name + '. Các chứng từ liên quan vẫn được giữ nguyên.', 'info');
+    } catch (e) { upd((n) => { n.udel = null; }); fail(e); }
+  }
+  function viewDeleteDialog() {
+    const d = S.udel; const u = d && S.users.find((x) => x.id === d.id); if (!u) return '';
+    const c = docsOf(u); const total = c.pn + c.px + c.kk;
+    const close = () => upd((n) => { n.udel = null; });
+    return '<div class="overlay" data-overlay="1"><div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="del-title" aria-describedby="del-desc">' +
+      '<div class="dialog-body"><div style="display:flex;gap:14px;align-items:flex-start"><span class="dicon">' + svg('trash', 24) + '</span>' +
+      '<div class="col" style="gap:6px"><h2 id="del-title" style="margin:0;font-size:20px;font-weight:700">Xóa tài khoản ' + esc(u.name) + '?</h2>' +
+      '<p id="del-desc" class="muted" style="margin:0;font-size:14px;line-height:1.55">Tài khoản ' + esc(fmtPhone(u.phone)) + ' (' + ROLE[u.role] + ') sẽ bị xóa vĩnh viễn và không thể đăng nhập hay khôi phục lại.</p></div></div>' +
+      '<div class="keep"><b style="display:flex;align-items:center;gap:8px;color:#13643A">' + svg('check', 16) + 'Lịch sử chứng từ được giữ nguyên</b>' +
+      '<span style="color:#2B3540">' + (total ? 'Tài khoản này đã lập hoặc duyệt <b>' + total + ' chứng từ</b>:' : 'Tài khoản này chưa lập hoặc duyệt chứng từ nào.') + '</span>' +
+      (total ? '<ul><li>' + c.pn + ' phiếu nhập kho</li><li>' + c.px + ' phiếu xuất kho</li><li>' + c.kk + ' phiếu kiểm kê</li></ul>' : '') +
+      '<span class="muted" style="font-size:13px">Các phiếu này không bị xóa. Tên người lập và người duyệt vẫn hiển thị trên chứng từ và thẻ kho để phục vụ truy vết, đối chiếu và kiểm toán sau này.</span></div>' +
+      '<label style="display:flex;align-items:flex-start;gap:10px;font-size:14px;cursor:pointer"><input type="checkbox" style="margin-top:2px" data-fid="del-ack" data-ch="' + on((e) => { const v = e.target.checked; upd((n) => { n.udel.ack = v; }); }) + '"' + (d.ack ? ' checked' : '') + '>' +
+      '<span>Tôi hiểu tài khoản sẽ bị xóa vĩnh viễn, còn lịch sử chứng từ liên quan vẫn được lưu giữ.</span></label></div>' +
+      '<div class="dialog-foot">' + btn('Hủy', close, '', ' data-fid="del-cancel"') + btn('Xóa tài khoản', confirmDelete, 'btn-danger', d.ack ? '' : ' disabled') + '</div></div></div>';
+  }
+  function viewUsers() {
+    const f = S.uf; const q = S.uq.trim().toLowerCase(); const qd = normPhone(q);
+    const cnt = { active: 0, draft: 0, locked: 0 }; S.users.forEach((u) => { cnt[u.status]++; });
+    const stats = statTiles([
+      { key: 'all', label: 'Tổng tài khoản', value: fmt(S.users.length), icon: 'users', bg: '#E6EFFF', fg: '#1A4FB8', sub: '3 vai trò' },
+      { key: 'active', label: 'Đang hoạt động', value: fmt(cnt.active), icon: 'check', bg: '#E8F4EE', fg: '#13643A', sub: 'đăng nhập được' },
+      { key: 'draft', label: 'Bản nháp', value: fmt(cnt.draft), icon: 'edit', bg: '#EEF3FD', fg: '#1C3F85', sub: 'chờ kích hoạt' },
+      { key: 'locked', label: 'Đã khóa', value: fmt(cnt.locked), icon: 'lock', bg: '#ECEEF1', fg: '#454F5B', sub: 'không đăng nhập được' }
+    ].map((it) => Object.assign(it, { on: it.key !== 'all' && S.ufilter === it.key, go: () => { upd((n) => { n.ufilter = (n.ufilter === it.key ? 'all' : it.key); }); scrollToId('user-table'); } })));
+    const setF = (k) => val((v) => upd((n) => { n.uf[k] = v; n.uf.err = ''; }));
+    let form = '';
+    if (f.mode) {
+      const isC = f.mode === 'create'; const u = isC ? null : S.users.find((x) => x.id === f.id);
+      const pwField = '<label class="field">' + (isC ? 'Mật khẩu' : 'Mật khẩu mới') + '<span class="ifield"><span class="lead">' + svg('lock', 18) + '</span>' +
+        input('uf-pass', f.pass, setF('pass'), 'type="' + (f.show ? 'text' : 'password') + '" autocomplete="new-password" placeholder="' + (isC ? 'Tối thiểu 6 ký tự' : 'Để trống nếu không đổi') + '"').replace('class="input"', 'class="input has-eye"') +
+        '<button type="button" class="eye" aria-label="' + (f.show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu') + '" data-c="' + on(() => upd((n) => { n.uf.show = !n.uf.show; })) + '">' + svg(f.show ? 'eyeOff' : 'eye', 18) + '</button></span></label>';
+      const phField = '<label class="field">Số điện thoại (tên đăng nhập)<span class="ifield"><span class="lead">' + svg('phone', 18) + '</span>' + input('uf-phone', f.phone, setF('phone'), 'type="tel" inputmode="tel" autocomplete="off" placeholder="Ví dụ: 0906 666 666"') + '</span></label>';
+      const body = isC
+        ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">' +
+          '<label class="field">Họ tên' + input('uf-name', f.name, setF('name'), 'placeholder="Ví dụ: Võ Minh Khoa"') + '</label>' + phField + pwField +
+          '<label class="field">Ngày mở tài khoản' + input('uf-opened', f.opened, setF('opened'), 'type="date"') + '</label></div>' +
+          '<div class="wrap" style="gap:24px"><div class="col g8"><span class="lbl">Vai trò</span>' + pills(['admin', 'manager', 'staff'].map((r) => ({ label: ROLE[r], on: f.role === r, pick: () => upd((n) => { n.uf.role = r; }) }))) + '</div>' +
+          '<div class="col g8"><span class="lbl">Tình trạng tài khoản</span>' + pills(['draft', 'active', 'locked'].map((st) => ({ label: USTAT[st].t, on: f.status === st, pick: () => upd((n) => { n.uf.status = st; }) }))) + '</div></div>' +
+          '<div class="notice">Nháp: đã tạo nhưng chưa đăng nhập được. Hoạt động: đăng nhập được. Khóa: ngưng đăng nhập. Muốn xóa tài khoản thì phải khóa trước.</div>'
+        : '<div class="wrap g10" style="padding:12px 14px;border-radius:10px;background:#F7F9FB;border:1px solid #EEF1F4;align-items:center">' +
+          '<span class="avatar" style="background:' + RCOL[u.role][0] + ';color:' + RCOL[u.role][1] + '">' + esc(initialsOf(u.name)) + '</span><div class="col" style="gap:2px"><b>' + esc(u.name) + '</b><span class="muted small">' + ROLE[u.role] + ', mở ngày ' + isoToVn(u.opened) + '</span></div>' +
+          '<span style="margin-left:auto">' + chip(USTAT[u.status]) + '</span></div>' +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">' + phField + pwField + '</div>' +
+          '<p class="muted small" style="margin:0">Quản trị viên chỉ sửa được số điện thoại đăng nhập và mật khẩu. Họ tên, vai trò và ngày mở tài khoản giữ nguyên.</p>';
+      form = '<section class="card" style="box-shadow:0 2px 4px rgba(16,24,40,.06),0 18px 40px rgba(16,24,40,.12)">' +
+        head(isC ? 'users' : 'edit', '#0F2742', '#FFFFFF', isC ? 'Tạo tài khoản mới' : 'Sửa tài khoản', isC ? 'Số điện thoại dùng làm tên đăng nhập' : 'Cập nhật số điện thoại đăng nhập hoặc đặt lại mật khẩu') +
+        '<div class="col g16" style="padding:20px">' + body + (f.err ? '<div class="alert-err" role="alert">' + esc(f.err) + '</div>' : '') +
+        '<div class="wrap g10" style="justify-content:flex-end">' + btn('Hủy', () => upd((n) => { n.uf = blankUF(); })) + btn(isC ? 'Tạo tài khoản' : 'Lưu thay đổi', saveUser, 'btn-primary') + '</div></div></section>';
+    }
+    const list = S.users.filter((u) => (S.ufilter === 'all' || u.status === S.ufilter) && (!q || u.name.toLowerCase().includes(q) || (qd && u.phone.includes(qd))));
+    const fopts = [['all', 'Tất cả', S.users.length], ['active', 'Hoạt động', cnt.active], ['draft', 'Nháp', cnt.draft], ['locked', 'Đã khóa', cnt.locked]];
+    const rows = list.map((u) => {
+      const me = u.id === S.meUser; const editing = f.mode === 'edit' && f.id === u.id;
+      const acts = [btn(svg('edit', 15) + 'Sửa', () => upd((n) => { n.uf = Object.assign(blankUF(), { mode: 'edit', id: u.id, phone: u.phone }); }), 'btn-sm')];
+      if (!me) {
+        if (u.status === 'draft') acts.push(btn('Kích hoạt', () => setStatus(u, 'active'), 'btn-sm btn-primary'));
+        if (u.status === 'draft' || u.status === 'active') acts.push(btn('Khóa', () => setStatus(u, 'locked'), 'btn-sm'));
+        if (u.status === 'locked') acts.push(btn('Mở khóa', () => setStatus(u, 'active'), 'btn-sm'));
+        acts.push(u.status === 'locked'
+          ? btn(svg('trash', 15) + 'Xóa', () => deleteUser(u), 'btn-sm', ' aria-label="Xóa tài khoản ' + esc(u.name) + '" style="color:#B42318;border-color:#F1B5AE"')
+          : btn(svg('trash', 15), () => deleteUser(u), 'btn-sm btn-ghost btn-muted', ' aria-label="Xóa tài khoản ' + esc(u.name) + ' (cần khóa trước)" title="Khóa tài khoản trước khi xóa"'));
+      }
+      const row = [cell('<span style="display:flex;align-items:center;gap:10px"><span class="avatar" style="width:34px;height:34px;background:' + RCOL[u.role][0] + ';color:' + RCOL[u.role][1] + '">' + esc(initialsOf(u.name)) + '</span><span class="col"><b style="font-weight:600">' + esc(u.name) + '</b>' + (me ? '<span class="muted small">Tài khoản của bạn</span>' : '') + '</span></span>'),
+        cell(esc(fmtPhone(u.phone)), 'font-variant-numeric:tabular-nums'), cell(chip({ t: ROLE[u.role], bg: RCOL[u.role][0], fg: RCOL[u.role][1] })), cell(isoToVn(u.opened)), cell(chip(USTAT[u.status])),
+        cell(acts.join(''), 'display:flex;gap:6px;flex-wrap:wrap;align-items:center')];
+      if (editing) row.cls = 'hl';
+      return row;
+    });
+    return '<div class="col g20">' + stats +
+      '<div class="card wrap g16" style="padding:16px 20px;align-items:flex-end;justify-content:space-between">' +
+      '<div class="wrap g16" style="align-items:flex-end;flex:1"><label class="field" style="flex:1 1 240px;max-width:360px">Tìm tài khoản<span class="ifield"><span class="lead">' + svg('search', 18) + '</span>' + input('uq', S.uq, val((v) => upd((n) => { n.uq = v; })), 'placeholder="Họ tên hoặc số điện thoại…"') + '</span></label>' +
+      '<div class="col" style="gap:6px"><span class="lbl">Tình trạng</span>' + pills(fopts.map((o) => ({ label: o[1] + ' (' + o[2] + ')', on: S.ufilter === o[0], pick: () => upd((n) => { n.ufilter = o[0]; }) }))) + '</div></div>' +
+      btn('+ Tạo tài khoản', () => upd((n) => { n.uf = Object.assign(blankUF(), { mode: 'create', opened: isoToday() }); }), 'btn-primary', ' style="box-shadow:0 6px 16px rgba(26,86,196,.25)"') + '</div>' +
+      form +
+      '<section class="card" id="user-table" style="scroll-margin-top:16px">' + head('users', '#E6EFFF', '#1A4FB8', 'Tài khoản người dùng', 'Đăng nhập bằng số điện thoại và mật khẩu. Chỉ tài khoản đã khóa mới xóa được.') +
+      table('minmax(200px,1.6fr) 140px 150px 120px 110px minmax(230px,1.4fr)', ['Họ tên', 'Số điện thoại', 'Vai trò', 'Ngày mở', 'Tình trạng', 'Thao tác'], rows, 980, 'Không có tài khoản nào khớp bộ lọc.') +
+      '</section></div>';
+  }
+
+  // ---------- render ----------
+  const TONE = { ok: '#13643A', warn: '#8A4B00', err: '#A01F17', info: '#1F2A37' };
+  function render() {
+    const a = document.activeElement; const fid = a && a.dataset ? a.dataset.fid : null;
+    let sel = null; try { sel = a && a.selectionStart != null ? [a.selectionStart, a.selectionEnd] : null; } catch (e) { sel = null; }
+    H = [];
+    let html;
+    if (!S.loggedIn) { html = S.home ? '<div inert aria-hidden="true">' + viewLogin() + '</div>' + viewHome() : viewLogin(); prevScreen = null; }
+    else {
+      const screen = S.screen === 'users' && !isAdmin() ? 'dashboard' : S.screen;
+      const low = lowList();
+      const views = { dashboard: () => viewDashboard(low), in: () => viewReceipts('in'), out: () => viewReceipts('out'), stocktake: viewStocktake, inventory: viewInventory, alerts: () => viewAlerts(low), reports: viewReports, products: viewProducts, suppliers: viewPartners, customers: viewPartners, warehouses: viewWarehouses, users: viewUsers };
+      html = '<div class="layout">' + viewSidebar(screen, low) + '<main>' + viewTop(screen === 'customers' && hideContact('cus') ? ['Khách hàng', 'Hàng đã xuất, phiếu chờ duyệt và ghi chú (FR-05)'] : screen === 'suppliers' && hideContact('sup') ? ['Nhà cung cấp', 'Hàng đã nhập, phiếu chờ duyệt và ghi chú (FR-04)'] : PAGES[screen]) + (views[screen] || views.dashboard)() + '</main></div>';
+      prevScreen = screen;
+    }
+    if (S.loggedIn && S.udel) html += viewDeleteDialog();
+    if (S.loggedIn && S.wdel) html += viewWhDeleteDialog();
+    if (S.loggedIn && S.kpick && S.wf.open) html += viewKeeperPicker();
+    if (S.toast) html += '<div class="toast" role="status" style="background:' + (TONE[S.toast.tone] || TONE.info) + '">' + esc(S.toast.text) + '</div>';
+    if (typeof hpHide === 'function' && hpTarget && !S.loggedIn) hpHide();
+    root.innerHTML = html;
+    if (hpTarget && !document.body.contains(hpTarget)) { const nt = root.querySelector('[data-hp="' + hpTarget.dataset.hp + '"]'); if (nt) hpTarget = nt; else hpHide(); }
+    if (S.home && !S.loggedIn) bindHome();
+    if (S.kpick && S.wf.open && !(fid && root.querySelector('[data-fid="' + fid + '"]'))) { const q = root.querySelector('[data-fid="kp-q"]'); if (q) q.focus(); }
+    if ((S.udel || S.wdel) && !(fid && root.querySelector('[data-fid="' + fid + '"]'))) { const c = root.querySelector('[data-fid="del-cancel"]'); if (c) c.focus(); }
+    if (fid) {
+      const el = root.querySelector('[data-fid="' + fid + '"]');
+      if (el) { el.focus(); if (sel) { try { el.setSelectionRange(sel[0], sel[1]); } catch (e) { /* number inputs */ } } }
+    }
+  }
+
+  // hover popup for partners
+  const HP = document.createElement('div'); HP.className = 'hpop'; HP.setAttribute('role', 'tooltip'); HP.id = 'hpop'; document.body.appendChild(HP);
+  let hpTarget = null, hpTimer = null;
+  function hpHtml(pid) {
+    const x = S.suppliers.concat(S.customers).find((y) => y.id === pid); if (!x) return '';
+    const st = partnerStats(pid); const isSup = st.type === 'in'; const hide = hideContact(isSup ? 'sup' : 'cus'); const c = AV[(parseInt(pid.slice(-2), 10) - 1) % AV.length];
+    const lowIn = st.inStock.filter((y) => y.stock <= prod(y.pid).min).length;
+    return '<div class="hp-head"><span class="avatar" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(initialsOf(x.name)) + '</span><div class="col" style="gap:2px;min-width:0"><b style="font-size:14px">' + esc(x.name) + '</b><span class="muted small">' + esc(x.id) + ', ' + (isSup ? 'Nhà cung cấp' : 'Khách hàng') + '</span></div></div>' +
+      (hide ? '<div class="hp-sec" style="padding-top:12px"><span class="muted" style="display:flex;gap:8px;align-items:center">' + svg('lock', 14) + 'Thông tin liên hệ được ẩn theo phân quyền</span></div>' : '<div class="hp-sec" style="padding-top:12px">' + (x.phone ? '<span style="display:flex;gap:8px;align-items:center">' + svg('phone', 14) + esc(fmtPhone(x.phone)) + '</span>' : '') + (x.email ? '<span style="display:flex;gap:8px;align-items:center">' + svg('mail', 14) + esc(x.email) + '</span>' : '') + (x.address ? '<span class="muted" style="display:flex;gap:8px;align-items:center">' + svg('partners', 14) + esc(x.address) + '</span>' : '') + '</div>') +
+      '<div class="hp-grid">' + (isSup
+        ? '<div><span class="muted small">Đã nhập</span><b>' + st.products + '</b><span class="muted small">' + fmt(st.apprQty) + ' đv</span></div><div><span class="muted small">Còn trong kho</span><b style="color:#13643A">' + st.stockProducts + '</b><span class="muted small">' + (lowIn ? lowIn + ' tồn thấp' : 'mặt hàng') + '</span></div>'
+        : '<div><span class="muted small">Đã xuất</span><b>' + st.products + '</b><span class="muted small">mặt hàng</span></div><div><span class="muted small">Số lượng</span><b style="color:#13643A">' + fmt(st.apprQty) + '</b><span class="muted small">đơn vị</span></div>') +
+      '<div><span class="muted small">Chờ duyệt</span><b style="color:' + (st.pending.length ? '#8A4B00' : '#17212B') + '">' + st.pending.length + '</b><span class="muted small">' + fmt(st.pendQty) + ' đv</span></div></div>' +
+      (st.pendLines.length ? '<div class="hp-sec"><span class="muted small">Đang chờ duyệt</span>' + st.pendLines.slice(0, 3).map((l) => '<span>' + esc(prod(l.pid).name) + ' × ' + fmt(l.qty) + ' <span class="muted">(' + esc(l.code) + ')</span></span>').join('') + '</div>' : '') +
+      '<div class="hp-sec"><span class="muted small">Giao dịch gần nhất</span><span>' + (st.last ? esc(st.last.code + ', ' + st.last.date + ', ') + ST[st.last.status].t.toLowerCase() : 'Chưa có giao dịch') + '</span></div>' +
+      (x.note ? '<div class="hp-sec"><span class="muted small">Ghi chú</span><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + esc(x.note) + '</span></div>' : '') +
+      '<div class="hp-foot">' + (hide ? '' : st.files + ' hồ sơ PDF. ') + 'Bấm “Chi tiết” để xem đầy đủ.</div>';
+  }
+  function hpShow(t) {
+    hpTarget = t; clearTimeout(hpTimer);
+    hpTimer = setTimeout(() => {
+      if (hpTarget !== t || !document.body.contains(t)) return;
+      HP.innerHTML = hpHtml(t.dataset.hp); t.setAttribute('aria-describedby', 'hpop');
+      const r = t.getBoundingClientRect(); const w = HP.offsetWidth, h = HP.offsetHeight;
+      let left = r.left, top = r.bottom + 8;
+      if (top + h > window.innerHeight - 12) top = Math.max(12, r.top - h - 8);
+      left = Math.min(Math.max(12, left), window.innerWidth - w - 12);
+      HP.style.left = left + 'px'; HP.style.top = top + 'px'; HP.classList.add('show');
+    }, 180);
+  }
+  function hpHide() { clearTimeout(hpTimer); if (hpTarget) hpTarget.removeAttribute('aria-describedby'); hpTarget = null; HP.classList.remove('show'); }
+  root.addEventListener('mouseover', (e) => { const t = e.target.closest('[data-hp]'); if (t && t !== hpTarget) hpShow(t); });
+  root.addEventListener('mouseout', (e) => { const t = e.target.closest('[data-hp]'); if (t && !(e.relatedTarget && t.contains(e.relatedTarget))) hpHide(); });
+  root.addEventListener('focusin', (e) => { const t = e.target.closest('[data-hp]'); if (t) hpShow(t); });
+  root.addEventListener('focusout', (e) => { if (e.target.closest('[data-hp]')) hpHide(); });
+  window.addEventListener('scroll', hpHide, true);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hpHide(); });
+  // PDF upload: picker + drag & drop
+  root.addEventListener('change', (e) => { const t = e.target; if (t.dataset && t.dataset.file) addFiles(t.dataset.file, t.files); });
+  root.addEventListener('dragover', (e) => { const d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); d.classList.add('over'); } });
+  root.addEventListener('dragleave', (e) => { const d = e.target.closest('[data-drop]'); if (d && !(e.relatedTarget && d.contains(e.relatedTarget))) d.classList.remove('over'); });
+  root.addEventListener('drop', (e) => { const d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); addFiles(d.dataset.drop, e.dataTransfer.files); } });
+  root.addEventListener('click', (e) => { const b = e.target.closest('[data-c]'); if (b && H[b.dataset.c]) H[b.dataset.c](e); });
+  root.addEventListener('input', (e) => { const t = e.target; if (t.dataset && t.dataset.i && H[t.dataset.i]) H[t.dataset.i]({ target: t }); });
+  root.addEventListener('change', (e) => { const t = e.target; if (t.dataset && t.dataset.ch && H[t.dataset.ch]) H[t.dataset.ch]({ target: t }); });
+  root.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !S.loggedIn && !S.home && e.target.tagName === 'INPUT') doLogin(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (S.udel || S.wdel || S.kpick)) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; }); });
+  root.addEventListener('mousedown', (e) => { if ((S.udel || S.wdel || S.kpick) && e.target.dataset && e.target.dataset.overlay) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; }); });
+  document.addEventListener('keydown', (e) => { if (S.home && !S.loggedIn && ['ArrowUp', 'ArrowDown', 'PageDown', 'Enter', ' '].indexOf(e.key) >= 0) { e.preventDefault(); leaveHome(); } });
+
+  render();
+  (async () => {
+    await loadPublic();
+    try { const r = await api('GET', '/api/auth/me'); if (r.user) await sync(); } catch (e) { /* chưa đăng nhập hoặc máy chủ chưa chạy */ }
+  })();
+})();
+</script>
+</body>
+</html>
