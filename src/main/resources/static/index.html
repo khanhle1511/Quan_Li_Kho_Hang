@@ -58,7 +58,7 @@ main{flex:999 1 560px;min-width:0;padding:24px 32px 48px;display:flex;flex-direc
 .g20{gap:20px}.g16{gap:16px}.g10{gap:10px}.g8{gap:8px}
 .wrap{display:flex;flex-wrap:wrap}
 input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
-.toast{position:fixed;right:24px;bottom:24px;max-width:420px;padding:14px 18px;border-radius:10px;color:#FFFFFF;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(15,23,42,.18);z-index:50}
+.toast{position:fixed;right:24px;bottom:24px;max-width:420px;padding:14px 18px;border-radius:10px;color:#FFFFFF;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(15,23,42,.18);z-index:50;overflow-wrap:anywhere}
 .logo{border-radius:9px;background:#1A56C4;color:#FFFFFF;display:flex;align-items:center;justify-content:center;flex:none}
 @media (max-width:640px){main{padding:20px 16px 40px}}
 /* ---- login ---- */
@@ -511,10 +511,13 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     const kk = S.kk;
     for (const r of kk.rows) { const v = Number(r.actual); if (r.actual === '' || !Number.isInteger(v) || v < 0) return upd((n) => { n.kk.err = 'Số thực tế của “' + prod(r.pid).name + '” phải là số nguyên ≥ 0.'; }); }
     try {
-      const r = await api('POST', '/api/stocktakes', { warehouseId: kk.wh, rows: kk.rows.map((x) => ({ productId: x.pid, actual: Number(x.actual) })) });
+      // BUG-008: gửi kèm số hệ thống lúc mở phiên để máy chủ chỉ điều chỉnh phần chênh lệch (thực tế − hệ thống),
+      // giữ nguyên các phiếu nhập/xuất được duyệt trong lúc kiểm kê
+      const r = await api('POST', '/api/stocktakes', { warehouseId: kk.wh, rows: kk.rows.map((x) => ({ productId: x.pid, actual: Number(x.actual), system: x.system })) });
       upd((n) => { n.kk.active = false; n.kk.rows = []; n.kk.err = ''; });
       await sync();
-      say('Đã hoàn tất ' + r.code + ': điều chỉnh ' + r.diff + ' mặt hàng tại ' + r.warehouse + '.', r.diff ? 'warn' : 'ok');
+      const moved = (r.moved || []).length ? ' ' + r.moved.length + ' mặt hàng có phiếu được duyệt trong lúc kiểm kê, biến động đó được giữ nguyên.' : '';
+      say('Đã hoàn tất ' + r.code + ': điều chỉnh ' + r.diff + ' mặt hàng tại ' + r.warehouse + '.' + moved, r.diff ? 'warn' : 'ok');
     } catch (e) { upd((n) => { n.kk.err = e.message; }); }
   }
   async function saveProduct() {
@@ -870,6 +873,10 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     '<input type="number" min="0" data-fid="' + fid + '" data-i="' + on(val(setter)) + '" value="' + esc(value) + '" aria-label="' + esc(label) + '">' +
     '<button type="button" aria-label="Tăng" data-c="' + on(inc) + '">' + svg('plus', 14) + '</button></span>';
   const AV = [['#E6EFFF', '#1A4FB8'], ['#E8F4EE', '#13643A'], ['#FFF3D1', '#7A5300'], ['#EFEAFE', '#5B3FB6'], ['#FDECEC', '#A01F17']];
+  // BUG-003: màu avatar theo số thứ tự trong mã (NCC-007 → 7). Trước đây chỉ lấy 2 chữ số cuối, mã kết thúc "00"
+  // (NCC-100) cho chỉ số -1 → AV[-1] undefined → màn danh sách không vẽ được. Dùng cả số và kẹp ≥ 0 nên luôn có màu;
+  // với mã 001–099 kết quả giống hệt công thức cũ.
+  const avOf = (id) => AV[Math.max(0, (parseInt(String(id).replace(/\D/g, ''), 10) || 0) - 1) % AV.length];
   const initialsOf = (name) => name.replace(/Công ty|TNHH|CP|–|-/g, ' ').split(/\s+/).filter(Boolean).slice(-2).map((w) => w[0]).join('').toUpperCase();
   const tl = (icon, bg, fg, title, right, rightColor, meta1, meta2) => '<div class="tl"><span class="tdot" style="background:' + bg + ';color:' + fg + '">' + svg(icon, 15) + '</span>' +
     '<div style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:500;font-size:14px">' + title + '</span><span style="font-weight:600;font-size:14px;color:' + rightColor + '">' + right + '</span></div>' +
@@ -1179,7 +1186,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     scrollToId('p-detail');
   }
   function viewPartnerDetail(x) {
-    const st = partnerStats(x.id); const isSup = st.type === 'in'; const hide = hideContact(isSup ? 'sup' : 'cus'); const tab = S.pdetail.tab; const c = AV[(parseInt(x.id.slice(-2), 10) - 1) % AV.length];
+    const st = partnerStats(x.id); const isSup = st.type === 'in'; const hide = hideContact(isSup ? 'sup' : 'cus'); const tab = S.pdetail.tab; const c = avOf(x.id);
     const setTab = (t) => () => upd((n) => { n.pdetail.tab = t; });
     const tiles = statTiles([
       isSup ? { key: 'instock', label: 'Còn trong kho', value: fmt(st.stockProducts) + ' mặt hàng', icon: 'inventory', bg: '#E8F4EE', fg: '#13643A', sub: fmt(st.inStock.reduce((a, y) => a + y.stock, 0)) + ' đơn vị đang tồn' } : null,
@@ -1276,7 +1283,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     const fopts = [['all', 'Tất cả', list.length], ['stock', isSup ? 'Có hàng trong kho' : 'Đã nhận hàng', cntStock], ['pending', 'Có phiếu chờ duyệt', cntPend]].concat(hide ? [] : [['docs', 'Có hồ sơ PDF', cntDocs]]);
     const cols = hide ? 'minmax(260px,2fr) 200px 170px 100px' : 'minmax(250px,2fr) minmax(210px,1.4fr) 170px 150px 90px 100px';
     const rows = shown.map((x, i) => {
-      const st = stats[x.id]; const c = AV[(parseInt(x.id.slice(-2), 10) - 1) % AV.length];
+      const st = stats[x.id]; const c = avOf(x.id);
       const r = [cell('<span class="hp" tabindex="0" data-hp="' + x.id + '"><span class="avatar" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(initialsOf(x.name)) + '</span><span class="col" style="gap:1px;min-width:0"><b style="font-weight:600">' + esc(x.name) + '</b><span class="muted small">' + esc(x.id) + (x.note ? ', có ghi chú' : '') + '</span></span></span>'),
         cell('<span class="col" style="gap:3px;font-size:13px">' + (x.phone ? '<span style="display:flex;align-items:center;gap:6px">' + svg('phone', 13) + esc(fmtPhone(x.phone)) + '</span>' : '') + (x.email ? '<span class="muted" style="display:flex;align-items:center;gap:6px;overflow-wrap:anywhere">' + svg('mail', 13) + esc(x.email) + '</span>' : '') + '</span>'),
         cell(isSup
@@ -1447,7 +1454,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       return [cell('<button type="button" class="whlink" title="Xem tồn kho của ' + esc(w.name) + '" data-c="' + on(goInv) + '"><span class="avatar" style="background:#0F2742;color:#FFFFFF">' + svg('warehouses', 18) + '</span><span class="col" style="gap:1px;min-width:0"><b style="font-weight:600">' + esc(w.name) + '</b><span class="muted small">' + esc(w.code) + ', từ ' + isoToVn(w.opened) + '</span><span class="whlink-go">Xem tồn kho ' + svg('chevUp', 12).replace('<svg', '<svg style="transform:rotate(90deg)"') + '</span></span></button>'),
         cell('<span class="col" style="gap:2px;font-size:13px"><span>' + esc(w.address) + '</span>' + (w.phone && !hideContact('wh') ? '<span class="muted" style="display:flex;gap:6px;align-items:center">' + svg('phone', 13) + esc(fmtPhone(w.phone)) + '</span>' : '') + '</span>'),
         cell((function () { const k = keeperOf(w); if (!k) return '<span class="col" style="gap:2px;font-size:13px"><span class="muted">' + (w.keeperId ? 'Tài khoản đã xóa' : 'Chưa phân công') + '</span>' + (w.keeperId ? '<span class="small" style="color:#933A00">Cần chọn thủ kho mới</span>' : '') + '</span>';
-          return '<span class="col" style="gap:2px;font-size:13px"><span style="font-weight:500">' + esc(k.name) + '</span>' + (hideContact('wh') ? '' : '<a href="tel:' + k.phone + '" style="display:flex;gap:6px;align-items:center;text-decoration:none">' + svg('phone', 13) + esc(fmtPhone(k.phone)) + '</a>') +
+          // BUG-010: chỉ Admin nhận SĐT thủ kho (users[].phone); vai trò khác chỉ thấy tên
+          return '<span class="col" style="gap:2px;font-size:13px"><span style="font-weight:500">' + esc(k.name) + '</span>' + (hideContact('wh') || !k.phone ? '' : '<a href="tel:' + k.phone + '" style="display:flex;gap:6px;align-items:center;text-decoration:none">' + svg('phone', 13) + esc(fmtPhone(k.phone)) + '</a>') +
             (k.status !== 'active' ? '<span class="small" style="color:#933A00">Tài khoản ' + USTAT[k.status].t.toLowerCase() + '</span>' : '<span class="muted small">' + ROLE[k.role] + '</span>') + '</span>'; })()),
         cell(w.capacity ? '<span class="col" style="gap:5px"><span style="font-size:13px"><b>' + fmt(u.qty) + '</b> / ' + fmt(w.capacity) + ' <span class="muted">(' + Math.round(pct) + '%)</span></span><span class="meter"><span style="width:' + pct.toFixed(0) + '%;background:' + col + '"></span></span></span>' : '<span style="font-size:13px"><b>' + fmt(u.qty) + '</b> <span class="muted">đơn vị, không giới hạn</span></span>'),
         cell('<span class="col" style="gap:2px;font-size:13px"><span><b>' + u.items + '</b> mặt hàng</span>' + (w.status === 'paused' ? '<span class="muted">không cảnh báo</span>' : u.low ? '<span style="color:#933A00">' + u.low + ' tồn thấp</span>' : '<span class="muted">đủ hàng</span>') + '</span>'),
@@ -1617,7 +1625,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
   let hpTarget = null, hpTimer = null;
   function hpHtml(pid) {
     const x = S.suppliers.concat(S.customers).find((y) => y.id === pid); if (!x) return '';
-    const st = partnerStats(pid); const isSup = st.type === 'in'; const hide = hideContact(isSup ? 'sup' : 'cus'); const c = AV[(parseInt(pid.slice(-2), 10) - 1) % AV.length];
+    const st = partnerStats(pid); const isSup = st.type === 'in'; const hide = hideContact(isSup ? 'sup' : 'cus'); const c = avOf(pid);
     const lowIn = st.inStock.filter((y) => y.stock <= prod(y.pid).min).length;
     return '<div class="hp-head"><span class="avatar" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(initialsOf(x.name)) + '</span><div class="col" style="gap:2px;min-width:0"><b style="font-size:14px">' + esc(x.name) + '</b><span class="muted small">' + esc(x.id) + ', ' + (isSup ? 'Nhà cung cấp' : 'Khách hàng') + '</span></div></div>' +
       (hide ? '<div class="hp-sec" style="padding-top:12px"><span class="muted" style="display:flex;gap:8px;align-items:center">' + svg('lock', 14) + 'Thông tin liên hệ được ẩn theo phân quyền</span></div>' : '<div class="hp-sec" style="padding-top:12px">' + (x.phone ? '<span style="display:flex;gap:8px;align-items:center">' + svg('phone', 14) + esc(fmtPhone(x.phone)) + '</span>' : '') + (x.email ? '<span style="display:flex;gap:8px;align-items:center">' + svg('mail', 14) + esc(x.email) + '</span>' : '') + (x.address ? '<span class="muted" style="display:flex;gap:8px;align-items:center">' + svg('partners', 14) + esc(x.address) + '</span>' : '') + '</div>') +

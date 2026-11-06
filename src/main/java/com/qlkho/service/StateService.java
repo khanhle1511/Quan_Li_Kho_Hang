@@ -56,7 +56,8 @@ public class StateService {
     public Map<String, Object> build(UserAccount me) {
         String role = me.role;
         boolean hideWh = Rules.hideContact("wh", role);
-        boolean showUserPhone = Rules.ADMIN.equals(role) || !hideWh;
+        // BUG-010: SĐT người dùng (cũng là tên đăng nhập) chỉ Admin được xem, không gắn với quyền xem SĐT kho
+        boolean showUserPhone = Rules.ADMIN.equals(role);
 
         List<Map<String, Object>> userList = users.findAll().stream()
                 .sorted(Comparator.comparingInt((UserAccount u) -> u.id.length()).thenComparing(u -> u.id))

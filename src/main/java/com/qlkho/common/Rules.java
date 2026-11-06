@@ -1,5 +1,6 @@
 package com.qlkho.common;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -49,6 +50,8 @@ public final class Rules {
     public static final Pattern EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$");
     public static final Pattern ISO_DATE = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}$");
     public static final Pattern WH_CODE = Pattern.compile("^KHO-[A-Z0-9]{2,10}$");
+    /** BCrypt chỉ băm được tối đa 72 byte UTF-8 (tính theo byte, nên chữ có dấu tốn 2–3 byte); dài hơn thư viện ném lỗi. */
+    public static final int PASSWORD_MAX_BYTES = 72;
 
     private static final Pattern PHONE_SEPARATORS = Pattern.compile("[\\s.\\-]");
     private static final Pattern NON_DIGIT_TAIL = Pattern.compile("\\D.*$");
@@ -69,6 +72,10 @@ public final class Rules {
     public static boolean blank(String v) { return v == null || v.isBlank(); }
 
     public static boolean isIsoDate(String v) { return v != null && ISO_DATE.matcher(v).matches(); }
+
+    public static boolean passwordTooLong(String pass) {
+        return pass != null && pass.getBytes(StandardCharsets.UTF_8).length > PASSWORD_MAX_BYTES;
+    }
 
     public static String pad(int n, int width) {
         return String.format("%0" + width + "d", n);

@@ -6,15 +6,12 @@ import com.qlkho.common.Rules;
 import com.qlkho.model.*;
 import com.qlkho.repo.*;
 import com.qlkho.web.Dto;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +22,8 @@ import java.util.UUID;
 @Service
 public class CatalogService {
     private static final long MAX_PDF_BYTES = 10L * 1024 * 1024;
+    /** Bằng độ dài cột ho_so_doi_tac.file_name (PartnerFile.fileName). */
+    private static final int MAX_FILE_NAME = 255;
     private static final byte[] PDF_MAGIC = "%PDF".getBytes(StandardCharsets.US_ASCII);
 
     private final ProductRepo products;
@@ -35,12 +34,11 @@ public class CatalogService {
     private final StockRepo stocks;
     private final ReceiptRepo receipts;
     private final UserRepo users;
-    /** Thư mục chứa file của bản cũ (trước khi chuyển sang lưu trong CSDL). */
-    private final Path uploadDir;
+    /** BUG-007: tạo hàng hóa / đối tác / kho chạy tuần tự và INSERT thật, không ghi đè bản ghi cùng mã. */
+    private final CreateTx create;
 
     public CatalogService(ProductRepo products, PartnerRepo partners, PartnerFileRepo files, PartnerFileContentRepo contents,
-                          WarehouseRepo warehouses, StockRepo stocks, ReceiptRepo receipts, UserRepo users,
-                          @Value("${app.upload-dir:./uploads}") String uploadDir) {
+                          WarehouseRepo warehouses, StockRepo stocks, ReceiptRepo receipts, UserRepo users, CreateTx create) {
         this.products = products;
         this.partners = partners;
         this.files = files;
@@ -49,12 +47,15 @@ public class CatalogService {
         this.stocks = stocks;
         this.receipts = receipts;
         this.users = users;
-        this.uploadDir = Path.of(uploadDir).toAbsolutePath().normalize();
+        this.create = create;
     }
 
     // ---------- hàng hóa ----------
-    @Transactional
     public Map<String, Object> createProduct(Dto.NewProduct f) {
+        return create.run(() -> createProductTx(f));
+    }
+
+    private Map<String, Object> createProductTx(Dto.NewProduct f) {
         String sku = Rules.trim(f.sku()), name = Rules.trim(f.name()), unit = Rules.trim(f.unit());
         if (sku.isEmpty() || name.isEmpty() || unit.isEmpty())
             throw ApiException.bad("Vui lòng nhập Mã SKU, Tên hàng hóa và Đơn vị tính.");
@@ -71,7 +72,7 @@ public class CatalogService {
         p.unit = unit;
         p.minStock = f.minStock();
         p.price = price;
-        products.save(p);
+        create.insert(p);
         return Map.of("id", p.id, "name", p.name);
     }
 
@@ -95,8 +96,11 @@ public class CatalogService {
         if (!email.isEmpty() && !Rules.EMAIL.matcher(email).matches()) throw ApiException.bad("Email không hợp lệ.");
     }
 
-    @Transactional
     public Map<String, Object> createPartner(Dto.PartnerForm f, UserAccount me) {
+        return create.run(() -> createPartnerTx(f, me));
+    }
+
+    private Map<String, Object> createPartnerTx(Dto.PartnerForm f, UserAccount me) {
         String type = f.type();
         if (!"sup".equals(type) && !"cus".equals(type)) throw ApiException.bad("Loại đối tác không hợp lệ.");
         String name = Rules.trim(f.name()), phone = Rules.normPhone(f.phone()), email = Rules.trim(f.email());
@@ -116,7 +120,7 @@ public class CatalogService {
             p.noteAt = Rules.now();
             p.noteBy = me.name;
         }
-        partners.save(p);
+        create.insert(p);
         return Map.of("id", p.id);
     }
 
@@ -148,26 +152,16 @@ public class CatalogService {
         return Map.of("id", p.id);
     }
 
-    // ---------- hồ sơ PDF ----------
+    // ---------- hồ sơ PDF (nội dung lưu trong bảng ho_so_noi_dung) ----------
     public PartnerFile file(String fileId, UserAccount me) {
         PartnerFile pf = files.findById(fileId).orElseThrow(() -> ApiException.notFound("Không tìm thấy file."));
         visiblePartner(pf.partnerId, me);
         return pf;
     }
 
-    /** Đọc nội dung file: từ CSDL, hoặc từ thư mục uploads với file của bản cũ. */
     public byte[] readFile(PartnerFile pf) {
-        Optional<byte[]> data;
-        if (pf.inDb()) {
-            data = contents.findById(pf.id).map(c -> c.data);
-        } else {
-            try {
-                data = Optional.of(Files.readAllBytes(uploadDir.resolve(pf.storedPath)));
-            } catch (IOException e) {
-                data = Optional.empty();
-            }
-        }
-        return data.orElseThrow(() -> ApiException.notFound("File " + pf.fileName + " không còn trên máy chủ."));
+        return contents.findById(pf.id).map(c -> c.data)
+                .orElseThrow(() -> ApiException.notFound("File " + pf.fileName + " không còn trên máy chủ."));
     }
 
     @Transactional
@@ -175,6 +169,9 @@ public class CatalogService {
         Partner p = visiblePartner(partnerId, me);
         if (mf == null || mf.isEmpty()) throw ApiException.bad("Chưa chọn file.");
         String name = Optional.ofNullable(mf.getOriginalFilename()).orElse("hoso.pdf");
+        // BUG-009: cột ho_so_doi_tac.file_name là VARCHAR(255); dài hơn thì CSDL từ chối → 500. Chặn trước và báo rõ.
+        if (name.length() > MAX_FILE_NAME)
+            throw ApiException.bad("Tên file quá dài (tối đa " + MAX_FILE_NAME + " ký tự). Vui lòng đổi tên rồi tải lại.");
         if (!name.toLowerCase().endsWith(".pdf")) throw ApiException.bad(name + " không phải file PDF.");
         if (mf.getSize() > MAX_PDF_BYTES) throw ApiException.bad(name + " vượt quá 10 MB.");
         byte[] bytes;
@@ -216,15 +213,7 @@ public class CatalogService {
     @Transactional
     public void deleteFile(String fileId, UserAccount me) {
         PartnerFile pf = file(fileId, me);
-        if (pf.inDb()) {
-            contents.deleteById(pf.id);
-        } else {
-            try {
-                Files.deleteIfExists(uploadDir.resolve(pf.storedPath));
-            } catch (IOException ignored) {
-                // file vật lý có thể đã bị xóa tay; vẫn xóa bản ghi
-            }
-        }
+        contents.deleteById(pf.id);
         files.delete(pf);
     }
 
@@ -250,8 +239,11 @@ public class CatalogService {
         return Rules.PAUSED.equals(f.status()) ? Rules.PAUSED : Rules.ACTIVE;
     }
 
-    @Transactional
     public Map<String, Object> createWarehouse(Dto.WarehouseForm f) {
+        return create.run(() -> createWarehouseTx(f));
+    }
+
+    private Map<String, Object> createWarehouseTx(Dto.WarehouseForm f) {
         String code = Rules.trim(f.code()).toUpperCase();
         if (!Rules.WH_CODE.matcher(code).matches())
             throw ApiException.bad("Mã kho phải có dạng KHO-XXX (2–10 chữ in hoa hoặc số), ví dụ KHO-DN.");
@@ -265,7 +257,7 @@ public class CatalogService {
         w.code = code;
         w.opened = f.opened();
         w.status = statusOf(f);
-        warehouses.save(w);
+        create.insert(w);
         return Map.of("id", w.id, "name", w.name);
     }
 

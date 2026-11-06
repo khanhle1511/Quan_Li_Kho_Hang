@@ -19,10 +19,12 @@ public class UserService {
 
     private final UserRepo users;
     private final BCryptPasswordEncoder encoder;
+    private final CreateTx create;
 
-    public UserService(UserRepo users, BCryptPasswordEncoder encoder) {
+    public UserService(UserRepo users, BCryptPasswordEncoder encoder, CreateTx create) {
         this.users = users;
         this.encoder = encoder;
+        this.create = create;
     }
 
     private UserAccount user(String id) {
@@ -41,11 +43,18 @@ public class UserService {
 
     private void checkPassword(String pass) {
         if (pass == null || pass.length() < 6) throw ApiException.bad("Mật khẩu phải có ít nhất 6 ký tự.");
+        // BUG-002: chặn trước khi băm, vì BCrypt ném IllegalArgumentException (→ HTTP 500) khi mật khẩu dài hơn 72 byte
+        if (Rules.passwordTooLong(pass))
+            throw ApiException.bad("Mật khẩu quá dài: tối đa " + Rules.PASSWORD_MAX_BYTES + " byte (khoảng 72 ký tự không dấu).");
         if (pass.chars().anyMatch(Character::isWhitespace)) throw ApiException.bad("Mật khẩu không được chứa khoảng trắng.");
     }
 
-    @Transactional
+    /** BUG-007: sinh mã + kiểm tra trùng SĐT + INSERT chạy tuần tự trong CreateTx, không ghi đè tài khoản cùng mã. */
     public Map<String, Object> create(Dto.UserForm f) {
+        return create.run(() -> createTx(f));
+    }
+
+    private Map<String, Object> createTx(Dto.UserForm f) {
         String name = Rules.trim(f.name());
         if (name.isEmpty()) throw ApiException.bad("Vui lòng nhập họ tên.");
         String phone = checkPhone(f.phone(), null);
@@ -54,14 +63,15 @@ public class UserService {
         if (!Rules.isIsoDate(f.opened())) throw ApiException.bad("Vui lòng chọn ngày mở tài khoản.");
 
         UserAccount u = new UserAccount();
-        u.id = Rules.nextCode(users.findAllIds(), "U", 1);
+        // BUG-011: lấy số từ bộ đếm chỉ tăng, không suy từ mã đang tồn tại, để mã tài khoản đã xóa không bị cấp lại
+        u.id = "U" + create.nextNumber("U", users.findAllIds(), "U");
         u.name = name;
         u.phone = phone;
         u.passwordHash = encoder.encode(f.password());
         u.role = f.role();
         u.opened = f.opened();
         u.status = STATUSES.contains(f.status()) ? f.status() : Rules.DRAFT;
-        users.save(u);
+        create.insert(u);
         return Map.of("id", u.id, "name", u.name);
     }
 

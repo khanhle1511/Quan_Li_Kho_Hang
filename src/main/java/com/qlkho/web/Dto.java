@@ -12,7 +12,8 @@ public final class Dto {
 
     public record NewReceipt(String type, String partnerId, String warehouseId, String note, List<Line> lines) {}
 
-    public record CountRow(String productId, Integer actual) {}
+    /** system = số hệ thống lúc mở phiên kiểm kê (giao diện gửi kèm); null = so với tồn hiện tại. Xem BUG-008. */
+    public record CountRow(String productId, Integer actual, Integer system) {}
 
     public record NewStocktake(String warehouseId, List<CountRow> rows) {}
 

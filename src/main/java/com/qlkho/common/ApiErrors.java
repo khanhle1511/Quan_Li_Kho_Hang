@@ -2,6 +2,7 @@ package com.qlkho.common;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -34,6 +35,18 @@ public class ApiErrors {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, String>> unreadable(HttpMessageNotReadableException e) {
         return error(HttpStatus.BAD_REQUEST.value(), "Dữ liệu gửi lên không hợp lệ.");
+    }
+
+    /**
+     * Lưới an toàn (BUG-009): CSDL từ chối vì giá trị dài hơn cột hoặc vi phạm ràng buộc duy nhất.
+     * Các trường hợp đã biết được kiểm tra trước ở service với thông báo cụ thể; đây là lỗi dữ liệu của người gửi,
+     * không phải lỗi máy chủ, nên trả 400 thay vì 500.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> integrity(DataIntegrityViolationException e) {
+        log.warn("CSDL từ chối dữ liệu: {}", e.getMostSpecificCause().getMessage());
+        return error(HttpStatus.BAD_REQUEST.value(),
+                "Dữ liệu không hợp lệ: có trường quá dài so với giới hạn lưu trữ hoặc trùng với bản ghi khác.");
     }
 
     /**

@@ -2,6 +2,7 @@ package com.qlkho.common;
 
 /** Lỗi nghiệp vụ trả về cho giao diện dưới dạng {"error": "..."} kèm mã HTTP. */
 public class ApiException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
     private final int status;
 
     public ApiException(int status, String message) {
