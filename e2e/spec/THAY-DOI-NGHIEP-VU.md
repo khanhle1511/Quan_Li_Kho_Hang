@@ -36,3 +36,39 @@ Kết quả chạy toàn bộ BDD sau thay đổi (agent1, CSDL mẫu, theo th�
 ### Việc còn lại
 
 - Cập nhật BR-09, F2 trong `QLKho_Dac_ta_kiem_thu_tu_dong.docx` và RCPT-08 trong `QLKho_Test_Tracker.xlsx`, rồi xuất lại PDF.
+
+## CR-02 – Admin sửa được họ tên của mọi tài khoản (07/11/2026)
+
+Chỉ **bổ sung**, không bỏ quy tắc nào.
+
+| | Trước (BR-18, USR-03) | Sau |
+| --- | --- | --- |
+| Admin sửa tài khoản (bất kỳ ai, kể cả chính mình) | Chỉ sửa được **SĐT đăng nhập** và **mật khẩu** | Sửa được **họ tên**, SĐT đăng nhập và mật khẩu |
+| Vai trò, ngày mở tài khoản, tình trạng | Không sửa ở form này | Không đổi |
+| Mật khẩu để trống | Giữ mật khẩu cũ | Không đổi |
+| Không gửi trường `name` (client cũ) | — | Giữ họ tên cũ |
+| Họ tên rỗng / dài hơn 100 ký tự | — | 400 "Vui lòng nhập họ tên." / "Họ tên tối đa 100 ký tự." |
+| Không thay đổi gì | 400 "Chưa có thay đổi nào để lưu." | Không đổi (tính cả họ tên) |
+| SĐT sai định dạng / trùng, mật khẩu < 6 ký tự / có khoảng trắng / > 72 byte | 400 | Không đổi |
+| Quản lý kho, Nhân viên kho gọi API sửa | 403 | Không đổi |
+
+- **Người yêu cầu:** QA_QC, 07/11/2026: "Cho phép Admin thay đổi tên, sđt, Mật khẩu của bất kì nhân viên nào, những rule khác vẫn giữ nguyên, chỉ bổ sung thêm".
+- Phiếu, kiểm kê cũ lưu sẵn tên người lập/duyệt tại thời điểm đó, nên đổi họ tên **không** sửa tên trên chứng từ cũ (đúng với nguyên tắc giữ chứng từ).
+
+### Thay đổi trong mã nguồn
+
+| File | Thay đổi |
+| --- | --- |
+| `src/main/java/com/qlkho/service/UserService.java` | `update()` nhận thêm `name` (trim, bắt buộc, ≤ 100 ký tự); thiếu `name` thì giữ tên cũ; kiểm tra "không có thay đổi" tính cả họ tên |
+| `src/main/resources/static/index.html` | Form "Sửa tài khoản" có thêm ô **Họ tên** (điền sẵn tên hiện tại), gửi `name` khi lưu; sửa câu hướng dẫn và tiêu đề phụ của form |
+
+### Thay đổi trong bộ test
+
+USR-03 (`13-nguoi-dung.feature`) giữ nguyên 3 TC cũ, thêm: 03-04 đổi họ tên + SĐT + mật khẩu cùng lúc (vai trò, ngày mở, tình trạng không đổi; đăng nhập bằng thông tin mới); 03-05 họ tên rỗng / 101 ký tự → 400; 03-06 sửa họ tên trên giao diện; 03-07 Manager sửa họ tên → 403.
+
+Kết quả toàn bộ BDD sau thay đổi (agent1, CSDL mẫu, thứ tự chuẩn, 1 worker): **205 đạt, 0 lỗi, 3 bỏ qua**; smoke viết tay 12/12.
+
+### Việc còn lại
+
+- Cập nhật BR-18 trong đặc tả và USR-03 trong tracker.
+

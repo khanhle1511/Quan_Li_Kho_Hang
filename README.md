@@ -144,7 +144,7 @@ qlkho-web/
 | PUT                 | `/api/partners/{id}/note`             | QL kho, Admin             | Lưu ghi chú                                             |
 | POST                | `/api/partners/{id}/files`            | Theo phân quyền xem hồ sơ | Tải lên PDF (≤ 10 MB)                                   |
 | GET / DELETE        | `/api/files/{id}`                     | Theo phân quyền xem hồ sơ | Xem, tải về (`?download=1`), xóa PDF                    |
-| POST / PUT / DELETE | `/api/users…`                         | Admin                     | Tạo, sửa SĐT/mật khẩu, đổi trạng thái, xóa tài khoản    |
+| POST / PUT / DELETE | `/api/users…`                         | Admin                     | Tạo, sửa họ tên/SĐT/mật khẩu, đổi trạng thái, xóa tài khoản |
 | POST / PUT / DELETE | `/api/warehouses…`                    | Admin                     | Thêm, sửa, tạm ngưng, xóa kho                           |
 
 Mọi lỗi đều trả về JSON dạng `{"error": "..."}`: lỗi nghiệp vụ là HTTP 400, chưa đăng nhập 401, không đủ quyền 403, không tìm thấy 404. Lỗi không lường trước trả về 500 với thông báo chung và được ghi log ở máy chủ. Giao diện hiển thị nguyên văn trường `error`.

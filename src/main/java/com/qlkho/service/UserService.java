@@ -16,6 +16,8 @@ import java.util.Set;
 @Service
 public class UserService {
     private static final Set<String> STATUSES = Set.of(Rules.ACTIVE, Rules.DRAFT, Rules.LOCKED);
+    /** Bằng độ dài cột nguoi_dung.name (UserAccount.name). */
+    private static final int NAME_MAX = 100;
 
     private final UserRepo users;
     private final BCryptPasswordEncoder encoder;
@@ -75,14 +77,19 @@ public class UserService {
         return Map.of("id", u.id, "name", u.name);
     }
 
-    /** Admin chỉ sửa được số điện thoại đăng nhập và mật khẩu. */
+    /** Admin sửa được họ tên (CR-02), số điện thoại đăng nhập và mật khẩu của mọi tài khoản; vai trò, ngày mở giữ nguyên. */
     @Transactional
     public Map<String, Object> update(String id, Dto.UserForm f) {
         UserAccount u = user(id);
+        // CR-02 (07/11/2026): Admin sửa được thêm HỌ TÊN của mọi tài khoản. Không gửi "name" (client cũ) thì giữ tên cũ.
+        String name = f.name() == null ? u.name : Rules.trim(f.name());
+        if (name.isEmpty()) throw ApiException.bad("Vui lòng nhập họ tên.");
+        if (name.length() > NAME_MAX) throw ApiException.bad("Họ tên tối đa " + NAME_MAX + " ký tự.");
         String phone = checkPhone(f.phone(), u.id);
         boolean changePass = !Rules.blank(f.password());
         if (changePass) checkPassword(f.password());
-        if (phone.equals(u.phone) && !changePass) throw ApiException.bad("Chưa có thay đổi nào để lưu.");
+        if (name.equals(u.name) && phone.equals(u.phone) && !changePass) throw ApiException.bad("Chưa có thay đổi nào để lưu.");
+        u.name = name;
         u.phone = phone;
         if (changePass) u.passwordHash = encoder.encode(f.password());
         users.save(u);

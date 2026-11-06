@@ -1,8 +1,8 @@
 # language: vi
 @nguoi-dung
 Tính năng: Người dùng
-  Danh sách, tạo tài khoản, sửa SĐT/mật khẩu, kích hoạt/khóa, xóa, quyền riêng tư.
-  6 tính năng · 20 test case · Tham chiếu BR-03, BR-04, BR-17..BR-19, F5, RISK-05, RISK-06.
+  Danh sách, tạo tài khoản, sửa họ tên/SĐT/mật khẩu, kích hoạt/khóa, xóa, quyền riêng tư.
+  6 tính năng · 25 test case · Tham chiếu BR-03, BR-04, BR-17..BR-19, CR-02, F5, RISK-05, RISK-06.
   Chỉ Admin quản lý người dùng; Manager và Staff không thấy menu và bị chặn ở API (403).
 
   Quy tắc: USR-01 – Danh sách, thống kê, lọc (UI · P3)
@@ -87,8 +87,9 @@ Tính năng: Người dùng
       Khi tôi gọi POST "/api/users"
       Thì mã phản hồi là 403
 
-  Quy tắc: USR-03 – Sửa SĐT / mật khẩu (API · P1 · BR-18)
-    Chỉ 2 trường; để trống = giữ nguyên.
+  Quy tắc: USR-03 – Sửa họ tên / SĐT / mật khẩu (API + UI · P1 · BR-18, CR-02)
+    Admin sửa được họ tên (bổ sung CR-02 ngày 07/11/2026), SĐT và mật khẩu của mọi tài khoản;
+    mật khẩu để trống = giữ nguyên; không gửi họ tên = giữ nguyên; vai trò, ngày mở, tình trạng không đổi.
 
     @USR-03 @TC-USR-03-01 @P1 @regression
     Kịch bản: Đổi mật khẩu người dùng
@@ -111,6 +112,42 @@ Tính năng: Người dùng
       Khi tôi gọi PUT "/api/users/U3" với phone "0903333333" và password rỗng
       Thì mã phản hồi là 400
       Và thông báo lỗi là "Chưa có thay đổi nào để lưu."
+
+    @USR-03 @TC-USR-03-04 @P1 @regression
+    Kịch bản: Admin đổi họ tên, SĐT và mật khẩu cùng lúc (CR-02)
+      Cho fixture [TEST] đã được tạo
+      Khi Admin sửa T_USER với họ tên "[TEST] Tên mới", phone mới ngẫu nhiên và password "newpass2"
+      Thì mã phản hồi là 200
+      Và "state.users" có T_USER với họ tên mới
+      Và T_USER đăng nhập bằng SĐT mới và mật khẩu mới thành công
+      Và vai trò, ngày mở và tình trạng của T_USER không đổi
+
+    @USR-03 @TC-USR-03-05 @P2 @regression
+    Khung kịch bản: Họ tên không hợp lệ khi sửa (CR-02)
+      Cho fixture [TEST] đã được tạo
+      Khi Admin gọi PUT "/api/users/T_USER" với họ tên "<họ tên>"
+      Thì mã phản hồi là 400
+      Và thông báo lỗi là "<thông báo>"
+
+      Dữ liệu:
+        | họ tên  | thông báo                 |
+        |         | Vui lòng nhập họ tên.     |
+        | A×101   | Họ tên tối đa 100 ký tự.  |
+
+    @USR-03 @TC-USR-03-06 @P2 @regression
+    Kịch bản: Sửa họ tên trên giao diện (CR-02)
+      Cho fixture [TEST] đã được tạo
+      Khi Admin mở "Sửa" ở dòng T_USER
+      Thì ô "Họ tên" điền sẵn họ tên hiện tại của T_USER
+      Khi tôi đổi họ tên thành "[TEST] Tên sửa trên UI" và bấm "Lưu thay đổi"
+      Thì toast vừa hiện có "Đã cập nhật tài khoản [TEST] Tên sửa trên UI"
+      Và bảng người dùng hiển thị họ tên mới của T_USER
+
+    @USR-03 @TC-USR-03-07 @P2 @regression
+    Kịch bản: Manager không sửa được họ tên người dùng
+      Cho fixture [TEST] đã được tạo
+      Khi Manager gọi PUT "/api/users/T_USER" với họ tên "[TEST] Manager đổi"
+      Thì mã phản hồi là 403
 
   Quy tắc: USR-04 – Kích hoạt / khóa / mở khóa (API · P1 · BR-04)
     Không tự đổi trạng thái của mình.

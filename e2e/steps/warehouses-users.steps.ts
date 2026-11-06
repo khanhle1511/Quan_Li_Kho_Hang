@@ -1,6 +1,6 @@
 import { Given, When, Then, expect, today, randomPhone, type World } from './fixtures';
 import { SEL } from '../helpers/selectors';
-import { gotoLogin, nav, uiLogin } from '../helpers/app';
+import { gotoLogin, nav, readToast, uiLogin, waitToastGone } from '../helpers/app';
 
 const rnd4 = () => String(Math.floor(1000 + Math.random() * 9000));
 const PHONE_SHOWN = /0\d{3} \d{3} \d{3}/;
@@ -328,4 +328,57 @@ When(/^tôi gọi GET "\/api\/state" và đọc "users\[\]\.phone"$/, async ({ w
 Then('theo quyền riêng tư chỉ Admin nên thấy SĐT người dùng', async ({ world }) => {
   const shown = world.ok().users.filter((u: any) => u.phone);
   expect(shown.map((u: any) => u.id), 'vai trò ' + world.actor + ' vẫn nhận SĐT người dùng (RISK-06)').toEqual([]);
+});
+
+// ================= USR-03 – CR-02: Admin sửa được họ tên =================
+
+const userInState = async (world: World, id: string) => (await world.state('admin')).users.find((x: any) => x.id === id);
+/** "A×101" → 101 chữ A; còn lại giữ nguyên */
+const expandName = (s: string) => s.replace(/^([^×])×(\d+)$/, (_, ch: string, n: string) => ch.repeat(Number(n)));
+
+When(/^Admin sửa T_USER với họ tên "([^"]+)", phone mới ngẫu nhiên và password "([^"]+)"$/, async ({ world }, name: string, pass: string) => {
+  const u = world.need().user;
+  const before = await userInState(world, u.id);
+  world.vars.before = { role: before.role, opened: before.opened, status: before.status };
+  world.vars.newName = `${name} ${world.runId}`;
+  const phone = randomPhone();
+  world.ok(await world.call('admin', 'PUT', `/api/users/${u.id}`, { name: world.vars.newName, phone, password: pass }), 'sửa T_USER');
+  Object.assign(u, { name: world.vars.newName, phone, pass });
+});
+Then('"state.users" có T_USER với họ tên mới', async ({ world }) => {
+  expect((await userInState(world, world.need().user.id))?.name).toBe(world.vars.newName);
+});
+Then('T_USER đăng nhập bằng SĐT mới và mật khẩu mới thành công', async ({ world }) => {
+  const u = world.need().user;
+  expect(await loginStatus(world, u.phone, u.pass)).toBe(200);
+});
+Then('vai trò, ngày mở và tình trạng của T_USER không đổi', async ({ world }) => {
+  const now = await userInState(world, world.need().user.id);
+  expect({ role: now.role, opened: now.opened, status: now.status }).toEqual(world.vars.before);
+});
+When(/^(Admin|Manager) gọi PUT "\/api\/users\/T_USER" với họ tên "([^"]*)"$/, async ({ world }, who: string, name: string) => {
+  const u = world.need().user;
+  await world.call(who === 'Admin' ? 'admin' : 'manager', 'PUT', `/api/users/${u.id}`, { name: expandName(name), phone: u.phone, password: '' });
+});
+
+When('Admin mở "Sửa" ở dòng T_USER', async ({ world }) => {
+  await world.setActor('admin');
+  await world.ui();
+  await nav(world.page, 'Người dùng');
+  const row = world.page.locator(SEL.userRow, { hasText: world.need().user.name }).first();
+  await row.locator('button', { hasText: 'Sửa' }).first().click();
+});
+Then('ô "Họ tên" điền sẵn họ tên hiện tại của T_USER', async ({ world }) => {
+  await expect(world.page.locator('[data-fid="uf-name"]')).toHaveValue(world.need().user.name);
+});
+When(/^tôi đổi họ tên thành "([^"]+)" và bấm "Lưu thay đổi"$/, async ({ world }, name: string) => {
+  world.vars.newName = name;
+  await world.page.fill('[data-fid="uf-name"]', name);
+  await waitToastGone(world.page);
+  await world.page.click('button:has-text("Lưu thay đổi")');
+  world.vars.toast = await readToast(world.page);
+  world.need().user.name = name;
+});
+Then('bảng người dùng hiển thị họ tên mới của T_USER', async ({ world }) => {
+  await expect(world.page.locator(SEL.userRow, { hasText: world.vars.newName })).toHaveCount(1);
 });

@@ -1484,7 +1484,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
         upd((n) => { n.uf = blankUF(); }); await sync();
         say('Đã tạo tài khoản ' + r.name + ' (' + fmtPhone(f.phone) + '), trạng thái ' + USTAT[f.status].t + '.', 'ok');
       } else {
-        const r = await api('PUT', '/api/users/' + encodeURIComponent(f.id), { phone: normPhone(f.phone), password: f.pass });
+        const r = await api('PUT', '/api/users/' + encodeURIComponent(f.id), { name: f.name, phone: normPhone(f.phone), password: f.pass });
         upd((n) => { n.uf = blankUF(); }); await sync();
         say('Đã cập nhật tài khoản ' + r.name + '.', 'ok');
       }
@@ -1555,10 +1555,10 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
         : '<div class="wrap g10" style="padding:12px 14px;border-radius:10px;background:#F7F9FB;border:1px solid #EEF1F4;align-items:center">' +
           '<span class="avatar" style="background:' + RCOL[u.role][0] + ';color:' + RCOL[u.role][1] + '">' + esc(initialsOf(u.name)) + '</span><div class="col" style="gap:2px"><b>' + esc(u.name) + '</b><span class="muted small">' + ROLE[u.role] + ', mở ngày ' + isoToVn(u.opened) + '</span></div>' +
           '<span style="margin-left:auto">' + chip(USTAT[u.status]) + '</span></div>' +
-          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">' + phField + pwField + '</div>' +
-          '<p class="muted small" style="margin:0">Quản trị viên chỉ sửa được số điện thoại đăng nhập và mật khẩu. Họ tên, vai trò và ngày mở tài khoản giữ nguyên.</p>';
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">' + '<label class="field">Họ tên' + input('uf-name', f.name, setF('name'), 'placeholder="Ví dụ: Võ Minh Khoa"') + '</label>' + phField + pwField + '</div>' +
+          '<p class="muted small" style="margin:0">Quản trị viên sửa được họ tên, số điện thoại đăng nhập và mật khẩu. Vai trò và ngày mở tài khoản giữ nguyên.</p>';
       form = '<section class="card" style="box-shadow:0 2px 4px rgba(16,24,40,.06),0 18px 40px rgba(16,24,40,.12)">' +
-        head(isC ? 'users' : 'edit', '#0F2742', '#FFFFFF', isC ? 'Tạo tài khoản mới' : 'Sửa tài khoản', isC ? 'Số điện thoại dùng làm tên đăng nhập' : 'Cập nhật số điện thoại đăng nhập hoặc đặt lại mật khẩu') +
+        head(isC ? 'users' : 'edit', '#0F2742', '#FFFFFF', isC ? 'Tạo tài khoản mới' : 'Sửa tài khoản', isC ? 'Số điện thoại dùng làm tên đăng nhập' : 'Cập nhật họ tên, số điện thoại đăng nhập hoặc đặt lại mật khẩu') +
         '<div class="col g16" style="padding:20px">' + body + (f.err ? '<div class="alert-err" role="alert">' + esc(f.err) + '</div>' : '') +
         '<div class="wrap g10" style="justify-content:flex-end">' + btn('Hủy', () => upd((n) => { n.uf = blankUF(); })) + btn(isC ? 'Tạo tài khoản' : 'Lưu thay đổi', saveUser, 'btn-primary') + '</div></div></section>';
     }
@@ -1566,7 +1566,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     const fopts = [['all', 'Tất cả', S.users.length], ['active', 'Hoạt động', cnt.active], ['draft', 'Nháp', cnt.draft], ['locked', 'Đã khóa', cnt.locked]];
     const rows = list.map((u) => {
       const me = u.id === S.meUser; const editing = f.mode === 'edit' && f.id === u.id;
-      const acts = [btn(svg('edit', 15) + 'Sửa', () => upd((n) => { n.uf = Object.assign(blankUF(), { mode: 'edit', id: u.id, phone: u.phone }); }), 'btn-sm')];
+      const acts = [btn(svg('edit', 15) + 'Sửa', () => upd((n) => { n.uf = Object.assign(blankUF(), { mode: 'edit', id: u.id, name: u.name, phone: u.phone }); }), 'btn-sm')];
       if (!me) {
         if (u.status === 'draft') acts.push(btn('Kích hoạt', () => setStatus(u, 'active'), 'btn-sm btn-primary'));
         if (u.status === 'draft' || u.status === 'active') acts.push(btn('Khóa', () => setStatus(u, 'locked'), 'btn-sm'));
