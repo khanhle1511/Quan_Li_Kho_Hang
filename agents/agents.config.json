@@ -1,0 +1,15 @@
+{
+  "basePort": 8101,
+  "count": 4,
+  "javaHome": "",
+  "javaOpts": [
+    "-Xms128m",
+    "-Xmx512m"
+  ],
+  "startTimeoutSec": 120,
+  "fallbackPorts": {
+    "from": 8201,
+    "to": 8299
+  },
+  "maxPortTries": 5
+}

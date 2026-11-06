@@ -1,8 +1,9 @@
 target/
 data/
-uploads/
 .git/
 .idea/
 *.iml
 .vscode/
 *.log
+e2e/
+agents/

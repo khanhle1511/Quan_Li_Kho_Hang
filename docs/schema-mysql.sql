@@ -78,7 +78,7 @@ CREATE TABLE ho_so_doi_tac (
 -- Nội dung nhị phân của file PDF (tách riêng để liệt kê hồ sơ không phải tải cả file)
 CREATE TABLE ho_so_noi_dung (
   id    VARCHAR(40) PRIMARY KEY,                -- trùng ho_so_doi_tac.id
-  data  LONGBLOB NOT NULL,
+  data  LONGBLOB NOT NULL,                      -- Hibernate tự chọn kiểu theo CSDL: LONGBLOB (MySQL), BYTEA (PostgreSQL), VARBINARY (H2)
   CONSTRAINT fk_noidung_hoso FOREIGN KEY (id) REFERENCES ho_so_doi_tac(id) ON DELETE CASCADE
 );
 

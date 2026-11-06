@@ -1,0 +1,417 @@
+[
+  {
+    "flow": "LOGIN",
+    "step": "SĐT sai định dạng",
+    "ok": true,
+    "detail": "Số điện thoại không hợp lệ (10 số, bắt đầu bằng 03, 05, 07, 08 hoặc 09)."
+  },
+  {
+    "flow": "LOGIN",
+    "step": "sai mật khẩu",
+    "ok": true,
+    "detail": "Sai số điện thoại hoặc mật khẩu."
+  },
+  {
+    "flow": "LOGIN",
+    "step": "tài khoản khóa U4",
+    "ok": true,
+    "detail": "Tài khoản đã bị khóa. Vui lòng liên hệ Quản trị viên."
+  },
+  {
+    "flow": "LOGIN",
+    "step": "tài khoản nháp U5",
+    "ok": true,
+    "detail": "Tài khoản chưa được kích hoạt. Vui lòng liên hệ Quản trị viên."
+  },
+  {
+    "flow": "STAFF",
+    "step": "đăng nhập staff",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "flow": "STAFF",
+    "step": "menu không có Người dùng",
+    "ok": true,
+    "detail": "Tổng quan | Nhập kho | Xuất kho | Kiểm kê | Tồn kho | Cảnh báo tồn thấp\n4 | Báo cáo | Hàng hóa | Nhà cung cấp | Khách hàng | Kho"
+  },
+  {
+    "flow": "F7",
+    "step": "staff: suppliers phone/email rỗng",
+    "ok": true
+  },
+  {
+    "flow": "F7",
+    "step": "staff: customers phone/email rỗng",
+    "ok": true
+  },
+  {
+    "flow": "F7",
+    "step": "staff: files rỗng",
+    "ok": true,
+    "detail": "files=0"
+  },
+  {
+    "flow": "F7",
+    "step": "staff: users/warehouses phone null",
+    "ok": true
+  },
+  {
+    "flow": "STAFF",
+    "step": "Hàng hóa: không có nút Thêm",
+    "ok": true
+  },
+  {
+    "flow": "STAFF",
+    "step": "Kho: không có nút Thêm kho",
+    "ok": true
+  },
+  {
+    "flow": "F1",
+    "step": "lập PX-0003",
+    "ok": true,
+    "detail": "Đã tạo phiếu PX-0003 – đang chờ Quản lý kho duyệt."
+  },
+  {
+    "flow": "F1",
+    "step": "tồn P02|HN chưa đổi (=80)",
+    "ok": true,
+    "detail": "before=80 after=80"
+  },
+  {
+    "flow": "F1",
+    "step": "PX-0003 pending, creator U3",
+    "ok": true
+  },
+  {
+    "flow": "BR-07",
+    "step": "xuất quá tồn bị chặn",
+    "ok": true,
+    "detail": "Không đủ tồn: “Mực in laser đen” chỉ còn 6 Hộp tại Kho Hà Nội."
+  },
+  {
+    "flow": "F3",
+    "step": "PX-0004 (P06×4 HCM)",
+    "ok": true,
+    "detail": "Đã tạo phiếu PX-0004 – đang chờ Quản lý kho duyệt."
+  },
+  {
+    "flow": "F3",
+    "step": "PX-0005 (P06×4 HCM) cũng tạo được",
+    "ok": true,
+    "detail": "Đã tạo phiếu PX-0005 – đang chờ Quản lý kho duyệt."
+  },
+  {
+    "flow": "F9",
+    "step": "chuyển sang Nhập kho, qty điền sẵn 14",
+    "ok": true,
+    "detail": "Nhập kho qty=14"
+  },
+  {
+    "flow": "F9",
+    "step": "PN-0003 tạo",
+    "ok": true,
+    "detail": "Đã tạo phiếu PN-0003 – đang chờ Quản lý kho duyệt."
+  },
+  {
+    "flow": "F4",
+    "step": "staff: không có nút xác nhận, có thông báo",
+    "ok": true,
+    "detail": "Số liệu thực tế đã được lưu trong phiên. Quản lý kho cần đăng nhập để xác nhận điều chỉnh tồn."
+  },
+  {
+    "flow": "F4",
+    "step": "POST /stocktakes bằng phiên staff -> 403",
+    "ok": true,
+    "detail": "status=403"
+  },
+  {
+    "flow": "F4",
+    "step": "staff approve qua API -> 403",
+    "ok": true,
+    "detail": "status=403"
+  },
+  {
+    "flow": "MANAGER",
+    "step": "đăng nhập manager",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "flow": "F4",
+    "step": "phiên kiểm kê vẫn còn sau khi đổi người",
+    "ok": true
+  },
+  {
+    "flow": "F4",
+    "step": "số thực tế P01 = 119 còn giữ",
+    "ok": true,
+    "detail": "val=119"
+  },
+  {
+    "flow": "F4",
+    "step": "KK-0002 tạo, tồn P01|HN = 119",
+    "ok": true,
+    "detail": "Đã hoàn tất KK-0002: điều chỉnh 1 mặt hàng tại Kho Hà Nội. stock=119"
+  },
+  {
+    "flow": "F4",
+    "step": "thẻ kho có dòng Kiểm kê -1",
+    "ok": true
+  },
+  {
+    "flow": "F1",
+    "step": "duyệt PX-0003",
+    "ok": true,
+    "detail": "Đã duyệt PX-0003. Cảnh báo: Bút bi xanh (hộp 20) đã xuống mức tồn thấp."
+  },
+  {
+    "flow": "F1",
+    "step": "tồn P02|HN = 20",
+    "ok": true,
+    "detail": "stock=20"
+  },
+  {
+    "flow": "F1",
+    "step": "thẻ kho: Xuất -60, sau 20, PX-0003",
+    "ok": true
+  },
+  {
+    "flow": "F1",
+    "step": "cảnh báo tồn thấp tăng 4 -> 5",
+    "ok": true,
+    "detail": "4 -> 5"
+  },
+  {
+    "flow": "F3",
+    "step": "duyệt PX-0004 -> tồn P06|HCM = 0",
+    "ok": true,
+    "detail": "Đã duyệt PX-0004. Cảnh báo: Bàn phím có dây đã xuống mức tồn thấp. stock=0"
+  },
+  {
+    "flow": "F3",
+    "step": "duyệt PX-0005 bị từ chối, vẫn pending",
+    "ok": true,
+    "detail": "Không thể duyệt PX-0005: “Bàn phím có dây” chỉ còn 0 Cái tại Kho TP.HCM."
+  },
+  {
+    "flow": "F3",
+    "step": "từ chối PX-0005 -> cancelled",
+    "ok": true,
+    "detail": "Đã từ chối phiếu PX-0005."
+  },
+  {
+    "flow": "F2",
+    "step": "manager lập PN-0004",
+    "ok": true,
+    "detail": "Đã tạo phiếu PN-0004 – đang chờ Quản lý kho duyệt."
+  },
+  {
+    "flow": "F2",
+    "step": "UI không hiện nút Duyệt cho phiếu mình lập",
+    "ok": true,
+    "detail": "PN-0004 10 đơn vị 07/11/2026 00:53 Lập: Trần Thị Bình Công ty TNHH VPP Minh An Kho Hà Nội Giấy in A4 70gsm × 10 Chờ duyệt Phiếu do bạn lập, cần người khác duyệt"
+  },
+  {
+    "flow": "F2",
+    "step": "API tự duyệt -> 400",
+    "ok": true,
+    "detail": "Bạn không thể tự duyệt phiếu do chính mình lập."
+  },
+  {
+    "flow": "F7",
+    "step": "manager: suppliers phone rỗng",
+    "ok": true,
+    "detail": "\"\""
+  },
+  {
+    "flow": "F7",
+    "step": "manager: customers phone có",
+    "ok": true,
+    "detail": "0243111222"
+  },
+  {
+    "flow": "F7",
+    "step": "manager: files chỉ của KH",
+    "ok": true,
+    "detail": "KH-01"
+  },
+  {
+    "flow": "F7",
+    "step": "manager GET file KH-01 -> 200 pdf",
+    "ok": true,
+    "detail": "status=200"
+  },
+  {
+    "flow": "F8",
+    "step": "manager upload PDF cho KH-02",
+    "ok": true,
+    "detail": "Đã tải lên 1 file PDF."
+  },
+  {
+    "flow": "F8",
+    "step": "upload .txt đổi tên .pdf -> bị từ chối",
+    "ok": true,
+    "detail": "Bỏ qua: fake.pdf (fake.pdf không phải file PDF hợp lệ.)."
+  },
+  {
+    "flow": "CATALOG",
+    "step": "lưu ghi chú KH-02 (noteBy = manager)",
+    "ok": true,
+    "detail": "Đã lưu ghi chú cho Cửa hàng Quận 3."
+  },
+  {
+    "flow": "CATALOG",
+    "step": "thêm hàng hóa P09, danh mục mặc định Khác",
+    "ok": true,
+    "detail": "Đã thêm “Băng keo trong 5cm”. Tồn ban đầu = 0 nên mặt hàng đang ở trạng thái cảnh báo."
+  },
+  {
+    "flow": "BR-14",
+    "step": "SKU trùng (không phân biệt hoa thường) bị chặn",
+    "ok": true,
+    "detail": "Mã SKU “sp-0001” đã tồn tại."
+  },
+  {
+    "flow": "ADMIN",
+    "step": "đăng nhập admin",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "flow": "F2",
+    "step": "admin duyệt PN-0004 thành công",
+    "ok": true,
+    "detail": "Đã duyệt PN-0004. Tồn kho đã được cộng thêm."
+  },
+  {
+    "flow": "F9",
+    "step": "admin duyệt PN-0003 -> P04|HN = 20, cảnh báo giảm 1",
+    "ok": true,
+    "detail": "stock=20 low 7->6"
+  },
+  {
+    "flow": "F7",
+    "step": "admin: suppliers phone có, files đủ 5",
+    "ok": true,
+    "detail": "files=5"
+  },
+  {
+    "flow": "F7",
+    "step": "admin GET file NCC-01 download -> 200 attachment",
+    "ok": true,
+    "detail": "attachment; filename=\"=?UTF-8?Q?GiayPhepKinhDoanh=5FMinhAn.pdf?=\"; filename*=UTF-8''GiayPhepKinhDoanh_MinhAn.pdf"
+  },
+  {
+    "flow": "F8",
+    "step": "admin upload PDF cho NCC-03",
+    "ok": true,
+    "detail": "Đã tải lên 1 file PDF."
+  },
+  {
+    "flow": "F8",
+    "step": "xem lại file vừa tải",
+    "ok": true
+  },
+  {
+    "flow": "F8",
+    "step": "xóa file NCC-03",
+    "ok": true,
+    "detail": "files NCC-03=0"
+  },
+  {
+    "flow": "F5",
+    "step": "tạo U6 nháp",
+    "ok": true,
+    "detail": "Đã tạo tài khoản [TEST] Võ Minh Khoa (0906 666 666), trạng thái Nháp."
+  },
+  {
+    "flow": "F5",
+    "step": "U6 nháp đăng nhập bị từ chối",
+    "ok": true,
+    "detail": "Tài khoản chưa được kích hoạt. Vui lòng liên hệ Quản trị viên."
+  },
+  {
+    "flow": "F5",
+    "step": "U6 đăng nhập được sau kích hoạt",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "flow": "F5",
+    "step": "U6 lập PN-0005",
+    "ok": true,
+    "detail": "Đã tạo phiếu PN-0005 – đang chờ Quản lý kho duyệt."
+  },
+  {
+    "flow": "F5",
+    "step": "U6 bị khóa: API 401, UI về trang đăng nhập",
+    "ok": false,
+    "detail": "status=401 msg="
+  },
+  {
+    "flow": "F5",
+    "step": "xóa U6 sau khi khóa; PN-0005 vẫn giữ tên người lập",
+    "ok": true,
+    "detail": "Đã xóa tài khoản [TEST] Võ Minh Khoa. Các chứng từ liên quan vẫn được giữ nguyên."
+  },
+  {
+    "flow": "F5",
+    "step": "admin không tự đổi trạng thái mình (400)",
+    "ok": true,
+    "detail": "Bạn không thể đổi trạng thái tài khoản của chính mình."
+  },
+  {
+    "flow": "F6",
+    "step": "tạo KHO-DN, thủ kho U3",
+    "ok": true,
+    "detail": "Đã thêm [TEST] Kho Đà Nẵng (KHO-DN). Kho mới chưa có hàng."
+  },
+  {
+    "flow": "F6",
+    "step": "cảnh báo tăng theo số mặt hàng (9)",
+    "ok": true,
+    "detail": "6 -> 15"
+  },
+  {
+    "flow": "F6",
+    "step": "tạm ngưng DN -> cảnh báo về như cũ",
+    "ok": true,
+    "detail": "Đã tạm ngưng [TEST] Kho Đà Nẵng. Kho sẽ không xuất hiện khi lập phiếu và kiểm kê. low=6"
+  },
+  {
+    "flow": "F6",
+    "step": "xóa DN thành công",
+    "ok": true,
+    "detail": "Đã xóa [TEST] Kho Đà Nẵng. Chứng từ cũ của kho vẫn được giữ nguyên."
+  },
+  {
+    "flow": "BR-22",
+    "step": "tạm ngưng HCM còn phiếu chờ -> 400",
+    "ok": true,
+    "detail": "Không thể tạm ngưng Kho TP.HCM: còn 3 phiếu chờ duyệt. Hãy xử lý các phiếu này trước."
+  },
+  {
+    "flow": "F10",
+    "step": "kho HCM hiện cảnh báo thủ kho đã khóa",
+    "ok": true,
+    "detail": "Kho TP.HCM KHO-HCM, từ 01/03/2026 Xem tồn kho Thủ Đức, TP.HCM 0283 777 666 Lê Minh Cường 0903 333 333 Tài khoản đã khóa "
+  },
+  {
+    "flow": "F10",
+    "step": "sửa kho giữ nguyên keeper U3 (đã khóa) -> OK",
+    "ok": true,
+    "detail": "status=200"
+  },
+  {
+    "flow": "F10",
+    "step": "đổi keeper sang U4 (locked) -> 400",
+    "ok": true,
+    "detail": "Chỉ chọn được tài khoản đang hoạt động làm thủ kho."
+  },
+  {
+    "flow": "LOGOUT",
+    "step": "đăng xuất, /auth/me user=null",
+    "ok": true
+  }
+]

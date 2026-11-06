@@ -35,7 +35,7 @@ Tổng thời gian khoảng **30–40 phút**. Phần lâu nhất là Render bui
    Không quen dòng lệnh thì dùng **GitHub Desktop**: *Add existing repository* → *Publish repository*.
 4. Kiểm tra trên GitHub: ở thư mục gốc của repo phải thấy `Dockerfile`, `render.yaml`, `pom.xml`, `src/`.
 
-> File `.gitignore` đã loại sẵn thư mục `data/`, `uploads/` và `target/`, nên CSDL H2 trên máy bạn không bị đẩy lên.
+> File `.gitignore` đã loại sẵn thư mục `data/` và `target/`, nên CSDL H2 trên máy bạn không bị đẩy lên.
 
 ---
 
