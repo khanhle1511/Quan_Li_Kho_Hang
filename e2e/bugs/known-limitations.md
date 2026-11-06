@@ -14,5 +14,8 @@ Những điểm quan sát được khi đi qua toàn bộ luồng ngày 07/11/20
 | — | Seeder chạy **sau** khi Tomcat mở cổng, nên request đầu tiên ngay lúc khởi động lần đầu có thể thấy số 0 | Đúng như code | Chỉ ảnh hưởng lần chạy đầu với CSDL trống; test nên đợi `/api/public/summary` trả `warehouses > 0`. |
 | USR-07 | Lịch sử hoạt động của tài khoản **đã xóa**: API `/api/users/{id}/activity` trả 404 dù nhật ký vẫn còn trong CSDL (TC-USR-07-10) | Đúng như đặc tả USR-07 mục 6 | Cân nhắc cho Admin xem lịch sử tài khoản đã xóa (tra theo user_id, bỏ kiểm tra tồn tại). |
 | USR-07 | Lịch sử **suy ra** từ chứng từ cũ dò người duyệt/xác nhận/tải hồ sơ theo **tên**; hai tài khoản trùng tên có thể bị gán nhầm. Thao tác chỉ ở trình duyệt (mở phiên kiểm kê) không được ghi | Đúng như đặc tả USR-07 mục 6 | Dòng suy ra có nhãn "Suy ra từ chứng từ". |
+| RCPT-10 | Thẻ kho qua API: `/api/state.history[]` vẫn trả delta/after của phiếu do Admin lập cho Quản lý kho (chỉ che trên giao diện) (TC-RCPT-10-13) | Đúng như đặc tả RCPT-10 mục 5 | Cân nhắc che ở máy chủ; lưu ý tồn hiện tại vẫn hiển thị nên chênh lệch tồn cũng suy ra được. |
+| RCPT-10 | Phiếu do tài khoản Admin **đã xóa** lập không tra được vai trò nên **không bị che** với Quản lý kho | Đúng như đặc tả RCPT-10 mục 5 | Liên quan việc xóa cứng tài khoản (xem thêm BUG-011). |
+| RCPT-10 | Phiếu **xuất** do Admin lập chỉ một Admin khác duyệt được (BR-09 + BR-26); hệ thống chỉ có một Admin thì phiếu đó không ai duyệt được | Đúng như đặc tả RCPT-10 mục 3 | Có thể nới cho Admin tự duyệt phiếu của mình nếu nghiệp vụ cho phép. |
 
 Các RISK chưa kiểm tra: 01, 02, 03 (đồng thời), 05, 08, 09, 13, 14, 15, 16, 18, 19, 20, 21. Viết test `risk_…` trong `e2e/tests/` cho từng mục.

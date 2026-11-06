@@ -59,7 +59,12 @@ public class StateService {
         // BUG-010: SĐT người dùng (cũng là tên đăng nhập) chỉ Admin được xem, không gắn với quyền xem SĐT kho
         boolean showUserPhone = Rules.ADMIN.equals(role);
 
-        List<Map<String, Object>> userList = users.findAll().stream()
+        List<UserAccount> allUsers = users.findAll();
+        // RCPT-10: vai trò người lập phiếu (tài khoản đã xóa: không tra được → null, không che)
+        Map<String, String> roleOf = allUsers.stream().collect(Collectors.toMap(u -> u.id, u -> u.role));
+        boolean viewerIsManager = Rules.MANAGER.equals(role);
+
+        List<Map<String, Object>> userList = allUsers.stream()
                 .sorted(Comparator.comparingInt((UserAccount u) -> u.id.length()).thenComparing(u -> u.id))
                 .map(u -> m("id", u.id, "name", u.name, "phone", showUserPhone ? u.phone : null,
                         "role", u.role, "opened", u.opened, "status", u.status))
@@ -89,13 +94,25 @@ public class StateService {
         Map<String, List<ReceiptLine>> linesBy = lines.findAllByOrderByIdAsc().stream()
                 .collect(Collectors.groupingBy(l -> l.receiptId));
         List<Receipt> rs = receipts.findAllByOrderBySortKeyDesc();
-        List<Map<String, Object>> receiptList = rs.stream().map(r -> m("id", r.id, "code", r.id, "type", r.receiptType,
-                "partner", r.partnerId, "wh", r.warehouseId, "date", r.createdAt, "status", r.status,
-                "creator", r.creatorName, "creatorId", r.creatorId, "approver", nz(r.approverName), "note", nz(r.note),
-                "lines", linesBy.getOrDefault(r.id, List.of()).stream().map(l -> m("pid", l.productId, "qty", l.qty)).toList()
-        )).toList();
+        // Phiếu duyệt trước khi có cột decided_at: lấy thời điểm từ dòng thẻ kho đầu tiên của phiếu
+        List<StockHistory> histAll = history.findAllByOrderByIdDesc();
+        Map<String, String> firstMove = new HashMap<>();
+        for (StockHistory h : histAll) firstMove.put(h.ref, h.happenedAt); // duyệt từ mới → cũ, giá trị cuối là dòng cũ nhất
+        List<Map<String, Object>> receiptList = rs.stream().map(r -> {
+            List<ReceiptLine> ls = linesBy.getOrDefault(r.id, List.of());
+            String creatorRole = r.creatorId == null ? null : roleOf.get(r.creatorId);
+            // BR-25 (RCPT-10): Quản lý kho không xem số liệu phiếu do Quản trị viên lập: bỏ dòng hàng và ghi chú
+            boolean masked = viewerIsManager && Rules.ADMIN.equals(creatorRole);
+            return m("id", r.id, "code", r.id, "type", r.receiptType,
+                    "partner", r.partnerId, "wh", r.warehouseId, "date", r.createdAt, "status", r.status,
+                    "creator", r.creatorName, "creatorId", r.creatorId, "creatorRole", creatorRole,
+                    "approver", nz(r.approverName), "note", masked ? "" : nz(r.note),
+                    "decidedAt", r.decidedAt != null ? r.decidedAt : Rules.APPROVED.equals(r.status) ? firstMove.get(r.id) : null,
+                    "masked", masked, "lineCount", ls.size(),
+                    "lines", masked ? List.of() : ls.stream().map(l -> m("pid", l.productId, "qty", l.qty)).toList());
+        }).toList();
 
-        List<Map<String, Object>> historyList = history.findAllByOrderByIdDesc().stream()
+        List<Map<String, Object>> historyList = histAll.stream()
                 .map(h -> m("t", h.happenedAt, "pid", h.productId, "wh", h.warehouseId, "kind", h.kind,
                         "delta", h.delta, "after", h.qtyAfter, "ref", h.ref))
                 .toList();

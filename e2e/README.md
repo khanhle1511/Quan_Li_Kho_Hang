@@ -78,7 +78,7 @@ e2e/
 ├── config-worker.ts       số worker chạy song song (sửa ở đây)
 ├── playwright.config.ts   baseURL: BASE_URL > test:online > localhost:8080; 1 worker khi chạy online
 ├── global-setup.ts        đánh thức máy chủ (Render ngủ sau 15 phút)
-├── features/            kịch bản BDD (Gherkin tiếng Việt) theo QLKho_Test_Tracker + USR-07: 67 tính năng, 187 TC – xem features/README.md
+├── features/            kịch bản BDD (Gherkin tiếng Việt) theo QLKho_Test_Tracker + USR-07 + RCPT-10: 68 tính năng, 202 TC – xem features/README.md
 ├── steps/               step definition cho features/ (playwright-bdd) – npm run bdd, bdd:smoke, bdd:after-reset, bdd:regression, bdd:exclusive
 ├── helpers/app.ts         tài khoản, gotoLogin / uiLogin / nav / toast / apiLogin
 ├── helpers/selectors.ts   toàn bộ selector giao diện đã tra từ index.html (dùng lại, không tra lại)

@@ -31,10 +31,13 @@ public class InventoryService {
     private final StocktakeRepo stocktakes;
     /** BUG-005: mã phiếu/kiểm kê sinh theo "mã lớn nhất + 1" nên việc tạo mới phải chạy tuần tự, xem {@link CreateTx}. */
     private final CreateTx create;
+    /** RCPT-10: tra vai trò người lập phiếu (BR-26). */
+    private final UserRepo users;
 
     public InventoryService(ProductRepo products, WarehouseRepo warehouses, StockRepo stocks, PartnerRepo partners,
                             ReceiptRepo receipts, ReceiptLineRepo lines, StockHistoryRepo history, StocktakeRepo stocktakes,
-                            CreateTx create) {
+                            CreateTx create, UserRepo users) {
+        this.users = users;
         this.products = products;
         this.warehouses = warehouses;
         this.stocks = stocks;
@@ -136,6 +139,7 @@ public class InventoryService {
         r.createdAt = Rules.now();
         r.status = autoApprove ? Rules.APPROVED : Rules.PENDING;
         r.approverName = autoApprove ? me.name : null;
+        r.decidedAt = autoApprove ? r.createdAt : null; // duyệt ngay = cùng thời điểm lập
         r.creatorId = me.id;
         r.creatorName = me.name;
         r.note = Rules.trim(req.note());
@@ -148,6 +152,16 @@ public class InventoryService {
     }
 
     // ---------- UC04: duyệt / từ chối ----------
+    /**
+     * BR-26 (RCPT-10): Quản lý kho không duyệt / từ chối phiếu do Quản trị viên lập.
+     * Tài khoản người lập đã bị xóa thì không tra được vai trò → không chặn (hạn chế đã biết).
+     */
+    private void checkCanDecide(Receipt r, UserAccount me) {
+        if (!Rules.MANAGER.equals(me.role) || r.creatorId == null) return;
+        boolean byAdmin = users.findById(r.creatorId).map(u -> Rules.ADMIN.equals(u.role)).orElse(false);
+        if (byAdmin) throw new ApiException(403, "Phiếu " + r.id + " do Quản trị viên lập; Quản lý kho không được xử lý.");
+    }
+
     private Receipt pendingReceipt(String id) {
         Receipt r = receipts.findById(id).orElseThrow(() -> ApiException.notFound("Không tìm thấy phiếu " + id + "."));
         if (!Rules.PENDING.equals(r.status)) throw ApiException.bad("Phiếu " + id + " đã được xử lý trước đó.");
@@ -160,13 +174,14 @@ public class InventoryService {
      * Nếu bước sau ném lỗi (không đủ tồn…) thì transaction rollback và phiếu trở lại chờ duyệt.
      */
     private void finish(Receipt r, String status, UserAccount me) {
-        if (receipts.finishPending(r.id, status, me.name) != 1)
+        if (receipts.finishPending(r.id, status, me.name, Rules.now()) != 1)
             throw ApiException.bad("Phiếu " + r.id + " đã được xử lý trước đó.");
     }
 
     @Transactional
     public Map<String, Object> approve(String id, UserAccount me) {
         Receipt r = pendingReceipt(id);
+        checkCanDecide(r, me);
         if (me.id.equals(r.creatorId)) throw ApiException.bad("Bạn không thể tự duyệt phiếu do chính mình lập.");
         finish(r, Rules.APPROVED, me);
         Warehouse w = warehouses.findById(r.warehouseId).orElseThrow(() -> ApiException.bad("Kho của phiếu không còn tồn tại."));
@@ -208,6 +223,7 @@ public class InventoryService {
     @Transactional
     public Map<String, Object> reject(String id, UserAccount me) {
         Receipt r = pendingReceipt(id);
+        checkCanDecide(r, me);
         finish(r, Rules.CANCELLED, me);
         return Map.of("code", r.id);
     }

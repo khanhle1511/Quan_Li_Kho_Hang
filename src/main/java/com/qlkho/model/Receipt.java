@@ -17,6 +17,8 @@ public class Receipt {
     @Column(length = 20) public String creatorId;
     @Column(length = 100) public String creatorName;
     @Column(length = 100) public String approverName;
+    /** Thời điểm duyệt / từ chối (dd/MM/yyyy HH:mm); null khi còn chờ duyệt hoặc phiếu cũ trước khi có cột này */
+    @Column(length = 20) public String decidedAt;
     @Column(length = 500) public String note;
     /** Dùng để sắp xếp: mới nhất lên đầu */
     public long sortKey;

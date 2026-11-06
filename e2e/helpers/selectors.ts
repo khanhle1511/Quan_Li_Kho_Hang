@@ -120,6 +120,19 @@ export const SEL = {
 
   // ---- Người dùng (viewUsers 1520, viewDeleteDialog 1504) ----
   userRow: '#user-table .trow',
+  // ---- RCPT-10: sổ phiếu nhập/xuất + popup chi tiết (viewReceiptBook, viewReceiptDialog) ----
+  rbRow: '#rb-list .trow',                         // cột: mã (rc-link), loại, ngày/người lập, đối tác, kho, hàng hóa ("•••" nếu che), tổng SL, trạng thái, Xem
+  rbQ: '[data-fid="rb-q"]',
+  rbSub: '#rb-list .cardhead .muted',              // "Hiển thị 1–10 / 305 phiếu. …" (phân trang 10 phiếu/trang)
+  pager: '#rb-list .pager',                        // "Trang x / y"; nút data-page="prev" | "next" | số trang
+  rbDecided: '.decided',                           // ô "Thời gian duyệt": thời điểm | "Từ chối lúc …" | "Đợi duyệt"
+  statTile: 'main .stat',                          // thẻ số liệu (bấm để lọc khi là nút)
+  rcLink: 'button.rc-link',                        // mã phiếu bấm được (data-code) ở sổ phiếu, Nhập/Xuất kho, chi tiết đối tác
+  rcvDialog: '.dialog.rcv',                        // popup chi tiết phiếu; .rcv-info (đối tác/kho/người lập/người duyệt), .rcv-lines, .rcv-move
+  rcvTitle: '#rcv-title',
+  rcvMove: '.rcv-move',
+  overlay: '.overlay',
+  actRc: 'button.act-rc',                          // dòng phiếu bấm được trong lịch sử hoạt động (data-code)
   // ---- USR-07: lịch sử hoạt động (viewActivity) ----
   userNameBtn: 'button.ulink',                     // tên trong bảng Người dùng, bấm để mở lịch sử (aria-label "Xem lịch sử hoạt động của …")
   actOverlay: '.overlay-right',                    // nền tối; bấm vào nền (ngoài .drawer) thì đóng

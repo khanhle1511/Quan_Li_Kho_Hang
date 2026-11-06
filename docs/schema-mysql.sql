@@ -146,3 +146,6 @@ CREATE TABLE nhat_ky_hoat_dong (
   by_other     VARCHAR(100),                   -- tên người khác đã thực hiện lên tài khoản này (Admin khóa, sửa…)
   INDEX idx_nk_user (user_id)
 );
+
+-- RCPT-10 (bổ sung): thời điểm duyệt / từ chối phiếu; null khi còn chờ duyệt. Hibernate tự thêm cột (ddl-auto=update).
+-- ALTER TABLE phieu ADD COLUMN decided_at VARCHAR(20);

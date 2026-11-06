@@ -159,6 +159,7 @@ Mọi lỗi đều trả về JSON dạng `{"error": "..."}`: lỗi nghiệp v�
 - Phiếu chỉ cộng/trừ tồn khi được duyệt.
 - **Phiếu nhập do Quản lý kho hoặc Admin lập được duyệt ngay khi lưu** (cộng tồn, ghi thẻ kho). Phiếu của Nhân viên kho phải chờ Quản lý kho / Admin duyệt.
 - **Phiếu xuất: người lập không được tự duyệt phiếu của mình.**
+- **Phiếu do Quản trị viên lập:** Quản lý kho chỉ thấy mã, loại, đối tác, kho; dòng hàng, số lượng, giá trị, ghi chú bị lược ở máy chủ (BR-25), và Quản lý kho không duyệt / từ chối được (BR-26, API trả 403). Vì người lập không tự duyệt được phiếu xuất, phiếu xuất của Admin cần một Admin khác duyệt.
 - Phiếu xuất được kiểm tra tồn **hai lần**: khi lập và khi duyệt.
 - Tồn không bao giờ âm. Mọi biến động đều ghi vào thẻ kho, và duyệt phiếu, kiểm kê đều chạy trong transaction.
 - Chỉ xóa được tài khoản **đã khóa**, và chỉ xóa được kho **đã tạm ngưng và hết hàng**. Chứng từ cũ luôn được giữ lại.

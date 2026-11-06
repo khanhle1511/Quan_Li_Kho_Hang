@@ -14,8 +14,8 @@ public interface ReceiptRepo extends JpaRepository<Receipt, String> {
      * CSDL khóa dòng khi UPDATE nên các request đồng thời chạy tuần tự và chỉ một request thấy status = pending.
      */
     @Modifying
-    @Query("update Receipt r set r.status = :status, r.approverName = :approverName where r.id = :id and r.status = 'pending'")
-    int finishPending(String id, String status, String approverName);
+    @Query("update Receipt r set r.status = :status, r.approverName = :approverName, r.decidedAt = :decidedAt where r.id = :id and r.status = 'pending'")
+    int finishPending(String id, String status, String approverName, String decidedAt);
 
     List<Receipt> findAllByOrderBySortKeyDesc();
     long countByStatus(String status);

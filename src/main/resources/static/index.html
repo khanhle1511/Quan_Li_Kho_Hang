@@ -285,6 +285,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     stocktake: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
     inventory: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>',
     alerts: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    receipts: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/>',
     reports: '<path d="M3 3v18h18"/><path d="M8 17v-6"/><path d="M13 17V7"/><path d="M18 17v-4"/>',
     products: '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
     partners: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
@@ -391,6 +392,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       wf: { open: false, mode: 'create', id: null, code: '', name: '', address: '', keeperId: '', phone: '', capacity: '', opened: '', status: 'active', err: '' },
       pform: { open: false, mode: 'create', id: null, name: '', phone: '', email: '', address: '', note: '', err: '' },
       pq: '', pfil: 'all', pdetail: null, pnote: '',
+      rb: { q: '', type: 'all', status: 'all', wh: 'all', admin: false, page: 1 }, // RCPT-10: bộ lọc sổ phiếu
+      rview: null, // RCPT-10: mã phiếu đang mở popup
       act: null, // USR-07: { id, data, err, cat, q } khi bảng lịch sử đang mở
       toast: null
     };
@@ -633,6 +636,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     dashboard: ['Tổng quan', 'Tình hình kho hôm nay và các việc cần xử lý'],
     in: ['Nhập kho', 'Lập phiếu nhập, Quản lý kho duyệt để cộng tồn (FR-07, FR-08)'],
     out: ['Xuất kho', 'Lập phiếu xuất có kiểm tra tồn, duyệt để trừ tồn (FR-09, FR-10)'],
+    receipts: ['Phiếu nhập/xuất', 'Toàn bộ phiếu nhập và xuất: tìm kiếm, lọc và xem chi tiết từng phiếu (FR-07 → FR-10)'],
     stocktake: ['Kiểm kê', 'Đối chiếu tồn hệ thống với thực tế và điều chỉnh chênh lệch (FR-12, FR-13)'],
     inventory: ['Tồn kho', 'Tra cứu tồn theo mặt hàng, theo kho và xem thẻ kho (FR-11, FR-15)'],
     alerts: ['Cảnh báo tồn thấp', 'Các mặt hàng có tồn ≤ mức tối thiểu (FR-14)'],
@@ -750,7 +754,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     return '<aside>' +
       '<div style="display:flex;align-items:center;gap:10px;padding:4px 8px 12px"><div class="logo" style="width:36px;height:36px">' + svg('box', 20) + '</div><div><div style="font-weight:700;font-size:16px">Quản lý kho</div><div class="muted small">Warehouse Management</div></div></div>' +
       item('dashboard', 'Tổng quan') +
-      '<div class="navgroup">Nghiệp vụ</div>' + item('in', 'Nhập kho') + item('out', 'Xuất kho') + item('stocktake', 'Kiểm kê') +
+      '<div class="navgroup">Nghiệp vụ</div>' + item('in', 'Nhập kho') + item('out', 'Xuất kho') + item('stocktake', 'Kiểm kê') + (canApprove() ? item('receipts', 'Phiếu nhập/xuất') : '') +
       '<div class="navgroup">Theo dõi</div>' + item('inventory', 'Tồn kho') + item('alerts', 'Cảnh báo tồn thấp', low.length ? '<span class="badge">' + low.length + '</span>' : '') + item('reports', 'Báo cáo') +
       '<div class="navgroup">Danh mục</div>' + item('products', 'Hàng hóa') + item('suppliers', 'Nhà cung cấp') + item('customers', 'Khách hàng') + item('warehouses', 'Kho') +
       (isAdmin() ? '<div class="navgroup">Hệ thống</div>' + item('users', 'Người dùng') : '') +
@@ -858,14 +862,14 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       (pending.length ? '' : '<div style="padding:20px" class="muted">Không có phiếu nào đang chờ duyệt.</div>') +
       pending.slice(0, 5).map((r) => '<div class="listrow"><span class="ktile" style="width:36px;height:36px;background:' + (r.type === 'in' ? '#E8F4EE' : '#FDECEC') + ';color:' + (r.type === 'in' ? '#13643A' : '#A01F17') + '">' + svg(r.type, 18) + '</span>' +
         '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">' + esc(r.code) + ' <span class="muted" style="font-weight:400">' + (r.type === 'in' ? 'Phiếu nhập' : 'Phiếu xuất') + '</span></div><div class="muted small">' + esc(partnerName(r.partner)) + '</div><div class="muted small">' + esc(whName(r.wh) + ', ' + r.date) + '</div></div>' +
-        (canApprove() && r.creatorId !== S.meUser ? btn('Duyệt', () => approve(r.id), 'btn-sm btn-primary') : btn('Mở', () => go(r.type), 'btn-sm')) + '</div>').join('') + '</section>';
+        (canApprove() && r.creatorId !== S.meUser && !r.masked ? btn('Duyệt', () => approve(r.id), 'btn-sm btn-primary') : btn('Mở', () => (canApprove() ? openReceipt(r.code) : go(r.type)), 'btn-sm')) + '</div>').join('') + '</section>';
 
     // Activity timeline
     const KIND = { 'Nhập': ['in', '#E8F4EE', '#13643A'], 'Xuất': ['out', '#FDECEC', '#A01F17'], 'Kiểm kê': ['stocktake', '#EFEAFE', '#5B3FB6'] };
     const hist = S.history.slice(0, 6);
     const actCard = '<section class="card" style="flex:1 1 320px;min-width:0"><div class="cardhead"><h2 class="h2">Hoạt động gần đây</h2>' + btn('Tồn kho', () => go('inventory'), 'btn-sm btn-ghost btn-link') + '</div><div>' +
       hist.map((h) => { const k = KIND[h.kind] || KIND['Kiểm kê']; return '<div class="tl"><span class="tdot" style="background:' + k[1] + ';color:' + k[2] + '">' + svg(k[0], 15) + '</span>' +
-        '<div style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:500;font-size:14px">' + esc(prod(h.pid).name) + '</span><span style="font-weight:600;font-size:14px;color:' + deltaColor(h.delta) + '">' + sign(h.delta) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:500;font-size:14px">' + esc(prod(h.pid).name) + '</span>' + (maskedRefs().has(h.ref) ? '<span class="masked-val" style="font-weight:600;font-size:14px">' + MASK + '</span>' : '<span style="font-weight:600;font-size:14px;color:' + deltaColor(h.delta) + '">' + sign(h.delta) + '</span>') + '</div>' +
         '<div class="muted small">' + esc(h.kind + ' tại ' + whName(h.wh) + ', ' + h.ref) + '</div><div class="muted small">' + esc(h.t) + '</div></div>'; }).join('') +
       (hist.length ? '' : '<div style="padding:20px" class="muted">Chưa có hoạt động.</div>') + '</div></section>';
 
@@ -979,12 +983,12 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       table(cols, ['Mã phiếu', 'Ngày lập', isIn ? 'Nhà cung cấp' : 'Đơn vị nhận', 'Kho', 'Hàng hóa', 'Trạng thái', 'Thao tác'],
         shown.map((r) => {
           const mine = r.creatorId === S.meUser;
-          const canAct = canApprove() && r.status === 'pending' && !mine;
-          const info = r.status === 'pending' ? (canApprove() && mine ? 'Phiếu do bạn lập, cần người khác duyệt' : 'Chờ Quản lý kho') : (r.status === 'approved' ? 'Duyệt: ' : 'Bởi: ') + r.approver;
+          const canAct = canApprove() && r.status === 'pending' && !mine && !r.masked;
+          const info = r.masked ? 'Chỉ Admin xem' : r.status === 'pending' ? (canApprove() && mine ? 'Phiếu do bạn lập, cần người khác duyệt' : 'Chờ Quản lý kho') : (r.status === 'approved' ? 'Duyệt: ' : 'Bởi: ') + r.approver;
           const q = r.lines.reduce((a, l) => a + l.qty, 0);
-          return [cell('<span style="display:flex;align-items:center;gap:10px"><span class="ktile" style="width:32px;height:32px;background:' + ac.bg + ';color:' + ac.fg + '">' + svg(t, 16) + '</span><span class="col"><b>' + esc(r.code) + '</b><span class="muted small">' + fmt(q) + ' đơn vị</span></span></span>'),
+          return [cell('<span style="display:flex;align-items:center;gap:10px"><span class="ktile" style="width:32px;height:32px;background:' + ac.bg + ';color:' + ac.fg + '">' + svg(t, 16) + '</span><span class="col">' + rcLink(r.code) + '<span class="muted small">' + (r.masked ? '•••' : fmt(q)) + ' đơn vị</span></span></span>'),
             cell('<span style="display:block">' + esc(r.date) + '</span><span class="muted small">Lập: ' + esc(r.creator) + '</span>'), cell(esc(partnerName(r.partner))), cell(esc(whName(r.wh))),
-            cell(esc(r.lines.map((l) => prod(l.pid).name + ' × ' + fmt(l.qty)).join('; ')), 'font-size:13px'), cell(chip(ST[r.status])),
+            cell(r.masked ? MASK + ' <span class="muted small">' + fmt(r.lineCount) + ' mặt hàng, số liệu được che</span>' : esc(r.lines.map((l) => prod(l.pid).name + ' × ' + fmt(l.qty)).join('; ')), 'font-size:13px'), cell(chip(ST[r.status])),
             cell(canAct ? btn('Duyệt', () => approve(r.id), 'btn-sm btn-primary') + btn('Từ chối', () => reject(r.id), 'btn-sm') : '<span class="muted small">' + esc(info) + '</span>', 'display:flex;gap:6px;flex-wrap:wrap;align-items:center')];
         }), 1060, 'Không có phiếu nào ở trạng thái này.') + '</section>';
 
@@ -1071,8 +1075,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     let card = '';
     const p = iv.card ? S.products.find((x) => x.id === iv.card) : null;
     if (p) {
-      const hs = S.history.filter((h) => h.pid === p.id);
-      const tin = hs.filter((h) => h.kind === 'Nhập').reduce((a, h) => a + h.delta, 0), tout = hs.filter((h) => h.kind === 'Xuất').reduce((a, h) => a - h.delta, 0);
+      const hs = S.history.filter((h) => h.pid === p.id); const mk = maskedRefs(); const hsv = hs.filter((h) => !mk.has(h.ref));
+      const tin = hsv.filter((h) => h.kind === 'Nhập').reduce((a, h) => a + h.delta, 0), tout = hsv.filter((h) => h.kind === 'Xuất').reduce((a, h) => a - h.delta, 0);
       const KIND = { 'Nhập': ['in', '#E8F4EE', '#13643A'], 'Xuất': ['out', '#FDECEC', '#A01F17'], 'Kiểm kê': ['stocktake', '#EFEAFE', '#5B3FB6'] };
       card = '<section class="card" style="box-shadow:0 2px 4px rgba(16,24,40,.06),0 18px 40px rgba(16,24,40,.12)">' +
         head('reports', '#0F2742', '#FFFFFF', 'Thẻ kho: ' + esc(p.name), esc(p.sku + ', ' + p.cat + ', đơn vị ' + p.unit), btn('Đóng', () => upd((n) => { n.inv.card = null; }), 'btn-sm')) +
@@ -1080,7 +1084,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
         S.warehouses.map((w) => { const v = have(p.id, w.id); return '<div class="mini"><span class="muted small">' + esc(w.name) + '</span><b>' + fmt(v) + '</b>' + chip(level(v, p.min)) + '</div>'; }).join('') +
         '<div class="mini"><span class="muted small">Tổng nhập</span><b style="color:#13643A">+' + fmt(tin) + '</b></div><div class="mini"><span class="muted small">Tổng xuất</span><b style="color:#A01F17">−' + fmt(tout) + '</b></div>' +
         '<div class="mini"><span class="muted small">Mức tối thiểu / kho</span><b>' + fmt(p.min) + '</b></div></div>' +
-        (hs.length ? '<div>' + hs.map((h) => { const k = KIND[h.kind] || KIND['Kiểm kê']; return tl(k[0], k[1], k[2], esc(h.kind + ' tại ' + whName(h.wh)), sign(h.delta), deltaColor(h.delta), esc('Chứng từ ' + h.ref + ', tồn sau ' + fmt(h.after) + ' ' + p.unit), esc(h.t)); }).join('') + '</div>'
+        (hs.length ? '<div>' + hs.map((h) => { const k = KIND[h.kind] || KIND['Kiểm kê']; return mk.has(h.ref) ? tl(k[0], k[1], k[2], esc(h.kind + ' tại ' + whName(h.wh)), MASK, '#56606B', esc('Chứng từ ' + h.ref + ', phiếu do Quản trị viên lập, số liệu được che'), esc(h.t)) : tl(k[0], k[1], k[2], esc(h.kind + ' tại ' + whName(h.wh)), sign(h.delta), deltaColor(h.delta), esc('Chứng từ ' + h.ref + ', tồn sau ' + fmt(h.after) + ' ' + p.unit), esc(h.t)); }).join('') + '</div>'
           : '<div style="padding:20px" class="muted">Mặt hàng này chưa có biến động nào.</div>') + '</section>';
     }
     const whOpts = [{ id: 'all', name: 'Tất cả kho' }].concat(S.warehouses);
@@ -1216,7 +1220,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
           cell(btn('Mở phiếu', () => { upd((n) => { n.screen = l.type; n.rcf[l.type] = 'pending'; }); scrollToId('rc-list'); }, 'btn-sm'))]; }), 900, 'Không có hàng hóa nào đang chờ duyệt.');
     } else if (tab === 'history') {
       body = table('110px 150px 110px minmax(220px,2fr) 120px', ['Mã phiếu', 'Ngày lập', 'Kho', 'Hàng hóa', 'Trạng thái'],
-        st.receipts.map((r) => [cell('<b>' + esc(r.code) + '</b>'), cell(esc(r.date)), cell(esc(whName(r.wh))), cell(esc(r.lines.map((l) => prod(l.pid).name + ' × ' + fmt(l.qty)).join('; ')), 'font-size:13px'), cell(chip(ST[r.status]))]), 760, 'Chưa có phiếu nào với đối tác này.');
+        st.receipts.map((r) => [cell(rcLink(r.code)), cell(esc(r.date)), cell(esc(whName(r.wh))), cell(r.masked ? MASK + ' <span class="muted small">' + fmt(r.lineCount) + ' mặt hàng, số liệu được che</span>' : esc(r.lines.map((l) => prod(l.pid).name + ' × ' + fmt(l.qty)).join('; ')), 'font-size:13px'), cell(chip(ST[r.status]))]), 760, 'Chưa có phiếu nào với đối tác này.');
     } else {
       const rows = (tab === 'instock' ? st.inStock : st.items);
       body = table('100px minmax(200px,2fr) 110px 120px 120px 120px 150px', ['SKU', 'Hàng hóa', 'Kho', { t: isSup ? 'Đã nhập' : 'Đã xuất', r: 1 }, { t: 'Tồn hiện tại', r: 1 }, 'Tình trạng', 'Chứng từ'],
@@ -1604,6 +1608,133 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       '</section></div>';
   }
 
+  // ---------- RCPT-10: sổ phiếu nhập/xuất + popup chi tiết ----------
+  const MASK = '<span class="masked" title="Phiếu do Quản trị viên lập, số liệu được che">•••</span>';
+  /** Mã các phiếu bị che với người xem hiện tại (Quản lý kho xem phiếu do Admin lập). */
+  const maskedRefs = () => { const m = new Set(); S.receipts.forEach((r) => { if (r.masked) m.add(r.code); }); return m; };
+  const rcLink = (code) => '<button type="button" class="ulink rc-link" data-code="' + esc(code) + '" data-c="' + on(() => openReceipt(code)) + '" title="Xem chi tiết phiếu">' + esc(code) + '</button>';
+  function openReceipt(code) { hpHide(); upd((n) => { n.rview = code; }); }
+  /** Từ lịch sử hoạt động: đóng bảng lịch sử, chuyển sang tab Phiếu nhập/xuất và mở đúng phiếu. */
+  function openReceiptFromActivity(code) {
+    upd((n) => { n.act = null; n.screen = canApprove() ? 'receipts' : n.screen; n.rview = code; });
+    window.scrollTo(0, 0);
+  }
+  const closeReceipt = () => upd((n) => { n.rview = null; });
+  const ADMIN_CHIP = { t: 'Admin cập nhật phiếu', bg: '#ECEDFE', fg: '#3B3FB6' };
+
+  const RB_PER_PAGE = 10;
+  /** Cột "Thời gian duyệt": đã duyệt → thời điểm; đã từ chối → "Từ chối lúc …"; còn chờ → "Đợi duyệt". */
+  const decidedCell = (r) => r.status === 'pending'
+    ? '<span class="decided pending" style="font-size:13px;font-weight:600;color:#8A4B00">Đợi duyệt</span>'
+    : r.status === 'cancelled'
+      ? '<span class="decided" style="font-size:13px"><span class="muted small" style="display:block">Từ chối lúc</span>' + esc(r.decidedAt || '—') + '</span>'
+      : '<span class="decided" style="font-size:13px">' + esc(r.decidedAt || '—') + '</span>';
+  /** Thanh chuyển trang: « Trước · 1 2 … n · Sau » (ẩn khi chỉ có 1 trang). */
+  function pager(pg, pages, goTo) {
+    if (pages <= 1) return '';
+    const nums = []; for (let i = 1; i <= pages; i++) if (i === 1 || i === pages || Math.abs(i - pg) <= 1) nums.push(i);
+    let html = ''; let prev = 0;
+    nums.forEach((i) => { if (i - prev > 1) html += '<span class="muted" style="padding:0 4px">…</span>'; prev = i;
+      html += '<button type="button" class="pill' + (i === pg ? ' on' : '') + '" data-page="' + i + '" aria-label="Trang ' + i + '"' + (i === pg ? ' aria-current="page"' : '') + ' data-c="' + on(() => { goTo(i); scrollToId('rb-list'); }) + '">' + i + '</button>'; });
+    const nav = (label, to, dis, key) => '<button type="button" class="btn btn-sm" data-page="' + key + '"' + (dis ? ' disabled' : ' data-c="' + on(() => { goTo(to); scrollToId('rb-list'); }) + '"') + '>' + label + '</button>';
+    return '<div class="pager wrap g8" style="padding:14px 20px;justify-content:space-between;align-items:center;border-top:1px solid #EEF1F4">' +
+      '<span class="muted small">Trang ' + pg + ' / ' + pages + '</span><span class="wrap g8" style="align-items:center">' +
+      nav('‹ Trước', pg - 1, pg === 1, 'prev') + html + nav('Sau ›', pg + 1, pg === pages, 'next') + '</span></div>';
+  }
+  function viewReceiptBook() {
+    const b = S.rb; const mgr = S.role === 'manager'; const all = S.receipts;
+    const cnt = { pending: 0, approved: 0, cancelled: 0 }; all.forEach((r) => { cnt[r.status] = (cnt[r.status] || 0) + 1; });
+    const nIn = all.filter((r) => r.type === 'in').length; const nAdmin = all.filter((r) => r.masked).length;
+    const tile = (key, label, value, icon, bg, fg, sub, color) => ({ label, value: fmt(value), icon, bg, fg, sub, color,
+      on: key === 'admin' ? b.admin : key !== 'all' && b.status === key,
+      go: () => upd((n) => { n.rb.page = 1; if (key === 'all') { n.rb.status = 'all'; n.rb.admin = false; } else if (key === 'admin') n.rb.admin = !n.rb.admin; else n.rb.status = n.rb.status === key ? 'all' : key; }) });
+    const tiles = [
+      tile('all', 'Tổng số phiếu', all.length, 'receipts', '#E6EFFF', '#1A4FB8', nIn + ' nhập, ' + (all.length - nIn) + ' xuất'),
+      tile('pending', 'Chờ duyệt', cnt.pending, 'stocktake', '#FFF3D1', '#8A5A00', 'cần xử lý', cnt.pending ? '#8A4B00' : null),
+      tile('approved', 'Đã duyệt', cnt.approved, 'check', '#E8F4EE', '#13643A', 'đã cập nhật tồn'),
+      tile('cancelled', 'Đã từ chối', cnt.cancelled, 'x', '#ECEEF1', '#454F5B', 'không ảnh hưởng tồn')];
+    if (mgr) tiles.push(tile('admin', 'Phiếu do Admin lập', nAdmin, 'lock', '#ECEDFE', '#3B3FB6', 'số liệu được che'));
+    const q = b.q.trim().toLowerCase();
+    const text = (r) => [r.code, partnerName(r.partner), r.partner, whName(r.wh), r.creator, r.approver, r.note]
+      .concat(r.lines.map((l) => prod(l.pid).name + ' ' + prod(l.pid).sku)).join(' ').toLowerCase();
+    const shown = all.filter((r) => (b.type === 'all' || r.type === b.type) && (b.status === 'all' || r.status === b.status) &&
+      (b.wh === 'all' || r.wh === b.wh) && (!b.admin || r.masked) && (!q || text(r).includes(q)));
+    const setRb = (k, v) => () => upd((n) => { n.rb[k] = v; n.rb.page = 1; });
+    const filters = '<div class="card wrap g16" style="padding:16px 20px;align-items:flex-end">' +
+      '<label class="field" style="flex:1 1 300px;max-width:440px">Tìm phiếu<span class="ifield"><span class="lead">' + svg('search', 18) + '</span>' + input('rb-q', b.q, val((v) => upd((n) => { n.rb.q = v; n.rb.page = 1; })), 'placeholder="Mã phiếu, đối tác, hàng hóa, người lập, ghi chú…"') + '</span></label>' +
+      '<div class="col" style="gap:6px"><span class="lbl">Loại</span>' + pills([['all', 'Tất cả'], ['in', 'Nhập'], ['out', 'Xuất']].map((o) => ({ label: o[1], on: b.type === o[0], pick: setRb('type', o[0]) }))) + '</div>' +
+      '<div class="col" style="gap:6px"><span class="lbl">Trạng thái</span>' + pills([['all', 'Tất cả'], ['pending', 'Chờ duyệt'], ['approved', 'Đã duyệt'], ['cancelled', 'Đã từ chối']].map((o) => ({ label: o[1], on: b.status === o[0], pick: setRb('status', o[0]) }))) + '</div>' +
+      '<div class="col" style="gap:6px"><span class="lbl">Kho</span>' + pills([{ id: 'all', name: 'Tất cả kho' }].concat(S.warehouses).map((w) => ({ label: w.name, on: b.wh === w.id, pick: setRb('wh', w.id) }))) + '</div></div>';
+    const notice = mgr && nAdmin ? '<div class="notice" style="display:flex;gap:10px;align-items:flex-start">' + svg('lock', 18) + '<span>Phiếu do Quản trị viên lập chỉ hiển thị mã, loại, đối tác và kho; số liệu được che và gắn nhãn “Admin cập nhật phiếu”. Quản lý kho không duyệt hoặc từ chối các phiếu này.</span></div>' : '';
+    const qty = (r) => r.lines.reduce((a, l) => a + l.qty, 0);
+    const PER = RB_PER_PAGE; const pages = Math.max(1, Math.ceil(shown.length / PER)); const pg = Math.min(Math.max(1, b.page || 1), pages);
+    const from = (pg - 1) * PER; const pageRows = shown.slice(from, from + PER);
+    const rows = pageRows.map((r) => {
+      const ac = r.type === 'in' ? ['#E8F4EE', '#13643A'] : ['#FDECEC', '#A01F17'];
+      const mine = r.creatorId === S.meUser;
+      const sub = r.masked ? 'Chỉ Admin xem' : r.status !== 'pending' ? (r.status === 'approved' ? 'Duyệt: ' : 'Bởi: ') + (r.approver || '—') : mine ? 'Phiếu của bạn' : 'Cần bạn duyệt';
+      return [cell('<span style="display:flex;align-items:center;gap:10px"><span class="ktile" style="width:32px;height:32px;background:' + ac[0] + ';color:' + ac[1] + '">' + svg(r.type, 16) + '</span><span class="col">' + rcLink(r.code) + '<span class="muted small">' + fmt(r.lineCount) + ' mặt hàng</span></span></span>'),
+        cell(chip({ t: r.type === 'in' ? 'Nhập' : 'Xuất', bg: ac[0], fg: ac[1] })),
+        cell('<span style="display:block">' + esc(r.date) + '</span><span class="muted small">' + esc(r.creator) + (r.creatorRole === 'admin' ? ' (Admin)' : '') + '</span>'),
+        cell(esc(partnerName(r.partner))), cell(esc(whName(r.wh))),
+        cell(r.masked ? MASK + ' <span class="muted small">' + fmt(r.lineCount) + ' mặt hàng, số liệu được che</span>' : esc(r.lines.map((l) => prod(l.pid).name + ' × ' + fmt(l.qty)).join('; ')), 'font-size:13px'),
+        cell(r.masked ? MASK : '<b>' + fmt(qty(r)) + '</b>', '', 'r'),
+        cell(decidedCell(r)),
+        cell('<span class="col" style="gap:3px;align-items:flex-start">' + chip(r.masked ? ADMIN_CHIP : ST[r.status]) + '<span class="muted small">' + esc(sub) + '</span></span>'),
+        cell(btn('Xem', () => openReceipt(r.code), 'btn-sm'))];
+    });
+    const list = '<section class="card" id="rb-list" style="scroll-margin-top:16px">' + head('receipts', '#E6EFFF', '#1A4FB8', 'Sổ phiếu nhập / xuất', (shown.length ? 'Hiển thị ' + (from + 1) + '–' + (from + pageRows.length) + ' / ' : '') + shown.length + ' phiếu' + (shown.length !== all.length ? ' (lọc từ ' + all.length + ')' : '') + '. Bấm vào mã phiếu để xem chi tiết.') +
+      table('minmax(112px,1fr) 62px minmax(132px,1fr) minmax(116px,1fr) 96px minmax(150px,1.4fr) 56px 118px minmax(136px,1fr) 62px', ['Mã phiếu', 'Loại', 'Ngày lập / người lập', 'Đối tác', 'Kho', 'Hàng hóa', 'Tổng SL', 'Thời gian duyệt', 'Trạng thái', ''], rows, 1180, 'Không có phiếu nào khớp bộ lọc.') + pager(pg, pages, (n) => upd((x) => { x.rb.page = n; })) + '</section>';
+    return '<div class="col g20">' + statTiles(tiles) + filters + notice + list + '</div>';
+  }
+
+  function viewReceiptDialog() {
+    const r = S.receipts.find((x) => x.code === S.rview);
+    if (!r) return '';
+    const isIn = r.type === 'in'; const mine = r.creatorId === S.meUser;
+    const pt = S.suppliers.concat(S.customers).find((x) => x.id === r.partner);
+    const showPhone = pt && pt.phone && !hideContact(isIn ? 'sup' : 'cus');
+    const canAct = r.status === 'pending' && canApprove() && !mine && !r.masked;
+    const accent = isIn ? '#13643A' : '#A01F17';
+    const top = '<div style="padding:20px 24px;background:linear-gradient(135deg,' + (isIn ? '#E8F4EE' : '#FDECEC') + ',#FFFFFF 70%);display:flex;justify-content:space-between;gap:16px;align-items:flex-start">' +
+      '<div class="col" style="gap:6px;min-width:0"><span style="font-size:12px;font-weight:700;letter-spacing:.04em;color:' + accent + '">' + (isIn ? 'PHIẾU NHẬP KHO' : 'PHIẾU XUẤT KHO') + '</span>' +
+      '<h2 id="rcv-title" style="margin:0;font-size:26px;font-weight:700;letter-spacing:-.01em">' + esc(r.code) + '</h2>' +
+      '<div class="wrap g8">' + chip(r.masked ? ADMIN_CHIP : ST[r.status]) + (r.creatorRole === 'admin' ? chip({ t: 'Admin lập', bg: '#E6EFFF', fg: '#1A4FB8' }) : '') + '</div></div>' +
+      '<div class="col" style="gap:4px;align-items:flex-end"><span class="muted small">Ngày lập</span><b style="font-size:17px">' + esc(r.date) + '</b>' +
+      btn(svg('x', 18), closeReceipt, 'btn-sm btn-ghost', ' aria-label="Đóng phiếu" data-fid="rcv-close" style="margin-top:6px"') + '</div></div>';
+    const f = (label, main, sub) => '<div class="col" style="gap:2px;min-width:0"><span class="muted small">' + label + '</span><b style="font-size:14px">' + main + '</b>' + (sub ? '<span class="muted small">' + sub + '</span>' : '') + '</div>';
+    const info = '<div class="rcv-info" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;padding:16px 24px;background:#F7F9FB;border-top:1px solid #EEF1F4;border-bottom:1px solid #EEF1F4">' +
+      f(isIn ? 'Nhà cung cấp' : 'Khách hàng / đơn vị nhận', esc(partnerName(r.partner)), showPhone ? esc(fmtPhone(pt.phone)) : '') +
+      f(isIn ? 'Nhập vào kho' : 'Xuất từ kho', esc(whName(r.wh))) +
+      f('Người lập', esc(r.creator || '—'), r.creatorRole ? ROLE[r.creatorRole] : '') +
+      f(r.status === 'cancelled' ? 'Người từ chối' : 'Người duyệt', r.approver ? esc(r.approver) : '<span class="muted" style="font-weight:500">Chưa có</span>') +
+      f(r.status === 'cancelled' ? 'Thời gian từ chối' : 'Thời gian duyệt', r.status === 'pending' ? '<span style="color:#8A4B00">Đợi duyệt</span>' : esc(r.decidedAt || '—')) + '</div>';
+    let body;
+    if (r.masked) {
+      const mini = (label, value) => '<div class="mini" style="flex:0 1 150px"><span class="muted small">' + label + '</span><b>' + value + '</b></div>';
+      body = '<div class="col g16" style="padding:20px 24px"><div class="notice" style="display:flex;gap:10px;align-items:flex-start">' + svg('lock', 18) +
+        '<span><b>Phiếu do Quản trị viên lập.</b> Danh sách hàng hóa, số lượng, giá trị và ghi chú được che với Quản lý kho. Phiếu này do Quản trị viên xử lý.</span></div>' +
+        '<div class="wrap g10">' + mini('Mặt hàng', fmt(r.lineCount)) + mini('Tổng số lượng', MASK) + mini('Giá trị', MASK) + '</div></div>';
+    } else {
+      let totQ = 0, totV = 0;
+      const rows = r.lines.map((l, i) => { const pr = prod(l.pid); const v = l.qty * (pr.price || 0); totQ += l.qty; totV += v;
+        return [cell(String(i + 1), 'color:#56606B'), cell(esc(pr.sku || l.pid), 'color:#56606B'), cell(esc(pr.name)), cell(esc(pr.unit)), cell('<b>' + fmt(l.qty) + '</b>', '', 'r'), cell(fmt(pr.price || 0), '', 'r'), cell(fmt(v), '', 'r')]; });
+      rows.push([cell(''), cell(''), cell('<b>Tổng cộng (' + r.lines.length + ' mặt hàng)</b>'), cell(''), cell('<b>' + fmt(totQ) + '</b>', '', 'r'), cell(''), cell('<b>' + money(totV) + '</b>', '', 'r')]);
+      const moves = S.history.filter((h) => h.ref === r.code);
+      body = '<div class="rcv-lines">' + table('40px 110px minmax(160px,2fr) 70px 90px 100px 120px', ['#', 'SKU', 'Hàng hóa', 'ĐVT', 'Số lượng', 'Giá vốn', 'Thành tiền'], rows, 720, 'Phiếu không có dòng hàng.') + '</div>' +
+        (r.note ? '<div style="padding:12px 24px;border-top:1px solid #EEF1F4;font-size:14px"><span class="muted">Ghi chú: </span>' + esc(r.note) + '</div>' : '') +
+        (moves.length ? '<div class="rcv-moves" style="padding:14px 24px;border-top:1px solid #EEF1F4"><div class="lbl" style="margin-bottom:8px">Biến động thẻ kho</div>' +
+          moves.map((h) => '<div class="rcv-move" style="display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:4px 0"><span>' + esc(h.kind + ' ' + prod(h.pid).name + ' tại ' + whName(h.wh)) + ' <span class="muted">(' + esc(h.t) + ')</span></span><span><b style="color:' + deltaColor(h.delta) + '">' + sign(h.delta) + '</b> <span class="muted">→ tồn ' + fmt(h.after) + '</span></span></div>').join('') + '</div>' : '');
+    }
+    const hint = r.masked ? 'Chỉ Quản trị viên xử lý' : r.status === 'pending' && mine ? 'Phiếu do bạn lập, cần người khác duyệt' : r.status === 'pending' && !canApprove() ? 'Chờ Quản lý kho duyệt' : '';
+    const foot = '<div class="dialog-foot" style="justify-content:space-between;align-items:center"><span class="muted small">' + esc(hint) + '</span><span class="wrap g10">' +
+      btn('Xem đối tác', () => { upd((n) => { n.rview = null; }); openPartner(r.partner, 'history'); }) +
+      (canAct ? btn('Từ chối', () => reject(r.id)) + btn('Duyệt phiếu', () => approve(r.id), 'btn-primary') : '') +
+      btn('Đóng', closeReceipt) + '</span></div>';
+    return '<div class="overlay" data-overlay="1"><div class="dialog rcv" role="dialog" aria-modal="true" aria-labelledby="rcv-title" style="max-width:860px;max-height:calc(100vh - 40px);display:flex;flex-direction:column">' +
+      '<div style="overflow:auto">' + top + info + body + '</div>' + foot + '</div></div>';
+  }
+
   // ---------- USR-07: lịch sử hoạt động của một tài khoản ----------
   const ACAT = { AUTH: 'Đăng nhập', RECEIPT: 'Nhập/Xuất kho', STOCKTAKE: 'Kiểm kê', CATALOG: 'Hàng hóa & đối tác', USER: 'Tài khoản', WAREHOUSE: 'Kho' };
   const ASTYLE = { AUTH: ['user', '#E6EFFF', '#1A4FB8'], RECEIPT: ['in', '#E8F4EE', '#13643A'], STOCKTAKE: ['stocktake', '#EFEAFE', '#5B3FB6'], CATALOG: ['products', '#FFF1DB', '#8A4B00'], USER: ['user', '#FDECEC', '#A01F17'], WAREHOUSE: ['warehouses', '#ECEEF1', '#454F5B'] };
@@ -1648,7 +1779,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       const timeline = groups.length ? groups.map((g) => '<div class="act-day">' + (g.day === today ? 'Hôm nay · ' : '') + esc(g.day) + '</div>' + g.items.map((it) => {
         const k = ASTYLE[it.category] || ASTYLE.USER;
         return '<div class="tl act-item" data-cat="' + esc(it.category) + '" data-action="' + esc(it.action) + '" data-at="' + esc(it.at || '') + '"><span class="tdot" style="background:' + k[1] + ';color:' + k[2] + '">' + svg(k[0], 14) + '</span>' +
-          '<div class="col" style="gap:4px;min-width:0"><span style="font-size:14px;overflow-wrap:anywhere"><b style="font-weight:600">' + esc(it.label) + '</b>' + (it.detail ? ' <span class="muted">' + esc(it.detail) + '</span>' : '') + '</span>' +
+          '<div class="col" style="gap:4px;min-width:0"><span style="font-size:14px;overflow-wrap:anywhere">' + (it.targetType === 'RECEIPT' && it.targetId && S.receipts.some((r) => r.code === it.targetId) ? '<button type="button" class="ulink act-rc" data-code="' + esc(it.targetId) + '" data-c="' + on(() => openReceiptFromActivity(it.targetId)) + '">' + esc(it.label + ' ' + it.targetId) + '</button>' : '<b style="font-weight:600">' + esc(it.label) + '</b>') + (it.detail ? ' <span class="muted">' + esc(it.detail) + '</span>' : '') + '</span>' +
           '<span class="muted small" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span>' + esc((it.at || '').slice(11) || '—') + '</span>' +
           (it.byOther ? '<span class="chip" style="background:#FFF1DB;color:#8A4B00">Do ' + esc(it.byOther) + ' thực hiện</span>' : '') +
           (it.inferred ? '<span class="chip" style="background:#ECEEF1;color:#454F5B" title="Suy ra từ chứng từ đang có, không phải ghi lúc thao tác">Suy ra từ chứng từ</span>' : '') + '</span></div></div>';
@@ -1668,13 +1799,14 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     let html;
     if (!S.loggedIn) { html = S.home ? '<div inert aria-hidden="true">' + viewLogin() + '</div>' + viewHome() : viewLogin(); prevScreen = null; }
     else {
-      const screen = S.screen === 'users' && !isAdmin() ? 'dashboard' : S.screen;
+      const screen = (S.screen === 'users' && !isAdmin()) || (S.screen === 'receipts' && !canApprove()) ? 'dashboard' : S.screen;
       const low = lowList();
-      const views = { dashboard: () => viewDashboard(low), in: () => viewReceipts('in'), out: () => viewReceipts('out'), stocktake: viewStocktake, inventory: viewInventory, alerts: () => viewAlerts(low), reports: viewReports, products: viewProducts, suppliers: viewPartners, customers: viewPartners, warehouses: viewWarehouses, users: viewUsers };
+      const views = { dashboard: () => viewDashboard(low), in: () => viewReceipts('in'), out: () => viewReceipts('out'), stocktake: viewStocktake, inventory: viewInventory, alerts: () => viewAlerts(low), reports: viewReports, products: viewProducts, suppliers: viewPartners, customers: viewPartners, warehouses: viewWarehouses, receipts: viewReceiptBook, users: viewUsers };
       html = '<div class="layout">' + viewSidebar(screen, low) + '<main>' + viewTop(screen === 'customers' && hideContact('cus') ? ['Khách hàng', 'Hàng đã xuất, phiếu chờ duyệt và ghi chú (FR-05)'] : screen === 'suppliers' && hideContact('sup') ? ['Nhà cung cấp', 'Hàng đã nhập, phiếu chờ duyệt và ghi chú (FR-04)'] : PAGES[screen]) + (views[screen] || views.dashboard)() + '</main></div>';
       prevScreen = screen;
     }
     if (S.loggedIn && S.act) html += viewActivity();
+    if (S.loggedIn && S.rview) html += viewReceiptDialog();
     if (S.loggedIn && S.udel) html += viewDeleteDialog();
     if (S.loggedIn && S.wdel) html += viewWhDeleteDialog();
     if (S.loggedIn && S.kpick && S.wf.open) html += viewKeeperPicker();
@@ -1737,8 +1869,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
   root.addEventListener('input', (e) => { const t = e.target; if (t.dataset && t.dataset.i && H[t.dataset.i]) H[t.dataset.i]({ target: t }); });
   root.addEventListener('change', (e) => { const t = e.target; if (t.dataset && t.dataset.ch && H[t.dataset.ch]) H[t.dataset.ch]({ target: t }); });
   root.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !S.loggedIn && !S.home && e.target.tagName === 'INPUT') doLogin(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (S.udel || S.wdel || S.kpick || S.act)) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; n.act = null; }); });
-  root.addEventListener('mousedown', (e) => { if ((S.udel || S.wdel || S.kpick || S.act) && e.target.dataset && e.target.dataset.overlay) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; n.act = null; }); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (S.udel || S.wdel || S.kpick || S.act || S.rview)) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; n.act = null; n.rview = null; }); });
+  root.addEventListener('mousedown', (e) => { if ((S.udel || S.wdel || S.kpick || S.act || S.rview) && e.target.dataset && e.target.dataset.overlay) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; n.act = null; n.rview = null; }); });
   document.addEventListener('keydown', (e) => { if (S.home && !S.loggedIn && ['ArrowUp', 'ArrowDown', 'PageDown', 'Enter', ' '].indexOf(e.key) >= 0) { e.preventDefault(); leaveHome(); } });
 
   render();
