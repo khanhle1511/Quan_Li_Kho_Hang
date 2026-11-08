@@ -18,6 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class AuthService {
     public static final String SESSION_KEY = "uid";
+    /** AUTH-08 / BR-34: phiên bản phiên lúc đăng nhập; khác UserAccount.sessionVersion thì phiên bị hủy. */
+    private static final String SESSION_VERSION_KEY = "sv";
 
     /** BUG-001 / RISK-07: sai liên tiếp MAX_FAILED lần thì khóa tạm LOCK_MINUTES phút. */
     public static final int MAX_FAILED = 5;
@@ -80,6 +82,7 @@ public class AuthService {
             throw ApiException.bad("Tài khoản chưa được kích hoạt. Vui lòng liên hệ Quản trị viên.");
         }
         session.setAttribute(SESSION_KEY, u.id);
+        session.setAttribute(SESSION_VERSION_KEY, u.sessionVersion());
         activity.record(u, "LOGIN", "USER", u.id, ""); // USR-07
         return u;
     }
@@ -110,13 +113,26 @@ public class AuthService {
         return "Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau " + minutes + " phút.";
     }
 
-    /** Người dùng đang hoạt động của phiên, nếu có. Phiên của tài khoản đã khóa/xóa bị hủy ngay. */
+    /** AUTH-08 / BR-34: đặt lại mật khẩu thành công thì gỡ khóa tạm do đăng nhập sai. */
+    public void clearFailures(String phone) {
+        attempts.remove(phone);
+    }
+
+    /**
+     * Người dùng đang hoạt động của phiên, nếu có. Phiên của tài khoản đã khóa/xóa, hoặc mở trước lần đặt lại
+     * mật khẩu gần nhất (BR-34), bị hủy ngay. Phiên tạo trước AUTH-08 không có "sv" → coi như phiên bản 0.
+     */
     public Optional<UserAccount> find(HttpSession session) {
         Object id = session.getAttribute(SESSION_KEY);
         if (id == null) return Optional.empty();
-        Optional<UserAccount> u = users.findById(id.toString()).filter(x -> Rules.ACTIVE.equals(x.status));
+        Optional<UserAccount> u = users.findById(id.toString())
+                .filter(x -> Rules.ACTIVE.equals(x.status) && sessionVersionOf(session) == x.sessionVersion());
         if (u.isEmpty()) session.invalidate();
         return u;
+    }
+
+    private static int sessionVersionOf(HttpSession session) {
+        return session.getAttribute(SESSION_VERSION_KEY) instanceof Integer v ? v : 0;
     }
 
     public UserAccount current(HttpSession session) {

@@ -8,6 +8,13 @@ public final class Dto {
 
     public record Login(String phone, String password) {}
 
+    /** AUTH-08: B1 – yêu cầu mã, B2 – kiểm tra mã, B3 – đặt mật khẩu mới. */
+    public record ForgotRequest(String phone) {}
+
+    public record ForgotVerify(String phone, String otp) {}
+
+    public record ForgotReset(String resetToken, String password, String confirm) {}
+
     public record Line(String productId, Integer qty) {}
 
     public record NewReceipt(String type, String partnerId, String warehouseId, String note, List<Line> lines) {}
@@ -23,7 +30,7 @@ public final class Dto {
 
     public record NoteForm(String note) {}
 
-    public record UserForm(String name, String phone, String password, String role, String opened, String status) {}
+    public record UserForm(String name, String phone, String email, String password, String role, String opened, String status) {}
 
     public record StatusForm(String status) {}
 

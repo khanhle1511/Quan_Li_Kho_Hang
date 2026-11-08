@@ -3,6 +3,7 @@ package com.qlkho.common;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -25,6 +26,14 @@ public class ApiErrors {
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Map<String, String>> api(ApiException e) {
         return error(e.getStatus(), e.getMessage());
+    }
+
+    /** AUTH-08 / BR-31: vượt giới hạn gửi mã → 429 với {"error", "retryAfter"} và header Retry-After. */
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<Map<String, Object>> tooMany(TooManyRequestsException e) {
+        return ResponseEntity.status(e.getStatus())
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(e.getRetryAfterSeconds()))
+                .body(Map.of("error", e.getMessage(), "retryAfter", e.getRetryAfterSeconds()));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)

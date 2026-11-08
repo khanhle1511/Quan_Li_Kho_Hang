@@ -14,7 +14,9 @@ CREATE TABLE nguoi_dung (
   password_hash  VARCHAR(100) NOT NULL,
   role           VARCHAR(10)  NOT NULL CHECK (role IN ('admin','manager','staff')),
   opened         VARCHAR(10),
-  status         VARCHAR(10)  NOT NULL CHECK (status IN ('active','draft','locked'))
+  status         VARCHAR(10)  NOT NULL CHECK (status IN ('active','draft','locked')),
+  email          VARCHAR(254) UNIQUE,         -- AUTH-08: nhận mã OTP khi quên mật khẩu; chữ thường, không bắt buộc
+  session_version INT                        -- AUTH-08: tăng khi đặt lại mật khẩu để hủy mọi phiên cũ; NULL = 0
 );
 
 CREATE TABLE kho (
@@ -149,3 +151,24 @@ CREATE TABLE nhat_ky_hoat_dong (
 
 -- RCPT-10 (bổ sung): thời điểm duyệt / từ chối phiếu; null khi còn chờ duyệt. Hibernate tự thêm cột (ddl-auto=update).
 -- ALTER TABLE phieu ADD COLUMN decided_at VARCHAR(20);
+
+-- AUTH-08: yêu cầu đặt lại mật khẩu bằng mã OTP qua email (Hibernate tự tạo). Ghi cả khi SĐT không tồn tại
+-- (status = ineligible) để giới hạn tần suất như nhau. Chỉ lưu bản băm của OTP (BCrypt) và reset token (SHA-256).
+-- Bản ghi cũ hơn 24 giờ được xóa định kỳ.
+-- Với CSDL đã có: ALTER TABLE nguoi_dung ADD COLUMN email VARCHAR(254) UNIQUE, ADD COLUMN session_version INT;
+CREATE TABLE yeu_cau_dat_lai_mk (
+  id                BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id           VARCHAR(20),                 -- NULL khi SĐT không thuộc tài khoản nào
+  phone             VARCHAR(15)  NOT NULL,
+  otp_hash          VARCHAR(100) NOT NULL,
+  created_at        BIGINT       NOT NULL,       -- mili-giây
+  expires_at        BIGINT       NOT NULL,
+  failed_attempts   INT          NOT NULL,
+  status            VARCHAR(12)  NOT NULL CHECK (status IN ('pending','ineligible','verified','used','locked','superseded')),
+  token_hash        VARCHAR(64),
+  token_expires_at  BIGINT,
+  request_ip        VARCHAR(45)  NOT NULL,
+  INDEX idx_dl_phone_created (phone, created_at),
+  INDEX idx_dl_ip_created (request_ip, created_at),
+  INDEX idx_dl_token (token_hash)
+);

@@ -1,6 +1,7 @@
 package com.qlkho.service;
 
 import com.qlkho.common.ApiException;
+import com.qlkho.common.PasswordPolicy;
 import com.qlkho.common.Rules;
 import com.qlkho.model.UserAccount;
 import com.qlkho.repo.UserRepo;
@@ -11,7 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /** FR-02 – Quản trị viên quản lý tài khoản. */
@@ -20,6 +23,8 @@ public class UserService {
     private static final Set<String> STATUSES = Set.of(Rules.ACTIVE, Rules.DRAFT, Rules.LOCKED);
     /** Bằng độ dài cột nguoi_dung.name (UserAccount.name). */
     private static final int NAME_MAX = 100;
+    /** Bằng độ dài cột nguoi_dung.email (UserAccount.email). */
+    private static final int EMAIL_MAX = 254;
 
     private final UserRepo users;
     private final BCryptPasswordEncoder encoder;
@@ -45,12 +50,18 @@ public class UserService {
         return phone;
     }
 
-    private void checkPassword(String pass) {
-        if (pass == null || pass.length() < 6) throw ApiException.bad("Mật khẩu phải có ít nhất 6 ký tự.");
-        // BUG-002: chặn trước khi băm, vì BCrypt ném IllegalArgumentException (→ HTTP 500) khi mật khẩu dài hơn 72 byte
-        if (Rules.passwordTooLong(pass))
-            throw ApiException.bad("Mật khẩu quá dài: tối đa " + Rules.PASSWORD_MAX_BYTES + " byte (khoảng 72 ký tự không dấu).");
-        if (pass.chars().anyMatch(Character::isWhitespace)) throw ApiException.bad("Mật khẩu không được chứa khoảng trắng.");
+    /**
+     * AUTH-08 / BR-27: email không bắt buộc (trống → null), đúng định dạng, lưu chữ thường, không trùng tài khoản khác.
+     */
+    private String checkEmail(String raw, String selfId) {
+        String email = Rules.trim(raw).toLowerCase(Locale.ROOT);
+        if (email.isEmpty()) return null;
+        if (email.length() > EMAIL_MAX || !Rules.EMAIL.matcher(email).matches())
+            throw ApiException.bad("Email không hợp lệ.");
+        users.findByEmail(email).ifPresent(o -> {
+            if (!o.id.equals(selfId)) throw ApiException.bad("Email đã được dùng cho tài khoản khác.");
+        });
+        return email;
     }
 
     /** BUG-007: sinh mã + kiểm tra trùng SĐT + INSERT chạy tuần tự trong CreateTx, không ghi đè tài khoản cùng mã. */
@@ -62,7 +73,8 @@ public class UserService {
         String name = Rules.trim(f.name());
         if (name.isEmpty()) throw ApiException.bad("Vui lòng nhập họ tên.");
         String phone = checkPhone(f.phone(), null);
-        checkPassword(f.password());
+        String email = checkEmail(f.email(), null);
+        PasswordPolicy.check(f.password());
         if (!Rules.ROLES.contains(f.role())) throw ApiException.bad("Vai trò không hợp lệ.");
         if (!Rules.isIsoDate(f.opened())) throw ApiException.bad("Vui lòng chọn ngày mở tài khoản.");
 
@@ -71,6 +83,7 @@ public class UserService {
         u.id = "U" + create.nextNumber("U", users.findAllIds(), "U");
         u.name = name;
         u.phone = phone;
+        u.email = email;
         u.passwordHash = encoder.encode(f.password());
         u.role = f.role();
         u.opened = f.opened();
@@ -79,7 +92,7 @@ public class UserService {
         return Map.of("id", u.id, "name", u.name);
     }
 
-    /** Admin sửa được họ tên (CR-02), số điện thoại đăng nhập và mật khẩu của mọi tài khoản; vai trò, ngày mở giữ nguyên. */
+    /** Admin sửa được họ tên (CR-02), số điện thoại đăng nhập, email (AUTH-08) và mật khẩu của mọi tài khoản; vai trò, ngày mở giữ nguyên. */
     @Transactional
     public Map<String, Object> update(String id, Dto.UserForm f) {
         UserAccount u = user(id);
@@ -88,15 +101,21 @@ public class UserService {
         if (name.isEmpty()) throw ApiException.bad("Vui lòng nhập họ tên.");
         if (name.length() > NAME_MAX) throw ApiException.bad("Họ tên tối đa " + NAME_MAX + " ký tự.");
         String phone = checkPhone(f.phone(), u.id);
+        // AUTH-08: không gửi "email" (client cũ) thì giữ email cũ; gửi chuỗi trống thì xóa email
+        String email = f.email() == null ? u.email : checkEmail(f.email(), u.id);
         boolean changePass = !Rules.blank(f.password());
-        if (changePass) checkPassword(f.password());
-        if (name.equals(u.name) && phone.equals(u.phone) && !changePass) throw ApiException.bad("Chưa có thay đổi nào để lưu.");
+        if (changePass) PasswordPolicy.check(f.password());
+        boolean changeEmail = !Objects.equals(email, u.email);
+        if (name.equals(u.name) && phone.equals(u.phone) && !changeEmail && !changePass)
+            throw ApiException.bad("Chưa có thay đổi nào để lưu.");
         List<String> changes = new ArrayList<>(); // USR-07: ghi vào nhật ký những gì đã đổi
         if (!name.equals(u.name)) changes.add("họ tên");
         if (!phone.equals(u.phone)) changes.add("SĐT");
+        if (changeEmail) changes.add("email");
         if (changePass) changes.add("mật khẩu");
         u.name = name;
         u.phone = phone;
+        u.email = email;
         if (changePass) u.passwordHash = encoder.encode(f.password());
         users.save(u);
         return Map.of("id", u.id, "name", u.name, "changes", changes);

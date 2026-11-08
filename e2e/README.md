@@ -23,6 +23,21 @@ Cần Node.js 18+ (máy hiện có Node 22).
 | `npm run test:ui` | Giao diện Playwright để chạy từng test, xem từng bước |
 | `npm run report` | Mở báo cáo HTML của lần chạy gần nhất (`output/report`) |
 
+### Quên mật khẩu (AUTH-08) – cần Mailpit
+
+Các test `@AUTH-08` đọc mã OTP từ hộp thư **Mailpit** (máy chủ SMTP giả, có REST API). Không có Mailpit thì các test cần đọc mail tự bỏ qua.
+
+```bash
+# 1. Mailpit (tải bản Windows/macOS/Linux ở github.com/axllent/mailpit/releases); --enable-chaos để test trường hợp gửi mail lỗi
+mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025 --enable-chaos      # hộp thư: http://localhost:8025
+# 2. Máy chủ: mặc định đã gửi qua SMTP localhost:1025. Rút ngắn thời hạn để test hết hạn / gửi lại không phải chờ lâu
+RESET_OTP_TTL_SECONDS=20 RESET_TOKEN_TTL_SECONDS=20 RESET_RESEND_COOLDOWN_SECONDS=3 mvn spring-boot:run > app.log
+# 3. Test (APP_LOG để chạy TC-AUTH-08-19: log không chứa OTP/token)
+BASE_URL=http://localhost:8080 APP_LOG=../app.log npx bddgen && npx playwright test --project=bdd --workers=1 --grep @AUTH-08
+```
+
+Mỗi kịch bản gửi yêu cầu từ một IP giả riêng (`X-Forwarded-For`) nên không chạm giới hạn 20 lần/giờ/IP của kịch bản khác. Đổi địa chỉ Mailpit bằng `MAILPIT_URL`.
+
 ### Nhiều agent cùng lúc
 
 Mỗi agent có app riêng (`node agents/agents.mjs start`, cổng 8101, 8102…). Đặt `AGENT=agentN` thì test tự trỏ tới cổng của agent đó và ghi kết quả, báo cáo vào `output/agentN/`. Xem [../agents/README.md](../agents/README.md).
@@ -78,10 +93,11 @@ e2e/
 ├── config-worker.ts       số worker chạy song song (sửa ở đây)
 ├── playwright.config.ts   baseURL: BASE_URL > test:online > localhost:8080; 1 worker khi chạy online
 ├── global-setup.ts        đánh thức máy chủ (Render ngủ sau 15 phút)
-├── features/            kịch bản BDD (Gherkin tiếng Việt) theo QLKho_Test_Tracker + USR-07 + RCPT-10: 68 tính năng, 202 TC – xem features/README.md
+├── features/            kịch bản BDD (Gherkin tiếng Việt) theo QLKho_Test_Tracker + USR-07 + RCPT-10 + AUTH-08: 69 tính năng, 223 TC – xem features/README.md
 ├── steps/               step definition cho features/ (playwright-bdd) – npm run bdd, bdd:smoke, bdd:after-reset, bdd:regression, bdd:exclusive
 ├── helpers/app.ts         tài khoản, gotoLogin / uiLogin / nav / toast / apiLogin
 ├── helpers/selectors.ts   toàn bộ selector giao diện đã tra từ index.html (dùng lại, không tra lại)
+├── helpers/mailpit.ts     đọc hộp thư Mailpit: chờ mail, lấy mã OTP, bật/tắt lỗi SMTP giả (AUTH-08)
 ├── tests/
 │   └── smoke.spec.ts      bộ @smoke (thêm các file *.spec.ts khác vào đây: flows.spec.ts, risk.spec.ts…)
 ├── fixtures/              test.pdf (PDF hợp lệ tối giản), fake.pdf (file text đổi đuôi)

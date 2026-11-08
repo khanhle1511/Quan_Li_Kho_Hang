@@ -94,7 +94,8 @@ CSDL `qlkho` và các bảng được tạo tự động. Lược đồ đầy �
 qlkho-web/
 ├── pom.xml
 ├── docs/
-│   └── schema-mysql.sql           Lược đồ CSDL (bảng, khóa chính/ngoại, ràng buộc)
+│   ├── schema-mysql.sql           Lược đồ CSDL (bảng, khóa chính/ngoại, ràng buộc)
+│   └── AUTH-08_quen-mat-khau.md   Đặc tả quên mật khẩu, đặt lại bằng OTP qua email
 ├── agents/                        Chạy nhiều instance local (mỗi agent một cổng + CSDL), xem agents/README.md
 ├── e2e/                           Mọi thứ phục vụ QA/QC và kiểm thử (xem e2e/README.md)
 │   ├── spec/                      Đặc tả kiểm thử tự động, test tracker (PDF, DOCX, XLSX)
@@ -107,19 +108,21 @@ qlkho-web/
 └── src/main/
     ├── java/com/qlkho/
     │   ├── QlkhoApplication.java  Điểm khởi động
-    │   ├── config/AppConfig       Bean băm mật khẩu BCrypt
-    │   ├── model/                 12 lớp @Entity ↔ 12 bảng (gồm ActivityLog – nhật ký hoạt động)
+    │   ├── config/                AppConfig (BCrypt, @Async, @Scheduled), ResetProperties (app.reset.*), MailProperties (app.mail.*)
+    │   ├── model/                 13 lớp @Entity ↔ 13 bảng (gồm ActivityLog – nhật ký hoạt động, PasswordReset – yêu cầu đặt lại mật khẩu)
     │   ├── repo/                  Spring Data JPA repository (truy vấn đếm, lấy mã… để không tải cả bảng)
     │   ├── service/               Nghiệp vụ
     │   │   ├── AuthService        UC01 Đăng nhập, kiểm tra quyền (requireAdmin / requireManager)
     │   │   ├── InventoryService   UC02–UC05 Lập phiếu, duyệt, kiểm kê
     │   │   ├── CatalogService     Hàng hóa, đối tác, hồ sơ PDF, kho
     │   │   ├── UserService        Quản lý tài khoản
+    │   │   ├── PasswordResetService  AUTH-08: quên mật khẩu (gửi mã, kiểm tra mã, đặt mật khẩu mới); ResetCodes sinh OTP/token
+    │   │   ├── mail/              Gửi mail: MailGateway (SMTP | Brevo | log), MailTemplates, PasswordResetMailer (@Async)
     │   │   ├── ActivityService    USR-07: ghi và tra cứu lịch sử hoạt động; ActivityBackfill suy ra lịch sử cũ lúc khởi động
     │   │   ├── StateService       Gom dữ liệu cho giao diện, ẩn liên hệ theo vai trò
     │   │   └── DataSeeder         Dữ liệu mẫu lần chạy đầu
     │   ├── web/                   REST controller + DTO (record)
-    │   └── common/                Rules (hằng số vai trò/trạng thái, regex, sinh mã), ApiException, ApiErrors, PdfMaker
+    │   └── common/                Rules (hằng số vai trò/trạng thái, regex, sinh mã), PasswordPolicy, ApiException, TooManyRequestsException, ApiErrors, FixedWindowLimiter, PdfMaker
     └── resources/
         ├── application.properties         Cấu hình H2 (mặc định)
         ├── application-mysql.properties   Cấu hình MySQL trên máy
@@ -133,6 +136,9 @@ qlkho-web/
 | ------------------- | ------------------------------------- | ------------------------- | ------------------------------------------------------- |
 | POST                | `/api/auth/login`                     | Mọi người                 | Đăng nhập bằng SĐT + mật khẩu                           |
 | POST                | `/api/auth/logout`                    | Đã đăng nhập              | Đăng xuất                                               |
+| POST                | `/api/auth/forgot`                    | Mọi người                 | Quên mật khẩu B1: gửi mã OTP tới email của tài khoản; luôn trả cùng một phản hồi (AUTH-08) |
+| POST                | `/api/auth/forgot/verify`             | Mọi người                 | B2: kiểm tra mã OTP, trả reset token dùng một lần       |
+| POST                | `/api/auth/forgot/reset`              | Mọi người                 | B3: đặt mật khẩu mới bằng reset token, hủy mọi phiên cũ |
 | GET                 | `/api/auth/me`                        | Mọi người                 | Người dùng của phiên hiện tại                           |
 | GET                 | `/api/public/summary`                 | Mọi người                 | Số liệu cho trang chủ                                   |
 | GET                 | `/api/state`                          | Đã đăng nhập              | Toàn bộ dữ liệu, đã lược thông tin liên hệ theo vai trò |
@@ -156,6 +162,7 @@ Mọi lỗi đều trả về JSON dạng `{"error": "..."}`: lỗi nghiệp v�
 - Mật khẩu băm BCrypt.
 - Tài khoản Nháp hoặc Đã khóa không đăng nhập được.
 - Thông báo sai đăng nhập dùng chung một câu, không cho biết sai SĐT hay sai mật khẩu.
+- **Quên mật khẩu (AUTH-08):** mã OTP 6 số gửi tới email của tài khoản, hiệu lực 5 phút, sai 5 lần thì hủy; gửi lại sau 60 giây, tối đa 5 mã/giờ/SĐT và 20 lần/giờ/IP. Phản hồi giống nhau dù SĐT có tài khoản hay không. Đặt lại xong thì mọi phiên cũ bị đăng xuất. Chỉ lưu bản băm của OTP và token.
 - Phiếu chỉ cộng/trừ tồn khi được duyệt.
 - **Phiếu nhập do Quản lý kho hoặc Admin lập được duyệt ngay khi lưu** (cộng tồn, ghi thẻ kho). Phiếu của Nhân viên kho phải chờ Quản lý kho / Admin duyệt.
 - **Phiếu xuất: người lập không được tự duyệt phiếu của mình.**

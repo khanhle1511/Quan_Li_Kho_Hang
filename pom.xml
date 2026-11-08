@@ -33,6 +33,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+        <!-- AUTH-08: gửi mã OTP qua SMTP (Mailpit khi chạy local, Gmail…) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
         <!-- Băm mật khẩu BCrypt (chỉ dùng thư viện crypto, không bật Spring Security) -->
         <dependency>
             <groupId>org.springframework.security</groupId>

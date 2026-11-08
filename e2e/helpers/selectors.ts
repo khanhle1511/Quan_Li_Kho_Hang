@@ -14,6 +14,17 @@ export const SEL = {
   loginBtn: '.auth-card button.btn-primary',
   loginErr: '.alert-err',                          // cũng là chỗ hiện "Phiên đăng nhập …" khi máy chủ trả 401
   roleCard: '.rolecard',                           // 3 thẻ demo U1, U2, U3; thẻ khớp SĐT đang nhập có class .on + aria-pressed="true"
+  authCard: '.auth-card',                          // khung bên phải màn đăng nhập; chứa form đăng nhập HOẶC luồng quên mật khẩu
+
+  // ---- AUTH-08: quên mật khẩu (viewForgot*, thay form đăng nhập trong .auth-card) ----
+  fpPhone: '[data-fid="fp-phone"]',                // B1 – SĐT, điền sẵn từ form đăng nhập
+  fpOtp: '[data-fid="fp-otp"]',                    // B2 – chỉ giữ lại chữ số, tối đa 6
+  fpTimer: '[data-fid="fp-timer"]',                // "Mã hết hạn sau mm:ss" hoặc "Mã đã hết hạn, hãy gửi lại mã."
+  fpResendWait: '[data-fid="fp-resend"]',          // nút "Gửi lại mã (N giây)" bị disabled; hết chờ thì thành nút "Gửi lại mã"
+  fpPass: '[data-fid="fp-pass"]',                  // B3 – mật khẩu mới
+  fpPass2: '[data-fid="fp-pass2"]',                // B3 – nhập lại
+  fpRule: '[data-fid="fp-rule"]',                  // gợi ý quy tắc mật khẩu, xanh khi thỏa
+  ufEmail: '[data-fid="uf-email"]',                // ô Email ở form Tạo/Sửa tài khoản (Admin)
 
   // ---- khung ứng dụng (viewSidebar 730, viewTop 742) ----
   navItem: 'aside button.nav',                     // chữ "Kho" trùng "Nhập kho"/"Xuất kho" → so khớp chính xác /^Kho$/

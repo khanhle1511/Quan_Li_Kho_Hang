@@ -53,6 +53,12 @@ public class ActivityService {
         def("USER", "USER_UPDATE", "Sửa tài khoản");
         def("USER", "USER_STATUS", "Đổi trạng thái tài khoản");
         def("USER", "USER_DELETE", "Xóa tài khoản");
+        // AUTH-08: quên mật khẩu (BR-35)
+        def("USER", "PWD_RESET_REQUEST", "Yêu cầu đặt lại mật khẩu");
+        def("USER", "PWD_RESET_OTP_FAIL", "Nhập sai mã xác nhận");
+        def("USER", "PWD_RESET_OTP_LOCKED", "Mã xác nhận bị hủy");
+        def("USER", "PWD_RESET", "Đặt lại mật khẩu");
+        def("USER", "PWD_RESET_MAIL_FAIL", "Không gửi được email");
         def("WAREHOUSE", "WH_CREATE", "Thêm kho");
         def("WAREHOUSE", "WH_UPDATE", "Sửa kho");
         def("WAREHOUSE", "WH_STATUS", "Đổi trạng thái kho");
@@ -160,6 +166,7 @@ public class ActivityService {
         user.put("roleLabel", Rules.ROLE_LABEL.get(u.role));
         user.put("status", u.status);
         user.put("phone", u.phone);
+        user.put("email", u.email); // AUTH-08
         user.put("opened", u.opened);
 
         Map<String, Object> out = new LinkedHashMap<>();

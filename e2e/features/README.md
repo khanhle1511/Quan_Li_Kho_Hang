@@ -26,7 +26,8 @@ Viết từ **QLKho_Test_Tracker.pdf** (66 tính năng · 172 test case). Đây 
 | 14-moi-truong-online.feature | Môi trường online | ENV-01 | 6 |
 | 15-lich-su-hoat-dong.feature | Lịch sử hoạt động của nhân viên (USR-07, bổ sung 07/11/2026 – spec/USR-07_testcases) | USR-07 | 10 |
 | 16-so-phieu.feature | Sổ phiếu nhập/xuất & popup chi tiết (RCPT-10, bổ sung 07/11/2026 – spec/RCPT-10_testcases) | RCPT-10 | 15 |
-| **Tổng** | | **68** | **202** |
+| 17-quen-mat-khau.feature | Quên mật khẩu, đặt lại bằng OTP qua email (AUTH-08, bổ sung 09/11/2026 – ../docs/AUTH-08_quen-mat-khau.md). Cần Mailpit | AUTH-08 | 21 |
+| **Tổng** | | **69** | **223** |
 
 ## Tag
 
@@ -41,6 +42,8 @@ Viết từ **QLKho_Test_Tracker.pdf** (66 tính năng · 172 test case). Đây 
 | `@exclusive` | Đợt 4 – ảnh hưởng người khác (restart, đồng thời, tạm ngưng kho thật). Báo nhóm → chạy → reset |
 | `@risk` | Nghi vấn bug ở mục 11 đặc tả; được phép thất bại nhưng phải ghi bug vào `../bugs/` |
 | `@seed-data` | Thêm vào một số `@smoke` tuy chỉ đọc nhưng **so với con số của dữ liệu mẫu** (ví dụ "2 dòng HN 6, HCM 14"). Sau khi chạy `@regression` trên cùng CSDL, các test này có thể lệch số mà không phải bug |
+| `@short-ttl` | Cần máy chủ chạy thời hạn rút ngắn (`RESET_OTP_TTL_SECONDS`, `RESET_TOKEN_TTL_SECONDS` ≤ 30); nếu không thì tự bỏ qua |
+| `@requires-log` | Cần biến `APP_LOG` trỏ tới file log của máy chủ; nếu không thì tự bỏ qua |
 | `@xac-thuc`, `@kho`… | Tag module ở cấp `Tính năng` |
 
 Theo quy trình hiện tại, chạy trên **local** trước; chỉ chạy trên bản online khi đã deploy theo yêu cầu.
@@ -106,6 +109,7 @@ Các file `.feature` được `playwright-bdd` 8.5.1 sinh thành test Playwright
 | `steps/partners.steps.ts` | SUP, CUS |
 | `steps/warehouses-users.steps.ts` | WH, USR |
 | `steps/env.steps.ts` | ENV |
+| `steps/forgot.steps.ts`, `steps/forgot-ui.steps.ts` | AUTH-08 (API / giao diện); trạng thái chung và lời gọi API ở `steps/forgot.world.ts`, đọc hộp thư ở `../helpers/mailpit.ts` |
 
 Selector giao diện tập trung ở `../helpers/selectors.ts` (có ghi số dòng trong `index.html`).
 

@@ -64,6 +64,8 @@ export class World {
   /** Kho thật bị tạm ngưng trong đợt @exclusive, mở lại sau kịch bản */
   restoreWhs: string[] = [];
   private sessions = new Map<string, APIRequestContext>();
+  /** Việc dọn dẹp do các bước tự đăng ký (đóng context riêng, tắt giả lập lỗi…), chạy trước khi xóa dữ liệu [TEST] */
+  private disposers: (() => Promise<unknown>)[] = [];
   private extraCreds = new Map<ActorKey, { phone: string; pass: string }>();
 
   constructor(public page: Page, public baseURL: string) {
@@ -81,6 +83,7 @@ export class World {
     throw new Error('Chưa có tài khoản cho ' + a);
   }
   setCreds(a: ActorKey, phone: string, pass: string) { this.extraCreds.set(a, { phone, pass }); }
+  onCleanup(fn: () => Promise<unknown>) { this.disposers.push(fn); }
 
   /** Context API đã đăng nhập cho vai trò `a` (mặc định là "tôi"). */
   async api(a: ActorKey = this.actor): Promise<APIRequestContext> {
@@ -270,6 +273,7 @@ export class World {
 
   // ---------- dọn dẹp ----------
   async cleanup() {
+    for (const fn of this.disposers) await fn().catch(() => null);
     for (const id of this.restoreWhs) await this.call('admin', 'PUT', `/api/warehouses/${id}/status`, { status: 'active' }).catch(() => null);
     const fx = this.fx;
     // T_WH2 còn hàng → mở lại, kiểm kê về 0 rồi mới xóa được

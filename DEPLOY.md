@@ -91,6 +91,11 @@ Bạn **không cần** tự tạo bảng. Lần chạy đầu tiên, ứng dụn
       | `DB_URL` | chuỗi JDBC ở Bước 2 |
       | `DB_USER` | `avnadmin` |
       | `DB_PASSWORD` | mật khẩu Aiven |
+      | `BREVO_API_KEY` | API key của Brevo (gửi mã OTP quên mật khẩu, xem mục dưới) |
+      | `MAIL_FROM` | địa chỉ người gửi đã xác minh trong Brevo |
+
+      **Gửi mail quên mật khẩu (AUTH-08).** Render bản Free chặn cổng SMTP đi ra, nên bản online gửi mail qua **Brevo HTTP API** (gói free khoảng 300 mail/ngày, không cần tên miền riêng):
+      tạo tài khoản Brevo → *Senders* → xác minh một địa chỉ email làm người gửi → *SMTP & API → API Keys* → tạo key. Thiếu `BREVO_API_KEY` thì ứng dụng vẫn chạy, nhưng không gửi được mã (log có dòng `chưa đặt BREVO_API_KEY`). Có thể đặt thêm `MAIL_FROM_NAME` (mặc định "Quản lý kho").
 
    4. *Advanced* → **Health Check Path**: `/api/public/summary` → **Create Web Service**.
 
@@ -160,7 +165,7 @@ Render **tự build và deploy lại** sau mỗi lần push (mất 3–6 phút).
 
 1. Trên Aiven, mở **Query editor** (hoặc kết nối bằng MySQL Workbench / DBeaver bằng thông tin ở Bước 2) và chạy:
    ```sql
-   DROP TABLE IF EXISTS nhat_ky_hoat_dong, chi_tiet_phieu, phieu, the_kho, phieu_kiem_ke, ton_kho, ho_so_noi_dung,
+   DROP TABLE IF EXISTS yeu_cau_dat_lai_mk, nhat_ky_hoat_dong, chi_tiet_phieu, phieu, the_kho, phieu_kiem_ke, ton_kho, ho_so_noi_dung,
                         ho_so_doi_tac, doi_tac, hang_hoa, kho, nguoi_dung;
    ```
 2. Trên Render, bấm **Manual Deploy → Restart service**. Bảng được tạo lại và dữ liệu mẫu được nạp lại.

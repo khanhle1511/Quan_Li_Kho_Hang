@@ -66,7 +66,8 @@ public class StateService {
 
         List<Map<String, Object>> userList = allUsers.stream()
                 .sorted(Comparator.comparingInt((UserAccount u) -> u.id.length()).thenComparing(u -> u.id))
-                .map(u -> m("id", u.id, "name", u.name, "phone", showUserPhone ? u.phone : null,
+                // AUTH-08: email tài khoản cũng chỉ Admin được xem
+                .map(u -> m("id", u.id, "name", u.name, "phone", showUserPhone ? u.phone : null, "email", showUserPhone ? u.email : null,
                         "role", u.role, "opened", u.opened, "status", u.status))
                 .toList();
 

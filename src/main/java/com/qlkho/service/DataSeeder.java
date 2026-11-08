@@ -50,11 +50,12 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         if (users.count() > 0) return;
         String hash = encoder.encode("123456");
-        user("U1", "Nguyễn Văn An", "0901111111", hash, Rules.ADMIN, "2026-09-01", Rules.ACTIVE);
-        user("U2", MANAGER_NAME, "0902222222", hash, Rules.MANAGER, "2026-09-01", Rules.ACTIVE);
-        user("U3", "Lê Minh Cường", "0903333333", hash, Rules.STAFF, "2026-09-15", Rules.ACTIVE);
-        user("U4", "Phạm Thu Dung", "0904444444", hash, Rules.STAFF, "2026-09-15", Rules.LOCKED);
-        user("U5", "Hoàng Gia Huy", "0905555555", hash, Rules.STAFF, "2026-11-03", Rules.DRAFT);
+        // AUTH-08: email demo nhận OTP qua Mailpit khi chạy local; U5 để trống email (kiểm thử tài khoản chưa có email)
+        user("U1", "Nguyễn Văn An", "0901111111", "an.nguyen@qlkho.local", hash, Rules.ADMIN, "2026-09-01", Rules.ACTIVE);
+        user("U2", MANAGER_NAME, "0902222222", "binh.tran@qlkho.local", hash, Rules.MANAGER, "2026-09-01", Rules.ACTIVE);
+        user("U3", "Lê Minh Cường", "0903333333", "cuong.le@qlkho.local", hash, Rules.STAFF, "2026-09-15", Rules.ACTIVE);
+        user("U4", "Phạm Thu Dung", "0904444444", "dung.pham@qlkho.local", hash, Rules.STAFF, "2026-09-15", Rules.LOCKED);
+        user("U5", "Hoàng Gia Huy", "0905555555", null, hash, Rules.STAFF, "2026-11-03", Rules.DRAFT);
 
         warehouse("HN", "KHO-HN", "Kho Hà Nội", "Long Biên, Hà Nội", "U2", "0243999888", 2000, "2026-01-05");
         warehouse("HCM", "KHO-HCM", "Kho TP.HCM", "Thủ Đức, TP.HCM", "U3", "0283777666", 1500, "2026-03-01");
@@ -116,9 +117,9 @@ public class DataSeeder implements CommandLineRunner {
                 List.of("Phong Hanh chinh - Chi nhanh 1 (KH-01)", "Tai lieu mau"));
     }
 
-    private void user(String id, String name, String phone, String hash, String role, String opened, String status) {
+    private void user(String id, String name, String phone, String email, String hash, String role, String opened, String status) {
         UserAccount u = new UserAccount();
-        u.id = id; u.name = name; u.phone = phone; u.passwordHash = hash; u.role = role; u.opened = opened; u.status = status;
+        u.id = id; u.name = name; u.phone = phone; u.email = email; u.passwordHash = hash; u.role = role; u.opened = opened; u.status = status;
         users.save(u);
     }
 

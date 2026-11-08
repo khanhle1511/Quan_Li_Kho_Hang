@@ -84,6 +84,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
 .eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:0;border-radius:8px;background:transparent;color:#56606B;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .eye:hover{background:#F1F4F7}
 .linkbtn{border:0;background:none;padding:0;color:#1A56C4;font-size:13px;font-weight:500;cursor:pointer}
+.linkbtn:disabled{color:#8A94A0;cursor:default}
+.otp-input{letter-spacing:.5em;font-size:22px;font-weight:600;text-align:center;font-variant-numeric:tabular-nums}
 .linkbtn:hover{color:#123F92;text-decoration:underline}
 .divider{display:flex;align-items:center;gap:12px;color:#56606B;font-size:12px}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:#E1E6EB}
@@ -384,7 +386,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       rcf: { in: 'all', out: 'all' },
       uq: '', ufilter: 'all',
       udel: null,
-      uf: { mode: null, id: null, name: '', phone: '', pass: '', role: 'staff', opened: '', status: 'draft', show: false, err: '' },
+      uf: { mode: null, id: null, name: '', phone: '', email: '', pass: '', role: 'staff', opened: '', status: 'draft', show: false, err: '' },
       prodQ: '',
       pf: { open: false, sku: '', name: '', cat: '', unit: '', min: '', price: '', err: '' },
       ptab: 'sup',
@@ -395,6 +397,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       rb: { q: '', type: 'all', status: 'all', wh: 'all', admin: false, page: 1 }, // RCPT-10: bộ lọc sổ phiếu
       rview: null, // RCPT-10: mã phiếu đang mở popup
       act: null, // USR-07: { id, data, err, cat, q } khi bảng lịch sử đang mở
+      fp: null, // AUTH-08: luồng quên mật khẩu đang mở (null = đang ở form đăng nhập), xem blankFP()
       toast: null
     };
   }
@@ -486,6 +489,122 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       say('Xin chào ' + me.name + '!', 'info');
     } catch (e) { upd((n) => { n.login.err = e.message; }); }
   }
+
+  // ---------- AUTH-08: quên mật khẩu, đặt lại bằng mã OTP gửi qua email ----------
+  const OTP_LEN = 6;
+  const PASS_MIN = 6;
+  const blankFP = (phone) => ({ step: 'phone', phone: phone || '', otp: '', token: '', pass: '', pass2: '', show: false, err: '', busy: false, ttl: 0, expiresAt: 0, resendAt: 0 });
+  const secondsLeft = (at) => Math.max(0, Math.ceil((at - Date.now()) / 1000));
+  const mmss = (sec) => String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
+  const durationText = (sec) => (sec >= 60 ? Math.round(sec / 60) + ' phút' : sec + ' giây');
+  const digitsOnly = (v) => String(v || '').replace(/\D/g, '').slice(0, OTP_LEN);
+  const passOk = (p) => p.length >= PASS_MIN && !/\s/.test(p);
+  const setFP = (patch) => upd((n) => { Object.assign(n.fp, patch); });
+  const focusField = (fid) => { const el = root.querySelector('[data-fid="' + fid + '"]'); if (el) el.focus(); };
+  let fpTimer = null;
+  /** Vẽ lại mỗi giây cho đồng hồ đếm ngược ở bước nhập mã; tự dừng khi rời bước đó. */
+  function startFpTimer() {
+    clearInterval(fpTimer);
+    fpTimer = setInterval(() => {
+      if (S.fp && S.fp.step === 'otp' && !S.loggedIn) render();
+      else { clearInterval(fpTimer); fpTimer = null; }
+    }, 1000);
+  }
+  function openForgot() { upd((n) => { n.fp = blankFP(n.login.user); n.login.err = ''; }); focusField('fp-phone'); }
+  /** Quay về form đăng nhập, giữ SĐT đã nhập. */
+  function closeForgot() { upd((n) => { if (n.fp.phone) n.login.user = n.fp.phone; n.fp = null; }); }
+  function restartForgot() { upd((n) => { n.fp = blankFP(n.fp.phone); }); focusField('fp-phone'); }
+  /** Chạy một bước gọi API: chặn bấm hai lần, hiện lỗi máy chủ trong khung. */
+  async function fpRun(work) {
+    if (S.fp.busy) return;
+    setFP({ busy: true, err: '' });
+    try { await work(); } catch (e) { if (S.fp) setFP({ err: e.message }); } finally { if (S.fp) setFP({ busy: false }); }
+  }
+  function fpSendCode(isResend) {
+    const phone = normPhone(S.fp.phone);
+    if (!phone) return setFP({ err: 'Vui lòng nhập số điện thoại.' });
+    if (!PHONE_RE.test(phone)) return setFP({ err: 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 03, 05, 07, 08 hoặc 09).' });
+    return fpRun(async () => {
+      const r = await api('POST', '/api/auth/forgot', { phone });
+      const now = Date.now();
+      setFP({ step: 'otp', phone, otp: '', ttl: r.expiresIn, expiresAt: now + r.expiresIn * 1000, resendAt: now + r.resendAfter * 1000 });
+      startFpTimer();
+      focusField('fp-otp');
+      if (isResend) say('Đã gửi lại mã xác nhận.', 'info');
+    });
+  }
+  function fpVerify() {
+    const f = S.fp;
+    if (f.otp.length !== OTP_LEN || !secondsLeft(f.expiresAt)) return;
+    return fpRun(async () => {
+      try {
+        const r = await api('POST', '/api/auth/forgot/verify', { phone: f.phone, otp: f.otp });
+        setFP({ step: 'reset', token: r.resetToken, otp: '' });
+        focusField('fp-pass');
+      } catch (e) { setFP({ otp: '' }); throw e; }
+    });
+  }
+  function fpReset() {
+    const f = S.fp;
+    if (!f.pass) return setFP({ err: 'Vui lòng nhập mật khẩu mới.' });
+    if (f.pass !== f.pass2) return setFP({ err: 'Mật khẩu nhập lại không khớp.' });
+    return fpRun(async () => {
+      const r = await api('POST', '/api/auth/forgot/reset', { resetToken: f.token, password: f.pass, confirm: f.pass2 });
+      upd((n) => { n.fp = null; n.login.user = r.phone; n.login.pass = ''; n.login.show = false; n.login.err = ''; });
+      say('Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.', 'ok');
+      focusField('login-pass');
+    });
+  }
+  /** Phím Enter trong ô nhập: bấm nút chính của bước đang mở. */
+  function fpSubmit() { ({ phone: () => fpSendCode(false), otp: fpVerify, reset: fpReset })[S.fp.step](); }
+
+  const fpBind = (key, filter) => val((v) => upd((n) => { n.fp[key] = filter ? filter(v) : v; n.fp.err = ''; }));
+  const fpHead = (title, sub) => '<div class="col" style="gap:6px"><h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-.01em">' + title + '</h2>' +
+    '<p class="muted" style="margin:0;font-size:14px;line-height:1.55">' + sub + '</p></div>';
+  const fpError = () => (S.fp.err ? '<div class="alert-err" role="alert">' + esc(S.fp.err) + '</div>' : '');
+  const fpLink = (label, fn) => '<button type="button" class="linkbtn" data-c="' + on(fn) + '">' + label + '</button>';
+  const fpPrimary = (label, fn, disabled) => btn(S.fp.busy ? 'Đang xử lý…' : label, fn, 'btn-primary',
+    ' style="width:100%;min-height:48px;border-radius:10px;font-size:15px;font-weight:600"' + (disabled || S.fp.busy ? ' disabled' : ''));
+  const fpPassField = (fid, label, key) => '<label class="field">' + label + '<span class="ifield"><span class="lead">' + svg('lock', 18) + '</span>' +
+    input(fid, S.fp[key], fpBind(key), 'type="' + (S.fp.show ? 'text' : 'password') + '" autocomplete="new-password"').replace('class="input"', 'class="input has-eye"') +
+    '<button type="button" class="eye" aria-label="' + (S.fp.show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu') + '" data-c="' + on(() => setFP({ show: !S.fp.show })) + '">' + svg(S.fp.show ? 'eyeOff' : 'eye', 18) + '</button></span></label>';
+
+  function viewForgot() { return { phone: viewForgotPhone, otp: viewForgotOtp, reset: viewForgotReset }[S.fp.step](); }
+  /** B1 – nhập số điện thoại. */
+  function viewForgotPhone() {
+    return fpHead('Quên mật khẩu', 'Nhập số điện thoại đăng nhập. Chúng tôi sẽ gửi mã xác nhận tới email đã đăng ký của tài khoản.') +
+      '<label class="field">Số điện thoại<span class="ifield"><span class="lead">' + svg('phone', 18) + '</span>' +
+      input('fp-phone', S.fp.phone, fpBind('phone'), 'type="tel" inputmode="tel" autocomplete="tel" placeholder="Ví dụ: 0902 222 222"') + '</span></label>' +
+      fpError() + fpPrimary('Gửi mã xác nhận', () => fpSendCode(false)) +
+      '<p class="muted small" style="margin:0">Tài khoản chưa có email? Liên hệ Quản trị viên để được đặt lại mật khẩu.</p>' +
+      fpLink('← Quay lại đăng nhập', closeForgot);
+  }
+  /** B2 – nhập mã OTP, có đồng hồ đếm ngược và gửi lại mã. Thông báo không cho biết SĐT có tài khoản hay không (BR-28). */
+  function viewForgotOtp() {
+    const f = S.fp; const left = secondsLeft(f.expiresAt); const wait = secondsLeft(f.resendAt);
+    const timer = left
+      ? '<span class="muted small" data-fid="fp-timer">Mã hết hạn sau <b>' + mmss(left) + '</b></span>'
+      : '<span class="small" data-fid="fp-timer" style="color:#B42318;font-weight:600">Mã đã hết hạn, hãy gửi lại mã.</span>';
+    const resend = wait
+      ? '<button type="button" class="linkbtn" data-fid="fp-resend" disabled>Gửi lại mã (' + wait + ' giây)</button>'
+      : fpLink('Gửi lại mã', () => fpSendCode(true));
+    return fpHead('Nhập mã xác nhận', 'Nếu số điện thoại <b>' + esc(fmtPhone(f.phone)) + '</b> đã đăng ký email, mã xác nhận 6 số đã được gửi tới email đó. ' +
+        'Mã có hiệu lực trong ' + durationText(f.ttl) + '. Không thấy email? Hãy kiểm tra thư mục Spam.') +
+      '<label class="field">Mã xác nhận' + input('fp-otp', f.otp, fpBind('otp', digitsOnly), 'inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" aria-label="Mã xác nhận 6 số"').replace('class="input"', 'class="input otp-input"') + '</label>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">' + timer + resend + '</div>' +
+      fpError() + fpPrimary('Xác nhận', fpVerify, f.otp.length !== OTP_LEN || !left) +
+      fpLink('Đổi số điện thoại', () => { setFP({ step: 'phone', otp: '', err: '' }); focusField('fp-phone'); });
+  }
+  /** B3 – đặt mật khẩu mới (quy tắc giống UserService/PasswordPolicy ở máy chủ). */
+  function viewForgotReset() {
+    const ok = passOk(S.fp.pass);
+    return fpHead('Đặt mật khẩu mới', 'Tạo mật khẩu mới cho tài khoản ' + esc(fmtPhone(S.fp.phone)) + '. Sau khi đặt lại, mọi phiên đăng nhập cũ sẽ bị đăng xuất.') +
+      fpPassField('fp-pass', 'Mật khẩu mới', 'pass') + fpPassField('fp-pass2', 'Nhập lại mật khẩu', 'pass2') +
+      '<span class="small" data-fid="fp-rule" style="display:flex;align-items:center;gap:6px;color:' + (ok ? '#13643A' : '#56606B') + '">' + (ok ? svg('check', 14) : '') + 'Ít nhất ' + PASS_MIN + ' ký tự, không chứa khoảng trắng.</span>' +
+      fpError() + fpPrimary('Đặt lại mật khẩu', fpReset) +
+      fpLink('Làm lại từ đầu', restartForgot);
+  }
+
   function createIn(pid, wh, qty) {
     upd((n) => { n.draft.in.wh = wh; n.draft.in.lines = [{ pid, qty: String(qty) }]; n.draft.in.note = 'Bổ sung hàng tồn thấp'; n.err.in = ''; n.screen = 'in'; });
     window.scrollTo(0, 0);
@@ -724,7 +843,13 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       '</section>';
     const form =
       '<section class="auth-form" style="position:relative"><button type="button" class="btn btn-sm btn-ghost backhome" data-c="' + on(() => upd((n) => { n.home = true; })) + '">' + svg('arrowLeft', 16) + 'Trang chủ</button><div class="auth-card' + anim + '">' +
-      '<div class="col" style="gap:6px"><h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-.01em">Chào mừng trở lại</h2><p class="muted" style="margin:0;font-size:14px">Đăng nhập bằng tài khoản được Quản trị viên cấp.</p></div>' +
+      (S.fp ? viewForgot() : viewLoginFields(roles)) + '</div></section>';
+    return '<div class="auth">' + brand + form + '</div>';
+  }
+
+  /** Các ô nhập của form đăng nhập (UC01). */
+  function viewLoginFields(roles) {
+    return '<div class="col" style="gap:6px"><h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-.01em">Chào mừng trở lại</h2><p class="muted" style="margin:0;font-size:14px">Đăng nhập bằng tài khoản được Quản trị viên cấp.</p></div>' +
       '<label class="field">Số điện thoại<span class="ifield"><span class="lead">' + svg('phone', 18) + '</span>' +
       input('login-user', S.login.user, val((v) => upd((n) => { n.login.user = v; n.login.err = ''; })), 'type="tel" inputmode="tel" autocomplete="tel" placeholder="Ví dụ: 0902 222 222"') + '</span></label>' +
       '<label class="field">Mật khẩu<span class="ifield"><span class="lead">' + svg('lock', 18) + '</span>' +
@@ -732,7 +857,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       '<button type="button" class="eye" aria-label="' + (S.login.show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu') + '" data-c="' + on(() => upd((n) => { n.login.show = !n.login.show; })) + '">' + svg(S.login.show ? 'eyeOff' : 'eye', 18) + '</button></span></label>' +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
       '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#3D4753"><input type="checkbox" data-ch="' + on((e) => { const v = e.target.checked; upd((n) => { n.login.remember = v; }); }) + '"' + (S.login.remember ? ' checked' : '') + '>Ghi nhớ đăng nhập</label>' +
-      '<button type="button" class="linkbtn" data-c="' + on(() => say('Vui lòng liên hệ Quản trị viên để được đặt lại mật khẩu.', 'info')) + '">Quên mật khẩu?</button></div>' +
+      '<button type="button" class="linkbtn" data-c="' + on(openForgot) + '">Quên mật khẩu?</button></div>' +
       (S.login.err ? '<div class="alert-err" role="alert">' + esc(S.login.err) + '</div>' : '') +
       btn('Đăng nhập', doLogin, 'btn-primary', ' style="width:100%;min-height:48px;border-radius:10px;font-size:15px;font-weight:600;box-shadow:0 6px 16px rgba(26,86,196,.28)"') +
       '<div class="divider">Tài khoản demo, bấm để điền nhanh</div>' +
@@ -744,9 +869,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
           '<span class="col" style="gap:1px;flex:1;min-width:0"><span style="font-size:14px;font-weight:600">' + r[1] + '</span><span class="muted small">' + r[2] + '</span></span>' +
           '<span class="muted small" style="font-family:ui-monospace,Consolas,monospace;white-space:nowrap">' + esc(fmtPhone(du.phone)) + '</span></button>';
       }).join('') + '</div>' +
-      '<p class="muted small" style="margin:0;text-align:center">Đồ án môn Phân tích và Thiết kế Yêu cầu</p>' +
-      '</div></section>';
-    return '<div class="auth">' + brand + form + '</div>';
+      '<p class="muted small" style="margin:0;text-align:center">Đồ án môn Phân tích và Thiết kế Yêu cầu</p>';
   }
 
   function viewSidebar(screen, low) {
@@ -1491,16 +1614,16 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
   // ---------- users CRUD ----------
   const USTAT = { active: { t: 'Hoạt động', bg: '#E1F3E8', fg: '#13643A' }, draft: { t: 'Nháp', bg: '#E6EFFF', fg: '#1A4FB8' }, locked: { t: 'Đã khóa', bg: '#ECEEF1', fg: '#454F5B' } };
   const RCOL = { admin: ['#ECEDFE', '#3B3FB6'], manager: ['#E6EFFF', '#1A4FB8'], staff: ['#FFF3D1', '#7A5300'] };
-  const blankUF = () => ({ mode: null, id: null, name: '', phone: '', pass: '', role: 'staff', opened: '', status: 'draft', show: false, err: '' });
+  const blankUF = () => ({ mode: null, id: null, name: '', phone: '', email: '', pass: '', role: 'staff', opened: '', status: 'draft', show: false, err: '' });
   async function saveUser() {
     const f = S.uf;
     try {
       if (f.mode === 'create') {
-        const r = await api('POST', '/api/users', { name: f.name, phone: normPhone(f.phone), password: f.pass, role: f.role, opened: f.opened, status: f.status });
+        const r = await api('POST', '/api/users', { name: f.name, phone: normPhone(f.phone), email: f.email.trim(), password: f.pass, role: f.role, opened: f.opened, status: f.status });
         upd((n) => { n.uf = blankUF(); }); await sync();
         say('Đã tạo tài khoản ' + r.name + ' (' + fmtPhone(f.phone) + '), trạng thái ' + USTAT[f.status].t + '.', 'ok');
       } else {
-        const r = await api('PUT', '/api/users/' + encodeURIComponent(f.id), { name: f.name, phone: normPhone(f.phone), password: f.pass });
+        const r = await api('PUT', '/api/users/' + encodeURIComponent(f.id), { name: f.name, phone: normPhone(f.phone), email: f.email.trim(), password: f.pass });
         upd((n) => { n.uf = blankUF(); }); await sync();
         say('Đã cập nhật tài khoản ' + r.name + '.', 'ok');
       }
@@ -1561,9 +1684,10 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
         input('uf-pass', f.pass, setF('pass'), 'type="' + (f.show ? 'text' : 'password') + '" autocomplete="new-password" placeholder="' + (isC ? 'Tối thiểu 6 ký tự' : 'Để trống nếu không đổi') + '"').replace('class="input"', 'class="input has-eye"') +
         '<button type="button" class="eye" aria-label="' + (f.show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu') + '" data-c="' + on(() => upd((n) => { n.uf.show = !n.uf.show; })) + '">' + svg(f.show ? 'eyeOff' : 'eye', 18) + '</button></span></label>';
       const phField = '<label class="field">Số điện thoại (tên đăng nhập)<span class="ifield"><span class="lead">' + svg('phone', 18) + '</span>' + input('uf-phone', f.phone, setF('phone'), 'type="tel" inputmode="tel" autocomplete="off" placeholder="Ví dụ: 0906 666 666"') + '</span></label>';
+      const emField = '<label class="field">Email (dùng để khôi phục mật khẩu)<span class="ifield"><span class="lead">' + svg('mail', 18) + '</span>' + input('uf-email', f.email, setF('email'), 'type="email" autocomplete="off" placeholder="Không bắt buộc, ví dụ: khoa.vo@congty.vn"') + '</span></label>';
       const body = isC
         ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">' +
-          '<label class="field">Họ tên' + input('uf-name', f.name, setF('name'), 'placeholder="Ví dụ: Võ Minh Khoa"') + '</label>' + phField + pwField +
+          '<label class="field">Họ tên' + input('uf-name', f.name, setF('name'), 'placeholder="Ví dụ: Võ Minh Khoa"') + '</label>' + phField + emField + pwField +
           '<label class="field">Ngày mở tài khoản' + input('uf-opened', f.opened, setF('opened'), 'type="date"') + '</label></div>' +
           '<div class="wrap" style="gap:24px"><div class="col g8"><span class="lbl">Vai trò</span>' + pills(['admin', 'manager', 'staff'].map((r) => ({ label: ROLE[r], on: f.role === r, pick: () => upd((n) => { n.uf.role = r; }) }))) + '</div>' +
           '<div class="col g8"><span class="lbl">Tình trạng tài khoản</span>' + pills(['draft', 'active', 'locked'].map((st) => ({ label: USTAT[st].t, on: f.status === st, pick: () => upd((n) => { n.uf.status = st; }) }))) + '</div></div>' +
@@ -1571,8 +1695,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
         : '<div class="wrap g10" style="padding:12px 14px;border-radius:10px;background:#F7F9FB;border:1px solid #EEF1F4;align-items:center">' +
           '<span class="avatar" style="background:' + RCOL[u.role][0] + ';color:' + RCOL[u.role][1] + '">' + esc(initialsOf(u.name)) + '</span><div class="col" style="gap:2px"><b>' + esc(u.name) + '</b><span class="muted small">' + ROLE[u.role] + ', mở ngày ' + isoToVn(u.opened) + '</span></div>' +
           '<span style="margin-left:auto">' + chip(USTAT[u.status]) + '</span></div>' +
-          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">' + '<label class="field">Họ tên' + input('uf-name', f.name, setF('name'), 'placeholder="Ví dụ: Võ Minh Khoa"') + '</label>' + phField + pwField + '</div>' +
-          '<p class="muted small" style="margin:0">Quản trị viên sửa được họ tên, số điện thoại đăng nhập và mật khẩu. Vai trò và ngày mở tài khoản giữ nguyên.</p>';
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">' + '<label class="field">Họ tên' + input('uf-name', f.name, setF('name'), 'placeholder="Ví dụ: Võ Minh Khoa"') + '</label>' + phField + emField + pwField + '</div>' +
+          '<p class="muted small" style="margin:0">Quản trị viên sửa được họ tên, số điện thoại đăng nhập, email và mật khẩu. Vai trò và ngày mở tài khoản giữ nguyên.</p>';
       form = '<section class="card" style="box-shadow:0 2px 4px rgba(16,24,40,.06),0 18px 40px rgba(16,24,40,.12)">' +
         head(isC ? 'users' : 'edit', '#0F2742', '#FFFFFF', isC ? 'Tạo tài khoản mới' : 'Sửa tài khoản', isC ? 'Số điện thoại dùng làm tên đăng nhập' : 'Cập nhật họ tên, số điện thoại đăng nhập hoặc đặt lại mật khẩu') +
         '<div class="col g16" style="padding:20px">' + body + (f.err ? '<div class="alert-err" role="alert">' + esc(f.err) + '</div>' : '') +
@@ -1582,7 +1706,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
     const fopts = [['all', 'Tất cả', S.users.length], ['active', 'Hoạt động', cnt.active], ['draft', 'Nháp', cnt.draft], ['locked', 'Đã khóa', cnt.locked]];
     const rows = list.map((u) => {
       const me = u.id === S.meUser; const editing = f.mode === 'edit' && f.id === u.id;
-      const acts = [btn(svg('edit', 15) + 'Sửa', () => upd((n) => { n.uf = Object.assign(blankUF(), { mode: 'edit', id: u.id, name: u.name, phone: u.phone }); }), 'btn-sm')];
+      const acts = [btn(svg('edit', 15) + 'Sửa', () => upd((n) => { n.uf = Object.assign(blankUF(), { mode: 'edit', id: u.id, name: u.name, phone: u.phone, email: u.email || '' }); }), 'btn-sm')];
       if (!me) {
         if (u.status === 'draft') acts.push(btn('Kích hoạt', () => setStatus(u, 'active'), 'btn-sm btn-primary'));
         if (u.status === 'draft' || u.status === 'active') acts.push(btn('Khóa', () => setStatus(u, 'locked'), 'btn-sm'));
@@ -1592,7 +1716,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
           : btn(svg('trash', 15), () => deleteUser(u), 'btn-sm btn-ghost btn-muted', ' aria-label="Xóa tài khoản ' + esc(u.name) + ' (cần khóa trước)" title="Khóa tài khoản trước khi xóa"'));
       }
       const row = [cell('<span style="display:flex;align-items:center;gap:10px"><span class="avatar" style="width:34px;height:34px;background:' + RCOL[u.role][0] + ';color:' + RCOL[u.role][1] + '">' + esc(initialsOf(u.name)) + '</span><span class="col"><button type="button" class="ulink" data-c="' + on(() => openActivity(u.id)) + '" aria-label="Xem lịch sử hoạt động của ' + esc(u.name) + '" title="Xem lịch sử hoạt động">' + esc(u.name) + '</button>' + (me ? '<span class="muted small">Tài khoản của bạn</span>' : '') + '</span></span>'),
-        cell(esc(fmtPhone(u.phone)), 'font-variant-numeric:tabular-nums'), cell(chip({ t: ROLE[u.role], bg: RCOL[u.role][0], fg: RCOL[u.role][1] })), cell(isoToVn(u.opened)), cell(chip(USTAT[u.status])),
+        cell(esc(fmtPhone(u.phone)) + '<span class="muted small" style="display:block;overflow-wrap:anywhere;font-variant-numeric:normal">' + (u.email ? esc(u.email) : 'Chưa có email') + '</span>', 'font-variant-numeric:tabular-nums'), cell(chip({ t: ROLE[u.role], bg: RCOL[u.role][0], fg: RCOL[u.role][1] })), cell(isoToVn(u.opened)), cell(chip(USTAT[u.status])),
         cell(acts.join(''), 'display:flex;gap:6px;flex-wrap:wrap;align-items:center')];
       if (editing) row.cls = 'hl';
       return row;
@@ -1604,7 +1728,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       btn('+ Tạo tài khoản', () => upd((n) => { n.uf = Object.assign(blankUF(), { mode: 'create', opened: isoToday() }); }), 'btn-primary', ' style="box-shadow:0 6px 16px rgba(26,86,196,.25)"') + '</div>' +
       form +
       '<section class="card" id="user-table" style="scroll-margin-top:16px">' + head('users', '#E6EFFF', '#1A4FB8', 'Tài khoản người dùng', 'Đăng nhập bằng số điện thoại và mật khẩu. Chỉ tài khoản đã khóa mới xóa được.') +
-      table('minmax(200px,1.6fr) 140px 150px 120px 110px minmax(230px,1.4fr)', ['Họ tên', 'Số điện thoại', 'Vai trò', 'Ngày mở', 'Tình trạng', 'Thao tác'], rows, 980, 'Không có tài khoản nào khớp bộ lọc.') +
+      table('minmax(200px,1.6fr) minmax(170px,1fr) 150px 120px 110px minmax(230px,1.4fr)', ['Họ tên', 'SĐT / Email', 'Vai trò', 'Ngày mở', 'Tình trạng', 'Thao tác'], rows, 980, 'Không có tài khoản nào khớp bộ lọc.') +
       '</section></div>';
   }
 
@@ -1752,7 +1876,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
       '<span class="avatar" style="background:' + RCOL[u.role][0] + ';color:' + RCOL[u.role][1] + '">' + esc(initialsOf(u.name)) + '</span>' +
       '<div class="col" style="gap:6px;min-width:0"><h2 class="h2" id="act-title" style="font-size:18px">' + esc(u.name) + '</h2>' +
       '<div class="wrap g8" style="align-items:center">' + chip({ t: ROLE[u.role], bg: RCOL[u.role][0], fg: RCOL[u.role][1] }) + chip(USTAT[u.status]) +
-      (u.phone ? '<span class="muted small" style="display:flex;align-items:center;gap:5px">' + svg('phone', 13) + esc(fmtPhone(u.phone)) + '</span>' : '') + '</div>' +
+      (u.phone ? '<span class="muted small" style="display:flex;align-items:center;gap:5px">' + svg('phone', 13) + esc(fmtPhone(u.phone)) + '</span>' : '') +
+      (u.email ? '<span class="muted small" style="display:flex;align-items:center;gap:5px">' + svg('mail', 13) + esc(u.email) + '</span>' : '') + '</div>' +
       '<span class="muted small">Lịch sử hoạt động, mới nhất ở trên</span></div></div>' +
       btn(svg('x', 18), closeActivity, 'btn-sm btn-ghost', ' aria-label="Đóng" data-fid="act-close"') + '</div>';
     let body;
@@ -1868,7 +1993,8 @@ input[type=checkbox]{width:18px;height:18px;accent-color:#1A56C4}
   root.addEventListener('click', (e) => { const b = e.target.closest('[data-c]'); if (b && H[b.dataset.c]) H[b.dataset.c](e); });
   root.addEventListener('input', (e) => { const t = e.target; if (t.dataset && t.dataset.i && H[t.dataset.i]) H[t.dataset.i]({ target: t }); });
   root.addEventListener('change', (e) => { const t = e.target; if (t.dataset && t.dataset.ch && H[t.dataset.ch]) H[t.dataset.ch]({ target: t }); });
-  root.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !S.loggedIn && !S.home && e.target.tagName === 'INPUT') doLogin(); });
+  root.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !S.loggedIn && !S.home && e.target.tagName === 'INPUT') (S.fp ? fpSubmit() : doLogin()); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.fp && !S.loggedIn) closeForgot(); }); // AUTH-08
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (S.udel || S.wdel || S.kpick || S.act || S.rview)) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; n.act = null; n.rview = null; }); });
   root.addEventListener('mousedown', (e) => { if ((S.udel || S.wdel || S.kpick || S.act || S.rview) && e.target.dataset && e.target.dataset.overlay) upd((n) => { n.udel = null; n.wdel = null; n.kpick = null; n.act = null; n.rview = null; }); });
   document.addEventListener('keydown', (e) => { if (S.home && !S.loggedIn && ['ArrowUp', 'ArrowDown', 'PageDown', 'Enter', ' '].indexOf(e.key) >= 0) { e.preventDefault(); leaveHome(); } });
