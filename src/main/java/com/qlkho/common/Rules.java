@@ -1,6 +1,7 @@
 package com.qlkho.common;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -57,7 +58,6 @@ public final class Rules {
     public static final Pattern ANY_PHONE = Pattern.compile("^0\\d{9,10}$");
     public static final Pattern EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$");
     public static final Pattern ISO_DATE = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}$");
-    public static final Pattern WH_CODE = Pattern.compile("^KHO-[A-Z0-9]{2,10}$");
     /** BCrypt chỉ băm được tối đa 72 byte UTF-8 (tính theo byte, nên chữ có dấu tốn 2–3 byte); dài hơn thư viện ném lỗi. */
     public static final int PASSWORD_MAX_BYTES = 72;
 
@@ -68,6 +68,11 @@ public final class Rules {
     private static final Locale VI = Locale.forLanguageTag("vi-VN");
 
     public static String now() { return LocalDateTime.now(VN).format(TS); }
+
+    public static LocalDate today() { return LocalDate.now(VN); }
+
+    /** Người lập các phiếu sinh tự động từ kế hoạch định kỳ (không có tài khoản). */
+    public static final String SYSTEM_NAME = "Hệ thống";
 
     /** "dd/MM/yyyy HH:mm" → mili-giây (0 nếu không đúng định dạng). Dùng để sắp xếp lịch sử suy ra từ chứng từ cũ. */
     public static long toMillis(String ts) {

@@ -13,7 +13,9 @@ import { SEL } from '../helpers/selectors';
  * - Các vai trò khác được nêu tên trong bước ("Admin gọi …") dùng request context riêng.
  * - Dữ liệu [TEST] tạo khi gặp bước "fixture [TEST] đã được tạo" và dọn sau kịch bản.
  */
-export type ActorKey = 'admin' | 'manager' | 'staff' | 'anon' | 'T_USER' | 'T_USER2';
+export type ActorKey = 'admin' | 'manager' | 'staff' | 'managerHcm' | 'managerDn' | 'staffHcm' | 'anon' | 'T_USER' | 'T_USER2';
+/** Vai trò có tài khoản trong dữ liệu mẫu (đọc từ ACCOUNTS). Manager/Staff = kho HN; Hcm/Dn = kho TP.HCM / Đà Nẵng (BR-36) */
+const SEEDED: ActorKey[] = ['admin', 'manager', 'staff', 'managerHcm', 'managerDn', 'staffHcm'];
 
 export interface TestUser { id: string; name: string; phone: string; pass: string }
 export interface TestWh { id: string; code: string; name: string }
@@ -35,11 +37,14 @@ export const FAKE_PDF_BYTES = () => readFileSync(join(FIXTURES, 'fake.pdf'));
 export const today = () => new Date().toISOString().slice(0, 10);
 const rnd = (n: number) => Array.from({ length: n }, () => Math.floor(Math.random() * 10)).join('');
 export const randomPhone = () => '09' + rnd(8);
-export const SEED = { low: 4, pending: 2, total: 792, warehouses: 2 };
+export const SEED = { low: 12, pending: 2, total: 994, warehouses: 3 }; // dữ liệu mẫu sau khi cố định 3 kho (DataSeeder)
 
 /** Tên vai trò trong câu bước → khóa nội bộ */
 export function actorOf(word: string): ActorKey {
-  const m: Record<string, ActorKey> = { Admin: 'admin', Manager: 'manager', Staff: 'staff', 'Quản trị viên': 'admin', T_USER: 'T_USER', T_USER2: 'T_USER2' };
+  const m: Record<string, ActorKey> = {
+    Admin: 'admin', Manager: 'manager', Staff: 'staff', 'Manager HCM': 'managerHcm', 'Manager DN': 'managerDn', 'Staff HCM': 'staffHcm',
+    'Quản trị viên': 'admin', T_USER: 'T_USER', T_USER2: 'T_USER2',
+  };
   if (!(word in m)) throw new Error('Không biết vai trò: ' + word);
   return m[word];
 }
@@ -77,7 +82,7 @@ export class World {
   creds(a: ActorKey) {
     const o = this.extraCreds.get(a);
     if (o) return o;
-    if (a === 'admin' || a === 'manager' || a === 'staff') return { phone: ACCOUNTS[a].phone, pass: ACCOUNTS[a].pass };
+    if (SEEDED.includes(a)) { const acc = ACCOUNTS[a as keyof typeof ACCOUNTS]; return { phone: acc.phone, pass: acc.pass }; }
     if (a === 'T_USER') return { phone: this.need().user.phone, pass: this.need().user.pass };
     if (a === 'T_USER2' && this.fx?.user2) return { phone: this.fx.user2.phone, pass: this.fx.user2.pass };
     throw new Error('Chưa có tài khoản cho ' + a);
@@ -203,7 +208,8 @@ export class World {
   async createUser(name: string, status: string, pass = 'Test1234'): Promise<TestUser> {
     for (let i = 0; i < 5; i++) {
       const phone = randomPhone();
-      const l = await this.call('admin', 'POST', '/api/users', { name, phone, password: pass, role: 'staff', opened: today(), status });
+      // BR-36: Nhân viên kho phải có kho làm việc
+      const l = await this.call('admin', 'POST', '/api/users', { name, phone, password: pass, role: 'staff', opened: today(), status, warehouseId: 'HN' });
       if (l.status === 200) return { id: l.json.id, name, phone, pass };
       if (!/đã được dùng/.test(l.json?.error ?? '')) this.ok(l, 'tạo user');
     }

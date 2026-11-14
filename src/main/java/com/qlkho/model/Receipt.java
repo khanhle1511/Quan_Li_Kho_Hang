@@ -20,6 +20,8 @@ public class Receipt {
     /** Thời điểm duyệt / từ chối (dd/MM/yyyy HH:mm); null khi còn chờ duyệt hoặc phiếu cũ trước khi có cột này */
     @Column(length = 20) public String decidedAt;
     @Column(length = 500) public String note;
+    /** Phiếu sinh tự động từ kế hoạch định kỳ: "DK-0001 / 2027-Q1"; null với phiếu lập tay */
+    @Column(length = 40) public String recurringRef;
     /** Dùng để sắp xếp: mới nhất lên đầu */
     public long sortKey;
 }

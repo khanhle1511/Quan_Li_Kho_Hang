@@ -163,6 +163,7 @@ public class AuthService {
         m.put("name", u.name);
         m.put("role", u.role);
         m.put("roleLabel", Rules.ROLE_LABEL.get(u.role));
+        m.put("warehouseId", u.warehouseId); // BR-37: kho làm việc, null = Admin hoặc chưa phân kho
         return m;
     }
 }

@@ -1,12 +1,14 @@
 package com.qlkho.service;
 
 import com.qlkho.common.Rules;
+import com.qlkho.common.WarehouseScope;
 import com.qlkho.model.*;
 import com.qlkho.repo.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.qlkho.common.Rules.nz;
@@ -28,10 +30,13 @@ public class StateService {
     private final StocktakeRepo stocktakes;
     private final PartnerFileRepo files;
     private final AuthService auth;
+    private final ReportService reports;
+    private final RecurringService recurring;
 
     public StateService(UserRepo users, WarehouseRepo warehouses, ProductRepo products, StockRepo stocks,
                         PartnerRepo partners, ReceiptRepo receipts, ReceiptLineRepo lines, StockHistoryRepo history,
-                        StocktakeRepo stocktakes, PartnerFileRepo files, AuthService auth) {
+                        StocktakeRepo stocktakes, PartnerFileRepo files, AuthService auth, ReportService reports,
+                        RecurringService recurring) {
         this.users = users;
         this.warehouses = warehouses;
         this.products = products;
@@ -43,6 +48,8 @@ public class StateService {
         this.stocktakes = stocktakes;
         this.files = files;
         this.auth = auth;
+        this.reports = reports;
+        this.recurring = recurring;
     }
 
     /** Map giữ thứ tự khóa, viết gọn: m("a", 1, "b", 2). */
@@ -58,6 +65,8 @@ public class StateService {
         boolean hideWh = Rules.hideContact("wh", role);
         // BUG-010: SĐT người dùng (cũng là tên đăng nhập) chỉ Admin được xem, không gắn với quyền xem SĐT kho
         boolean showUserPhone = Rules.ADMIN.equals(role);
+        // BR-37: Quản lý kho / Nhân viên kho chỉ nhận số liệu (kho, tồn, phiếu, thẻ kho, kiểm kê) của kho mình làm việc
+        Predicate<String> inScope = wh -> WarehouseScope.canUse(me, wh);
 
         List<UserAccount> allUsers = users.findAll();
         // RCPT-10: vai trò người lập phiếu (tài khoản đã xóa: không tra được → null, không che)
@@ -68,21 +77,31 @@ public class StateService {
                 .sorted(Comparator.comparingInt((UserAccount u) -> u.id.length()).thenComparing(u -> u.id))
                 // AUTH-08: email tài khoản cũng chỉ Admin được xem
                 .map(u -> m("id", u.id, "name", u.name, "phone", showUserPhone ? u.phone : null, "email", showUserPhone ? u.email : null,
-                        "role", u.role, "opened", u.opened, "status", u.status))
+                        "role", u.role, "opened", u.opened, "status", u.status, "warehouseId", u.warehouseId))
                 .toList();
 
+        // BR-36: Quản lý kho và số Nhân viên kho của từng kho, suy ra từ kho làm việc của tài khoản
+        Map<String, String> managerOf = new HashMap<>();
+        Map<String, Long> staffCount = new HashMap<>();
+        for (UserAccount u : allUsers) {
+            if (u.warehouseId == null) continue;
+            if (Rules.MANAGER.equals(u.role)) managerOf.put(u.warehouseId, u.id);
+            else if (Rules.STAFF.equals(u.role)) staffCount.merge(u.warehouseId, 1L, Long::sum);
+        }
         List<Map<String, Object>> whList = warehouses.findAllByOrderByOpenedAsc().stream()
-                .map(w -> m("id", w.id, "code", w.code, "name", w.name, "address", w.address, "keeperId", w.keeperId,
+                .filter(w -> inScope.test(w.id))
+                .map(w -> m("id", w.id, "code", w.code, "name", w.name, "address", w.address,
+                        "managerId", managerOf.get(w.id), "staffCount", staffCount.getOrDefault(w.id, 0L),
                         "phone", hideWh ? null : w.phone, "capacity", w.capacity, "opened", w.opened, "status", w.status))
                 .toList();
 
         List<Map<String, Object>> productList = products.findAllByOrderByIdAsc().stream()
                 .map(p -> m("id", p.id, "sku", p.sku, "name", p.name, "cat", p.category, "unit", p.unit,
-                        "min", p.minStock, "price", p.price))
+                        "min", p.minStock))
                 .toList();
 
         Map<String, Integer> stockMap = new LinkedHashMap<>();
-        for (Stock s : stocks.findAll()) stockMap.put(s.id, s.qty);
+        for (Stock s : stocks.findAll()) if (inScope.test(s.warehouseId)) stockMap.put(s.id, s.qty);
 
         // Đối tác: tải một lần, chia theo loại; vai trò bị ẩn liên hệ thì không thấy SĐT, email và hồ sơ
         Map<String, List<Partner>> byType = partners.findAllByOrderByIdAsc().stream()
@@ -94,9 +113,9 @@ public class StateService {
 
         Map<String, List<ReceiptLine>> linesBy = lines.findAllByOrderByIdAsc().stream()
                 .collect(Collectors.groupingBy(l -> l.receiptId));
-        List<Receipt> rs = receipts.findAllByOrderBySortKeyDesc();
+        List<Receipt> rs = receipts.findAllByOrderBySortKeyDesc().stream().filter(r -> inScope.test(r.warehouseId)).toList();
         // Phiếu duyệt trước khi có cột decided_at: lấy thời điểm từ dòng thẻ kho đầu tiên của phiếu
-        List<StockHistory> histAll = history.findAllByOrderByIdDesc();
+        List<StockHistory> histAll = history.findAllByOrderByIdDesc().stream().filter(h -> inScope.test(h.warehouseId)).toList();
         Map<String, String> firstMove = new HashMap<>();
         for (StockHistory h : histAll) firstMove.put(h.ref, h.happenedAt); // duyệt từ mới → cũ, giá trị cuối là dòng cũ nhất
         List<Map<String, Object>> receiptList = rs.stream().map(r -> {
@@ -106,7 +125,7 @@ public class StateService {
             boolean masked = viewerIsManager && Rules.ADMIN.equals(creatorRole);
             return m("id", r.id, "code", r.id, "type", r.receiptType,
                     "partner", r.partnerId, "wh", r.warehouseId, "date", r.createdAt, "status", r.status,
-                    "creator", r.creatorName, "creatorId", r.creatorId, "creatorRole", creatorRole,
+                    "creator", r.creatorName, "creatorId", r.creatorId, "creatorRole", creatorRole, "recurringRef", r.recurringRef,
                     "approver", nz(r.approverName), "note", masked ? "" : nz(r.note),
                     "decidedAt", r.decidedAt != null ? r.decidedAt : Rules.APPROVED.equals(r.status) ? firstMove.get(r.id) : null,
                     "masked", masked, "lineCount", ls.size(),
@@ -118,7 +137,7 @@ public class StateService {
                         "delta", h.delta, "after", h.qtyAfter, "ref", h.ref))
                 .toList();
 
-        List<Stocktake> kks = stocktakes.findAllByOrderBySortKeyDesc();
+        List<Stocktake> kks = stocktakes.findAllByOrderBySortKeyDesc().stream().filter(k -> inScope.test(k.warehouseId)).toList();
         List<Map<String, Object>> kkList = kks.stream()
                 .map(k -> m("code", k.id, "date", k.createdAt, "wh", k.warehouseId, "checked", k.checkedCount,
                         "diff", k.diffCount, "by", k.confirmedBy))
@@ -131,8 +150,10 @@ public class StateService {
                         "date", f.uploadedAt, "by", f.uploadedBy))
                 .toList();
 
-        List<String> rIds = rs.stream().map(r -> r.id).toList();
-        List<String> kIds = kks.stream().map(k -> k.id).toList();
+        // Mã kế tiếp đánh số chung cho mọi kho nên lấy từ toàn bộ mã, không từ danh sách đã lọc theo kho
+        int nextIn = Rules.maxNumber(receipts.findIdsByPrefix("PN-"), "PN-") + 1;
+        int nextOut = Rules.maxNumber(receipts.findIdsByPrefix("PX-"), "PX-") + 1;
+        int nextKk = Rules.maxNumber(stocktakes.findAllIds(), "KK-") + 1;
 
         return m(
                 "me", auth.me(me),
@@ -146,9 +167,10 @@ public class StateService {
                 "history", historyList,
                 "kkList", kkList,
                 "files", fileList,
-                "seq", m("in", Rules.maxNumber(rIds, "PN-") + 1, "out", Rules.maxNumber(rIds, "PX-") + 1,
-                        "kk", Rules.maxNumber(kIds, "KK-") + 1),
-                "hideContact", Rules.HIDE_CONTACT);
+                "seq", m("in", nextIn, "out", nextOut, "kk", nextKk),
+                "hideContact", Rules.HIDE_CONTACT,
+                "reports", WarehouseScope.allWarehouses(me) ? reports.history() : List.of(),
+                "plans", recurring.view(me));
     }
 
     private static List<Map<String, Object>> partnerList(List<Partner> list, boolean hide) {

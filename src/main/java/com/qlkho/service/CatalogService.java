@@ -33,12 +33,13 @@ public class CatalogService {
     private final WarehouseRepo warehouses;
     private final StockRepo stocks;
     private final ReceiptRepo receipts;
-    private final UserRepo users;
-    /** BUG-007: tạo hàng hóa / đối tác / kho chạy tuần tự và INSERT thật, không ghi đè bản ghi cùng mã. */
+    /** BR-36: Quản lý kho của từng kho. */
+    private final WarehouseStaffing staffing;
+    /** BUG-007: tạo hàng hóa chạy tuần tự và INSERT thật, không ghi đè bản ghi cùng mã. */
     private final CreateTx create;
 
     public CatalogService(ProductRepo products, PartnerRepo partners, PartnerFileRepo files, PartnerFileContentRepo contents,
-                          WarehouseRepo warehouses, StockRepo stocks, ReceiptRepo receipts, UserRepo users, CreateTx create) {
+                          WarehouseRepo warehouses, StockRepo stocks, ReceiptRepo receipts, WarehouseStaffing staffing, CreateTx create) {
         this.products = products;
         this.partners = partners;
         this.files = files;
@@ -46,7 +47,7 @@ public class CatalogService {
         this.warehouses = warehouses;
         this.stocks = stocks;
         this.receipts = receipts;
-        this.users = users;
+        this.staffing = staffing;
         this.create = create;
     }
 
@@ -56,24 +57,35 @@ public class CatalogService {
     }
 
     private Map<String, Object> createProductTx(Dto.NewProduct f) {
+        Product p = new Product();
+        p.id = Rules.nextCode(products.findAllIds(), "P", 2);
+        fillProduct(p, f);
+        create.insert(p);
+        return Map.of("id", p.id, "name", p.name);
+    }
+
+    /** Quản trị viên sửa hàng hóa: mã SKU, tên, danh mục, đơn vị tính, tồn tối thiểu. Tồn kho và chứng từ giữ nguyên. */
+    @Transactional
+    public Map<String, Object> updateProduct(String id, Dto.NewProduct f) {
+        Product p = products.findById(id).orElseThrow(() -> ApiException.notFound("Không tìm thấy hàng hóa " + id + "."));
+        fillProduct(p, f);
+        products.save(p);
+        return Map.of("id", p.id, "name", p.name, "sku", p.sku);
+    }
+
+    /** Kiểm tra và ghi các trường của hàng hóa; mã SKU không trùng với mặt hàng khác. */
+    private void fillProduct(Product p, Dto.NewProduct f) {
         String sku = Rules.trim(f.sku()), name = Rules.trim(f.name()), unit = Rules.trim(f.unit());
         if (sku.isEmpty() || name.isEmpty() || unit.isEmpty())
             throw ApiException.bad("Vui lòng nhập Mã SKU, Tên hàng hóa và Đơn vị tính.");
-        if (products.existsBySkuIgnoreCase(sku)) throw ApiException.bad("Mã SKU “" + sku + "” đã tồn tại.");
+        boolean skuTaken = p.id == null ? products.existsBySkuIgnoreCase(sku) : products.existsBySkuIgnoreCaseAndIdNot(sku, p.id);
+        if (skuTaken) throw ApiException.bad("Mã SKU “" + sku + "” đã tồn tại.");
         if (f.minStock() == null || f.minStock() < 0) throw ApiException.bad("Tồn tối thiểu phải là số nguyên ≥ 0.");
-        long price = f.price() == null ? 0 : f.price();
-        if (price < 0) throw ApiException.bad("Giá vốn không hợp lệ.");
-
-        Product p = new Product();
-        p.id = Rules.nextCode(products.findAllIds(), "P", 2);
         p.sku = sku;
         p.name = name;
         p.category = Rules.blank(f.category()) ? "Khác" : f.category().trim();
         p.unit = unit;
         p.minStock = f.minStock();
-        p.price = price;
-        create.insert(p);
-        return Map.of("id", p.id, "name", p.name);
     }
 
     // ---------- đối tác ----------
@@ -96,34 +108,7 @@ public class CatalogService {
         if (!email.isEmpty() && !Rules.EMAIL.matcher(email).matches()) throw ApiException.bad("Email không hợp lệ.");
     }
 
-    public Map<String, Object> createPartner(Dto.PartnerForm f, UserAccount me) {
-        return create.run(() -> createPartnerTx(f, me));
-    }
-
-    private Map<String, Object> createPartnerTx(Dto.PartnerForm f, UserAccount me) {
-        String type = f.type();
-        if (!"sup".equals(type) && !"cus".equals(type)) throw ApiException.bad("Loại đối tác không hợp lệ.");
-        String name = Rules.trim(f.name()), phone = Rules.normPhone(f.phone()), email = Rules.trim(f.email());
-        if (name.isEmpty()) throw ApiException.bad("Vui lòng nhập tên đối tác.");
-        checkContact(phone, email);
-
-        String prefix = "sup".equals(type) ? "NCC-" : "KH-";
-        Partner p = new Partner();
-        p.id = Rules.nextCode(partners.findIdsByPrefix(prefix), prefix, 2);
-        p.partnerType = type;
-        p.name = name;
-        p.phone = phone;
-        p.email = email;
-        p.address = Rules.trim(f.address());
-        p.note = Rules.trim(f.note());
-        if (!p.note.isEmpty()) {
-            p.noteAt = Rules.now();
-            p.noteBy = me.name;
-        }
-        create.insert(p);
-        return Map.of("id", p.id);
-    }
-
+    // Nhà cung cấp / khách hàng là danh sách cố định (FixedCatalog), không tạo mới; chỉ sửa thông tin, ghi chú, hồ sơ.
     @Transactional
     public Map<String, Object> updatePartner(String id, Dto.PartnerForm f, UserAccount me) {
         Partner p = partner(id);
@@ -226,59 +211,27 @@ public class CatalogService {
         return receipts.countByWarehouseIdAndStatus(warehouseId, Rules.PENDING);
     }
 
-    private void checkKeeper(String keeperId, String currentKeeperId) {
-        if (Rules.blank(keeperId)) return;
-        UserAccount k = users.findById(keeperId).orElseThrow(() -> ApiException.bad("Thủ kho đã chọn không còn tồn tại."));
-        if (!Rules.MANAGER.equals(k.role) && !Rules.STAFF.equals(k.role))
-            throw ApiException.bad("Thủ kho phải là Quản lý kho hoặc Nhân viên kho.");
-        if (!Rules.ACTIVE.equals(k.status) && !keeperId.equals(currentKeeperId))
-            throw ApiException.bad("Chỉ chọn được tài khoản đang hoạt động làm thủ kho.");
-    }
-
     private static String statusOf(Dto.WarehouseForm f) {
         return Rules.PAUSED.equals(f.status()) ? Rules.PAUSED : Rules.ACTIVE;
     }
 
-    public Map<String, Object> createWarehouse(Dto.WarehouseForm f) {
-        return create.run(() -> createWarehouseTx(f));
-    }
+    // Kho là danh sách cố định (FixedCatalog), không tạo mới; chỉ sửa, tạm ngưng/mở lại, xóa.
 
-    private Map<String, Object> createWarehouseTx(Dto.WarehouseForm f) {
-        String code = Rules.trim(f.code()).toUpperCase();
-        if (!Rules.WH_CODE.matcher(code).matches())
-            throw ApiException.bad("Mã kho phải có dạng KHO-XXX (2–10 chữ in hoa hoặc số), ví dụ KHO-DN.");
-        if (warehouses.existsByCode(code)) throw ApiException.bad("Mã kho " + code + " đã tồn tại.");
-        if (!Rules.isIsoDate(f.opened())) throw ApiException.bad("Vui lòng chọn ngày đưa vào sử dụng.");
-
-        Warehouse w = new Warehouse();
-        fillWarehouse(w, f);
-        w.id = code.substring("KHO-".length());
-        if (warehouses.existsById(w.id)) w.id = w.id + "-" + (System.currentTimeMillis() % 1000);
-        w.code = code;
-        w.opened = f.opened();
-        w.status = statusOf(f);
-        create.insert(w);
-        return Map.of("id", w.id, "name", w.name);
-    }
-
-    /** Kiểm tra và ghi các trường sửa được của kho (tên, địa chỉ, SĐT, sức chứa, thủ kho). */
+    /** Kiểm tra và ghi các trường sửa được của kho (tên, địa chỉ, SĐT, sức chứa) và Quản lý kho (BR-36). */
     private void fillWarehouse(Warehouse w, Dto.WarehouseForm f) {
         String name = Rules.trim(f.name()), address = Rules.trim(f.address()), phone = Rules.normPhone(f.phone());
         int cap = f.capacity() == null ? 0 : f.capacity();
         if (name.isEmpty()) throw ApiException.bad("Vui lòng nhập tên kho.");
-        boolean dupName = w.id == null ? warehouses.existsByNameIgnoreCase(name)
-                : warehouses.existsByNameIgnoreCaseAndIdNot(name, w.id);
-        if (dupName) throw ApiException.bad("Tên kho “" + name + "” đã được dùng.");
+        if (warehouses.existsByNameIgnoreCaseAndIdNot(name, w.id)) throw ApiException.bad("Tên kho “" + name + "” đã được dùng.");
         if (address.isEmpty()) throw ApiException.bad("Vui lòng nhập địa chỉ kho.");
         if (!phone.isEmpty() && !Rules.ANY_PHONE.matcher(phone).matches())
             throw ApiException.bad("Số điện thoại kho không hợp lệ (10–11 chữ số, bắt đầu bằng 0).");
         if (cap < 0) throw ApiException.bad("Sức chứa phải là số nguyên ≥ 0 (để trống nếu không giới hạn).");
-        checkKeeper(f.keeperId(), w.keeperId);
         w.name = name;
         w.address = address;
         w.phone = phone;
         w.capacity = cap;
-        w.keeperId = Rules.blank(f.keeperId()) ? null : f.keeperId();
+        staffing.setManager(w, f.managerId());
     }
 
     @Transactional
@@ -322,6 +275,7 @@ public class CatalogService {
             throw ApiException.bad("Không thể xóa " + w.name + ": kho còn " + Rules.fmt(qty) + " đơn vị hàng. Hãy xuất hết hàng trước.");
         if (pendingCount(id) > 0) throw ApiException.bad("Không thể xóa " + w.name + ": còn phiếu chờ duyệt.");
         stocks.deleteByWarehouseId(id);
+        staffing.releaseAll(id);
         warehouses.delete(w);
         // Phiếu, thẻ kho và phiếu kiểm kê cũ được giữ nguyên để tra cứu lịch sử
         return Map.of("name", w.name);

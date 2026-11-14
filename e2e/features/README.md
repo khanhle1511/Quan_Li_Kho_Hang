@@ -27,8 +27,23 @@ Viết từ **QLKho_Test_Tracker.pdf** (66 tính năng · 172 test case). Đây 
 | 15-lich-su-hoat-dong.feature | Lịch sử hoạt động của nhân viên (USR-07, bổ sung 07/11/2026 – spec/USR-07_testcases) | USR-07 | 10 |
 | 16-so-phieu.feature | Sổ phiếu nhập/xuất & popup chi tiết (RCPT-10, bổ sung 07/11/2026 – spec/RCPT-10_testcases) | RCPT-10 | 15 |
 | 17-quen-mat-khau.feature | Quên mật khẩu, đặt lại bằng OTP qua email (AUTH-08, bổ sung 09/11/2026 – ../docs/AUTH-08_quen-mat-khau.md). Cần Mailpit | AUTH-08 | 21 |
-| **Tổng** | | **69** | **223** |
+| 18-phan-kho.feature | Phân kho: mỗi kho một Quản lý kho, nhiều Nhân viên kho (BR-36); phạm vi kho của Quản lý/Nhân viên (BR-37). Bổ sung 13/11/2026 | WSTAFF-01, SCOPE-01 | 19 |
+| 19-sua-hang-hoa.feature | Quản trị viên sửa hàng hóa (bổ sung 13/11/2026) | PRD-03 | 9 |
+| 20-bao-cao-admin.feature | Admin xuất báo cáo Excel và xem lịch sử báo cáo (bổ sung 13/11/2026) | REP-04, REP-05 | 10 |
+| 21-nhap-xuat-dinh-ky.feature | Nhập/xuất định kỳ: kế hoạch theo tháng/quý/năm, tự lập phiếu chờ duyệt (bổ sung 14/11/2026, xem ../README.md) | PLAN-01..04 | 31 |
+| **Tổng** | | **78** | **292** |
 
+
+### Bộ kịch bản bổ sung 13–14/11/2026 (file 18–21)
+
+- **Chưa chạy lần nào** khi viết; `npx bddgen` đã xác nhận mọi câu bước đều có định nghĩa và không trùng.
+- Dữ liệu mẫu hiện có 3 kho và 3 Quản lý kho (U2 HN, U6 HCM, U7 DN); `SEED` trong `steps/fixtures.ts` đã cập nhật (3 kho, tồn 994, 12 vị trí tồn thấp).
+- Vai trò mới trong câu bước: `Manager HCM`, `Manager DN`, `Staff HCM` (cùng `Manager` = kho HN, `Staff` = kho HN). Tài khoản đọc từ `helpers/app.ts` (`ACCOUNTS`).
+- Các kịch bản này **không dùng** `fixture [TEST] đã được tạo` (fixture cũ còn gọi API tạo kho/đối tác đã bị gỡ). Chúng tự tạo hàng hóa [TEST] (`TST-<runId>`) và dọn sau khi chạy: kết thúc kế hoạch, từ chối phiếu còn chờ duyệt, khóa rồi xóa tài khoản [TEST].
+- Câu bước gọi API có thân JSON dùng động từ **"gửi"** (`Admin gửi POST "/api/plans" với JSON:` + docstring); biến `${…}` xem `fill()` trong `steps/new.helpers.ts` (`${today}`, `${monthStart}`, `${day}`, `${period}`, `${prod.id}`, `${planId}`, `${planReceipt}`, `${phone}`…).
+- Tag `@exclusive` trong nhóm này: kịch bản đổi Quản lý kho của kho thật (WSTAFF-01-08) và các kịch bản so tồn cuối báo cáo với tồn hiện tại (REP-04-02/03, REP-05-02).
+- Các kịch bản `@seed-data` của PLAN (01-01, 04-01, 04-02) chỉ đúng với kế hoạch mẫu DK-0001/DK-0002 chưa bị sửa và chạy trước ngày 01/01/2027.
+- PLAN-04-07 tự bỏ qua khi "hôm nay + 2 ngày" vượt ngày 28.
 ## Tag
 
 | Tag | Ý nghĩa |

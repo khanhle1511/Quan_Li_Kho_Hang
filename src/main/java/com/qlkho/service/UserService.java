@@ -29,11 +29,14 @@ public class UserService {
     private final UserRepo users;
     private final BCryptPasswordEncoder encoder;
     private final CreateTx create;
+    /** BR-36: kho làm việc của Quản lý kho / Nhân viên kho. */
+    private final WarehouseStaffing staffing;
 
-    public UserService(UserRepo users, BCryptPasswordEncoder encoder, CreateTx create) {
+    public UserService(UserRepo users, BCryptPasswordEncoder encoder, CreateTx create, WarehouseStaffing staffing) {
         this.users = users;
         this.encoder = encoder;
         this.create = create;
+        this.staffing = staffing;
     }
 
     private UserAccount user(String id) {
@@ -77,6 +80,9 @@ public class UserService {
         PasswordPolicy.check(f.password());
         if (!Rules.ROLES.contains(f.role())) throw ApiException.bad("Vai trò không hợp lệ.");
         if (!Rules.isIsoDate(f.opened())) throw ApiException.bad("Vui lòng chọn ngày mở tài khoản.");
+        if (WarehouseStaffing.worksAtWarehouse(f.role()) && Rules.blank(f.warehouseId()))
+            throw ApiException.bad("Vui lòng chọn kho làm việc cho " + Rules.ROLE_LABEL.get(f.role()) + ".");
+        String warehouseId = staffing.checkAssignment(f.role(), f.warehouseId(), null);
 
         UserAccount u = new UserAccount();
         // BUG-011: lấy số từ bộ đếm chỉ tăng, không suy từ mã đang tồn tại, để mã tài khoản đã xóa không bị cấp lại
@@ -87,12 +93,16 @@ public class UserService {
         u.passwordHash = encoder.encode(f.password());
         u.role = f.role();
         u.opened = f.opened();
+        u.warehouseId = warehouseId;
         u.status = STATUSES.contains(f.status()) ? f.status() : Rules.DRAFT;
         create.insert(u);
         return Map.of("id", u.id, "name", u.name);
     }
 
-    /** Admin sửa được họ tên (CR-02), số điện thoại đăng nhập, email (AUTH-08) và mật khẩu của mọi tài khoản; vai trò, ngày mở giữ nguyên. */
+    /**
+     * Admin sửa được họ tên (CR-02), số điện thoại đăng nhập, email (AUTH-08), mật khẩu và kho làm việc (BR-36)
+     * của mọi tài khoản; vai trò, ngày mở giữ nguyên.
+     */
     @Transactional
     public Map<String, Object> update(String id, Dto.UserForm f) {
         UserAccount u = user(id);
@@ -106,16 +116,21 @@ public class UserService {
         boolean changePass = !Rules.blank(f.password());
         if (changePass) PasswordPolicy.check(f.password());
         boolean changeEmail = !Objects.equals(email, u.email);
-        if (name.equals(u.name) && phone.equals(u.phone) && !changeEmail && !changePass)
+        // BR-36: không gửi "warehouseId" (client cũ) thì giữ kho cũ; chuỗi trống = bỏ phân kho
+        String warehouseId = f.warehouseId() == null ? u.warehouseId : staffing.checkAssignment(u.role, f.warehouseId(), u.id);
+        boolean changeWarehouse = !Objects.equals(warehouseId, u.warehouseId);
+        if (name.equals(u.name) && phone.equals(u.phone) && !changeEmail && !changePass && !changeWarehouse)
             throw ApiException.bad("Chưa có thay đổi nào để lưu.");
         List<String> changes = new ArrayList<>(); // USR-07: ghi vào nhật ký những gì đã đổi
         if (!name.equals(u.name)) changes.add("họ tên");
         if (!phone.equals(u.phone)) changes.add("SĐT");
         if (changeEmail) changes.add("email");
         if (changePass) changes.add("mật khẩu");
+        if (changeWarehouse) changes.add("kho làm việc");
         u.name = name;
         u.phone = phone;
         u.email = email;
+        u.warehouseId = warehouseId;
         if (changePass) u.passwordHash = encoder.encode(f.password());
         users.save(u);
         return Map.of("id", u.id, "name", u.name, "changes", changes);

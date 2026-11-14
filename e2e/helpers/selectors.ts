@@ -131,6 +131,18 @@ export const SEL = {
 
   // ---- Người dùng (viewUsers 1520, viewDeleteDialog 1504) ----
   userRow: '#user-table .trow',
+  ufName: '[data-fid="uf-name"]',
+  ufPhone: '[data-fid="uf-phone"]',
+  ufPass: '[data-fid="uf-pass"]',
+  ufWhHint: '[data-fid="uf-wh-hint"]',                // dưới ô "Kho làm việc": báo kho đã có Quản lý kho
+  userAdd: 'main button:has-text("+ Tạo tài khoản")',
+  userCreate: 'main button:text-is("Tạo tài khoản")',
+  userSave: 'main button:text-is("Lưu thay đổi")',
+  // ---- BR-36: popup "Kho … đã có Quản lý kho" (viewManagerConflict) ----
+  mconfDialog: '[aria-labelledby="mconf-title"]',
+  mconfTitle: '#mconf-title',
+  mconfCard: '[data-fid="mconf-card"]',                  // tên, vai trò, trạng thái, mã tài khoản, SĐT, email, kho đang quản lý
+  mconfClose: '[data-fid="mconf-close"]',
   // ---- RCPT-10: sổ phiếu nhập/xuất + popup chi tiết (viewReceiptBook, viewReceiptDialog) ----
   rbRow: '#rb-list .trow',                         // cột: mã (rc-link), loại, ngày/người lập, đối tác, kho, hàng hóa ("•••" nếu che), tổng SL, trạng thái, Xem
   rbQ: '[data-fid="rb-q"]',
@@ -164,4 +176,48 @@ export const TEXT = {
   approved: /^Đã duyệt (P[NX]-\d{4})\./,
   sessionHidden: 'được ẩn theo phân quyền',
   exportSimulated: '(mô phỏng',
+} as const;
+
+/**
+ * Selector cho các tính năng bổ sung 13–14/11/2026 (phạm vi kho BR-36/37, sửa hàng hóa, xuất báo cáo Admin,
+ * nhập/xuất định kỳ). Tách riêng để dễ đối chiếu với index.html khi giao diện đổi.
+ */
+export const SEL2 = {
+  // ---- Hàng hóa: Admin sửa (viewProducts) ----
+  prEdit: (name: string) => `button[aria-label="Sửa ${name}"]`,
+  prFormTitle: 'section.card:has(h2:text-matches("^Sửa hàng hóa"))',
+  prSaveEdit: 'section.card button:text-is("Lưu thay đổi")',
+  // ---- Báo cáo: Admin xuất + lịch sử (viewReports, viewReportHistory) ----
+  repExport: '[data-fid="rep-export"]',            // chỉ Admin
+  repHistory: '#report-history',                    // chỉ Admin
+  repHistoryRow: '#report-history .trow',           // Mã, Thời điểm xuất, Kho, Kỳ, Người xuất, Nhập, Xuất, Tồn cuối, link "Tải lại"
+  repReload: 'a:has-text("Tải lại")',
+  // ---- Nhập/xuất định kỳ (viewPlans, viewPlanForm, viewPlanDetail) ----
+  plNew: '[data-fid="pl-new"]',                     // "+ Tạo kế hoạch" (Admin; Quản lý kho đã được phân kho)
+  plList: 'section.card:has(h2:text-is("Kế hoạch nhập/xuất định kỳ")) .trow',
+  plOpen: (id: string) => `[data-fid="plan-open-${id}"]`,
+  plForm: '#plan-form',
+  plFormErr: '#plan-form .alert-err',
+  plDay: '[data-fid="pl-day"]',
+  plStart: '[data-fid="pl-start"]',
+  plEnd: '[data-fid="pl-end"]',
+  plNote: '[data-fid="pl-note"]',
+  plHint: '[data-fid="pl-hint"]',
+  plPartner: '[data-fid="pl-partner"]',
+  plWh: '[data-fid="pl-wh"]',
+  plMic: '[data-fid="pl-mic"]',                     // select tháng trong năm (chu kỳ năm)
+  plLinePick: '[data-fid="pl-line-pick"]',          // select "+ Thêm mặt hàng…", value = mã hàng
+  plLineQty: (i: number) => `[data-fid="pl-line-q${i}"]`,
+  plSave: '[data-fid="pl-save"]',
+  plCancel: '[data-fid="pl-cancel"]',
+  plDetail: '#plan-detail',
+  plEdit: '[data-fid="pl-edit"]',
+  plOvrOpen: '[data-fid="pl-ovr-open"]',
+  plOvrPick: '[data-fid="pl-ovr-pick"]',
+  plOvrQty: (i: number) => `[data-fid="pl-ovr-q${i}"]`,
+  plOvrSave: '[data-fid="pl-ovr-save"]',
+  plSkip: '[data-fid="pl-skip"]',
+  plRun: '[data-fid="pl-run"]',
+  /** Thẻ nhắc trên Tổng quan (kế hoạch còn ≤ 3 ngày là đến hạn) */
+  dueCard: 'section.card:has(h2:text-is("Sắp đến kỳ nhập/xuất"))',
 } as const;

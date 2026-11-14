@@ -35,6 +35,8 @@ public class ActivityService {
         CATEGORY_LABEL.put("CATALOG", "Hàng hóa & đối tác");
         CATEGORY_LABEL.put("USER", "Tài khoản");
         CATEGORY_LABEL.put("WAREHOUSE", "Kho");
+        CATEGORY_LABEL.put("REPORT", "Báo cáo");
+        CATEGORY_LABEL.put("PLAN", "Nhập/xuất định kỳ");
         def("AUTH", "LOGIN", "Đăng nhập");
         def("AUTH", "LOGOUT", "Đăng xuất");
         def("AUTH", "LOGIN_FAIL", "Đăng nhập thất bại");
@@ -44,6 +46,7 @@ public class ActivityService {
         def("RECEIPT", "RECEIPT_REJECT", "Từ chối phiếu");
         def("STOCKTAKE", "STOCKTAKE_CONFIRM", "Xác nhận kiểm kê");
         def("CATALOG", "PRODUCT_CREATE", "Thêm hàng hóa");
+        def("CATALOG", "PRODUCT_UPDATE", "Sửa hàng hóa");
         def("CATALOG", "PARTNER_CREATE", "Thêm đối tác");
         def("CATALOG", "PARTNER_UPDATE", "Sửa đối tác");
         def("CATALOG", "PARTNER_NOTE", "Cập nhật ghi chú");
@@ -63,6 +66,13 @@ public class ActivityService {
         def("WAREHOUSE", "WH_UPDATE", "Sửa kho");
         def("WAREHOUSE", "WH_STATUS", "Đổi trạng thái kho");
         def("WAREHOUSE", "WH_DELETE", "Xóa kho");
+        def("REPORT", "REPORT_EXPORT", "Xuất báo cáo");
+        def("PLAN", "PLAN_CREATE", "Tạo kế hoạch định kỳ");
+        def("PLAN", "PLAN_UPDATE", "Sửa kế hoạch định kỳ");
+        def("PLAN", "PLAN_STATUS", "Đổi trạng thái kế hoạch");
+        def("PLAN", "PLAN_NEXT_EDIT", "Điều chỉnh kỳ tới");
+        def("PLAN", "PLAN_SKIP", "Bỏ qua kỳ tới");
+        def("PLAN", "PLAN_RUN", "Chạy kế hoạch ngay");
     }
     private static void def(String category, String action, String label) {
         LABEL.put(action, label);
@@ -71,6 +81,7 @@ public class ActivityService {
     public static final Map<String, String> USER_STATUS_LABEL = Map.of(
             Rules.ACTIVE, "Hoạt động", Rules.DRAFT, "Nháp", Rules.LOCKED, "Đã khóa");
     public static final Map<String, String> WH_STATUS_LABEL = Map.of(Rules.ACTIVE, "Hoạt động", Rules.PAUSED, "Tạm ngưng");
+    public static final Map<String, String> PLAN_STATUS_LABEL = Map.of(Rules.ACTIVE, "Đang chạy", Rules.PAUSED, "Tạm dừng", "ended", "Đã kết thúc");
 
     private final ActivityLogRepo logs;
     private final UserRepo users;

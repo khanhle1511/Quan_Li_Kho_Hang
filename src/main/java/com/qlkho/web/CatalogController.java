@@ -40,16 +40,15 @@ public class CatalogController {
         return r;
     }
 
-    // ----- đối tác -----
-    @PostMapping("/partners")
-    public Map<String, Object> createPartner(@RequestBody Dto.PartnerForm req, HttpSession session) {
-        UserAccount me = auth.requireManager(session);
-        Map<String, Object> r = catalog.createPartner(req, me);
-        activity.record(me, "PARTNER_CREATE", "PARTNER", String.valueOf(r.get("id")),
-                Rules.trim(req.name()) + " (" + ("sup".equals(req.type()) ? "nhà cung cấp" : "khách hàng") + ")");
+    @PutMapping("/products/{id}")
+    public Map<String, Object> updateProduct(@PathVariable String id, @RequestBody Dto.NewProduct req, HttpSession session) {
+        UserAccount me = auth.requireAdmin(session);
+        Map<String, Object> r = catalog.updateProduct(id, req);
+        activity.record(me, "PRODUCT_UPDATE", "PRODUCT", id, r.get("name") + " (" + r.get("sku") + ")");
         return r;
     }
 
+    // ----- đối tác (danh sách cố định, không có API tạo mới) -----
     @PutMapping("/partners/{id}")
     public Map<String, Object> updatePartner(@PathVariable String id, @RequestBody Dto.PartnerForm req, HttpSession session) {
         UserAccount me = auth.requireManager(session);
@@ -95,15 +94,7 @@ public class CatalogController {
         return Map.of("ok", true);
     }
 
-    // ----- kho (chỉ Quản trị viên) -----
-    @PostMapping("/warehouses")
-    public Map<String, Object> createWarehouse(@RequestBody Dto.WarehouseForm req, HttpSession session) {
-        UserAccount me = auth.requireAdmin(session);
-        Map<String, Object> r = catalog.createWarehouse(req);
-        activity.record(me, "WH_CREATE", "WAREHOUSE", String.valueOf(r.get("id")), String.valueOf(r.get("name")));
-        return r;
-    }
-
+    // ----- kho (chỉ Quản trị viên; danh sách cố định, không có API tạo mới) -----
     @PutMapping("/warehouses/{id}")
     public Map<String, Object> updateWarehouse(@PathVariable String id, @RequestBody Dto.WarehouseForm req, HttpSession session) {
         UserAccount me = auth.requireAdmin(session);

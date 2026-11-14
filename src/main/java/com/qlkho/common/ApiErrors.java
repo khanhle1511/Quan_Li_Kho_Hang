@@ -28,6 +28,12 @@ public class ApiErrors {
         return error(e.getStatus(), e.getMessage());
     }
 
+    /** BR-36: kho đã có Quản lý kho → 409 với {"error", "conflict"} để giao diện hiện popup thông tin người đang quản lý. */
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<Map<String, Object>> conflict(ConflictException e) {
+        return ResponseEntity.status(e.getStatus()).body(Map.of("error", e.getMessage(), "conflict", e.getConflict()));
+    }
+
     /** AUTH-08 / BR-31: vượt giới hạn gửi mã → 429 với {"error", "retryAfter"} và header Retry-After. */
     @ExceptionHandler(TooManyRequestsException.class)
     public ResponseEntity<Map<String, Object>> tooMany(TooManyRequestsException e) {

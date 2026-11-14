@@ -4,6 +4,7 @@ import com.qlkho.model.UserAccount;
 import com.qlkho.service.ActivityService;
 import com.qlkho.service.AuthService;
 import com.qlkho.service.PasswordResetService;
+import com.qlkho.service.RecurringService;
 import com.qlkho.service.StateService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -20,17 +21,21 @@ public class AuthController {
     private final StateService state;
     private final ActivityService activity;
     private final PasswordResetService passwordReset;
+    private final RecurringService recurring;
 
-    public AuthController(AuthService auth, StateService state, ActivityService activity, PasswordResetService passwordReset) {
+    public AuthController(AuthService auth, StateService state, ActivityService activity, PasswordResetService passwordReset,
+                          RecurringService recurring) {
         this.auth = auth;
         this.state = state;
         this.activity = activity;
         this.passwordReset = passwordReset;
+        this.recurring = recurring;
     }
 
     @PostMapping("/auth/login")
     public Map<String, Object> login(@RequestBody Dto.Login req, HttpSession session) {
         UserAccount u = auth.login(req.phone(), req.password(), session);
+        recurring.runDueSafely(); // sinh phiếu định kỳ đến hạn: bản chạy miễn phí có thể ngủ qua ngày đến hạn
         return auth.me(u);
     }
 

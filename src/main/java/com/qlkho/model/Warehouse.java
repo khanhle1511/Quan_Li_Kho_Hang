@@ -10,8 +10,6 @@ public class Warehouse {
     @Column(nullable = false, unique = true, length = 20) public String code;
     @Column(nullable = false, length = 100) public String name;
     @Column(length = 200) public String address;
-    /** Khóa ngoại tới nguoi_dung.id (thủ kho phụ trách), có thể null */
-    @Column(length = 20) public String keeperId;
     @Column(length = 15) public String phone;
     /** Sức chứa tối đa (đơn vị), 0 = không giới hạn */
     public int capacity;

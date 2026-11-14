@@ -2,6 +2,7 @@ package com.qlkho.service;
 
 import com.qlkho.common.ApiException;
 import com.qlkho.common.Rules;
+import com.qlkho.common.WarehouseScope;
 import com.qlkho.model.*;
 import com.qlkho.repo.*;
 import com.qlkho.web.Dto;
@@ -112,6 +113,7 @@ public class InventoryService {
                 .orElseThrow(() -> ApiException.bad(in ? "Vui lòng chọn nhà cung cấp." : "Vui lòng chọn khách hàng / đơn vị nhận."));
         if (!p.partnerType.equals(in ? "sup" : "cus")) throw ApiException.bad("Đối tác không phù hợp với loại phiếu.");
         Warehouse w = activeWarehouse(req.warehouseId(), "Vui lòng chọn kho.", "lập phiếu");
+        WarehouseScope.check(me, w.id, "lập phiếu"); // BR-37
         if (req.lines() == null || req.lines().isEmpty())
             throw ApiException.bad("Phiếu chưa có mặt hàng nào. Hãy chọn hàng hóa ở danh sách bên trái.");
 
@@ -151,12 +153,56 @@ public class InventoryService {
         return Map.of("code", code, "status", r.status, "type", r.receiptType, "low", low);
     }
 
+    /** Phiếu vừa sinh từ kế hoạch định kỳ; {@code shortages} là các mặt hàng xuất đang thiếu tồn lúc lập. */
+    public record ScheduledReceipt(String code, List<String> shortages) {}
+
+    /**
+     * Lập phiếu từ kế hoạch định kỳ: luôn ở trạng thái chờ duyệt (kể cả phiếu nhập), người lập là "Hệ thống".
+     * Không có tài khoản người lập nên phiếu không bị che theo BR-25/26 và Quản lý kho của kho đó duyệt được.
+     * Phiếu xuất thiếu hàng vẫn được lập kèm cảnh báo trong ghi chú; bước duyệt kiểm tra lại tồn ({@link #applyStock}).
+     * Chỉ gọi bên trong {@link CreateTx#run}.
+     */
+    public ScheduledReceipt insertScheduledReceipt(String type, String partnerId, String warehouseId, List<Dto.Line> ls,
+                                                   String ref, String note) {
+        Map<String, Product> prods = productsOf(ls.stream().map(Dto.Line::productId).toList());
+        List<String> shortages = new ArrayList<>();
+        if (OUT.equals(type))
+            for (Dto.Line l : ls) {
+                int have = stockOf(l.productId(), warehouseId).qty;
+                if (l.qty() > have) shortages.add(prods.get(l.productId()).name + " (cần " + l.qty() + ", còn " + have + ")");
+            }
+        String prefix = IN.equals(type) ? "PN-" : "PX-";
+        String code = Rules.nextCode(receipts.findIdsByPrefix(prefix), prefix, 4);
+        Receipt r = new Receipt();
+        r.id = code;
+        r.receiptType = type;
+        r.partnerId = partnerId;
+        r.warehouseId = warehouseId;
+        r.createdAt = Rules.now();
+        r.status = Rules.PENDING;
+        r.creatorName = Rules.SYSTEM_NAME;
+        r.recurringRef = ref;
+        r.note = scheduledNote(ref, note, shortages);
+        r.sortKey = System.currentTimeMillis();
+        create.insert(r);
+        lines.saveAll(ls.stream().map(l -> ReceiptLine.of(code, l.productId(), l.qty())).toList());
+        return new ScheduledReceipt(code, shortages);
+    }
+
+    private static String scheduledNote(String ref, String planNote, List<String> shortages) {
+        String text = "Phiếu định kỳ " + ref + "." + (Rules.blank(planNote) ? "" : " " + planNote.trim())
+                + (shortages.isEmpty() ? "" : " CẢNH BÁO THIẾU HÀNG: " + String.join("; ", shortages) + ".");
+        return text.length() > 500 ? text.substring(0, 497) + "..." : text;
+    }
+
     // ---------- UC04: duyệt / từ chối ----------
     /**
+     * BR-37: Quản lý kho chỉ duyệt / từ chối phiếu của kho mình làm việc.
      * BR-26 (RCPT-10): Quản lý kho không duyệt / từ chối phiếu do Quản trị viên lập.
      * Tài khoản người lập đã bị xóa thì không tra được vai trò → không chặn (hạn chế đã biết).
      */
     private void checkCanDecide(Receipt r, UserAccount me) {
+        WarehouseScope.check(me, r.warehouseId, "duyệt hoặc từ chối phiếu");
         if (!Rules.MANAGER.equals(me.role) || r.creatorId == null) return;
         boolean byAdmin = users.findById(r.creatorId).map(u -> Rules.ADMIN.equals(u.role)).orElse(false);
         if (byAdmin) throw new ApiException(403, "Phiếu " + r.id + " do Quản trị viên lập; Quản lý kho không được xử lý.");
@@ -241,6 +287,7 @@ public class InventoryService {
      */
     private Map<String, Object> stocktakeTx(Dto.NewStocktake req, UserAccount me) {
         Warehouse w = activeWarehouse(req.warehouseId(), "Vui lòng chọn kho cần kiểm kê.", "kiểm kê");
+        WarehouseScope.check(me, w.id, "kiểm kê"); // BR-37
         if (req.rows() == null || req.rows().isEmpty()) throw ApiException.bad("Phiếu kiểm kê chưa có mặt hàng nào.");
         List<String> pids = req.rows().stream().map(row -> Rules.nz(row.productId())).toList();
         Map<String, Product> prods = productsOf(pids);

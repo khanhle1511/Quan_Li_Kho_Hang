@@ -23,6 +23,11 @@ public class UserAccount {
      * Để null được (không có giá trị mặc định ở CSDL) vì ddl-auto=update thêm cột vào bảng đã có dữ liệu.
      */
     @Column(name = "session_version") public Integer sessionVersion;
+    /**
+     * BR-36: kho làm việc của Quản lý kho / Nhân viên kho (null = chưa phân kho, hoặc Quản trị viên).
+     * Mỗi kho có tối đa một Quản lý kho và nhiều Nhân viên kho.
+     */
+    @Column(length = 20) public String warehouseId;
 
     public int sessionVersion() { return sessionVersion == null ? 0 : sessionVersion; }
 

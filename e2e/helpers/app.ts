@@ -5,6 +5,10 @@ export const ACCOUNTS = {
   admin: { phone: process.env.ADMIN_PHONE ?? '0901111111', pass: process.env.ADMIN_PASS ?? '123456', name: 'Nguyễn Văn An' },
   manager: { phone: process.env.MANAGER_PHONE ?? '0902222222', pass: process.env.MANAGER_PASS ?? '123456', name: 'Trần Thị Bình' },
   staff: { phone: process.env.STAFF_PHONE ?? '0903333333', pass: process.env.STAFF_PASS ?? '123456', name: 'Lê Minh Cường' },
+  // BR-36/37: mỗi kho một Quản lý kho; Manager/Staff ở trên làm ở kho HN. Dữ liệu mẫu có thêm 3 tài khoản (mật khẩu 123456)
+  managerHcm: { phone: '0906666666', pass: '123456', name: 'Đỗ Quang Hải' },
+  managerDn: { phone: '0907777777', pass: '123456', name: 'Vũ Ngọc Lan' },
+  staffHcm: { phone: '0908888888', pass: '123456', name: 'Bùi Thanh Tâm' },
   locked: { phone: '0904444444', pass: '123456', name: 'Phạm Thu Dung' },
   draft: { phone: '0905555555', pass: '123456', name: 'Hoàng Gia Huy' },
 } as const;

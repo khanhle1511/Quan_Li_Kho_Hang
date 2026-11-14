@@ -109,7 +109,7 @@ qlkho-web/
     ├── java/com/qlkho/
     │   ├── QlkhoApplication.java  Điểm khởi động
     │   ├── config/                AppConfig (BCrypt, @Async, @Scheduled), ResetProperties (app.reset.*), MailProperties (app.mail.*)
-    │   ├── model/                 13 lớp @Entity ↔ 13 bảng (gồm ActivityLog – nhật ký hoạt động, PasswordReset – yêu cầu đặt lại mật khẩu)
+    │   ├── model/                 20 lớp @Entity ↔ 20 bảng (gồm ActivityLog – nhật ký hoạt động, PasswordReset – yêu cầu đặt lại mật khẩu, ReportLog/ReportFile – lịch sử báo cáo, RecurringPlan/Line/Override/Run – nhập/xuất định kỳ)
     │   ├── repo/                  Spring Data JPA repository (truy vấn đếm, lấy mã… để không tải cả bảng)
     │   ├── service/               Nghiệp vụ
     │   │   ├── AuthService        UC01 Đăng nhập, kiểm tra quyền (requireAdmin / requireManager)
@@ -119,7 +119,9 @@ qlkho-web/
     │   │   ├── PasswordResetService  AUTH-08: quên mật khẩu (gửi mã, kiểm tra mã, đặt mật khẩu mới); ResetCodes sinh OTP/token
     │   │   ├── mail/              Gửi mail: MailGateway (SMTP | Brevo | log), MailTemplates, PasswordResetMailer (@Async)
     │   │   ├── ActivityService    USR-07: ghi và tra cứu lịch sử hoạt động; ActivityBackfill suy ra lịch sử cũ lúc khởi động
-    │   │   ├── StateService       Gom dữ liệu cho giao diện, ẩn liên hệ theo vai trò
+    │   │   ├── RecurringService   Nhập/xuất định kỳ: kế hoạch theo tháng/quý/năm, tự lập phiếu chờ duyệt khi đến hạn
+│   │   ├── RecurringScheduler Kích hoạt sinh phiếu định kỳ lúc khởi động và mỗi ngày một lần
+│   │   ├── StateService       Gom dữ liệu cho giao diện, ẩn liên hệ theo vai trò
     │   │   └── DataSeeder         Dữ liệu mẫu lần chạy đầu
     │   ├── web/                   REST controller + DTO (record)
     │   └── common/                Rules (hằng số vai trò/trạng thái, regex, sinh mã), PasswordPolicy, ApiException, TooManyRequestsException, ApiErrors, FixedWindowLimiter, PdfMaker
@@ -151,6 +153,10 @@ qlkho-web/
 | PUT                 | `/api/partners/{id}/note`             | QL kho, Admin             | Lưu ghi chú                                             |
 | POST                | `/api/partners/{id}/files`            | Theo phân quyền xem hồ sơ | Tải lên PDF (≤ 10 MB)                                   |
 | GET / DELETE        | `/api/files/{id}`                     | Theo phân quyền xem hồ sơ | Xem, tải về (`?download=1`), xóa PDF                    |
+| POST / PUT          | `/api/plans`, `/api/plans/{id}`       | QL kho (kho mình), Admin  | Tạo, sửa kế hoạch nhập/xuất định kỳ                     |
+| PUT                 | `/api/plans/{id}/status`              | QL kho (kho mình), Admin  | Tạm dừng / tiếp tục / kết thúc kế hoạch                 |
+| PUT / DELETE        | `/api/plans/{id}/next`                | QL kho (kho mình), Admin  | Điều chỉnh riêng / bỏ điều chỉnh của kỳ tới             |
+| POST                | `/api/plans/{id}/skip`, `/run`        | QL kho (kho mình), Admin  | Bỏ qua kỳ tới / lập phiếu cho kỳ tới ngay               |
 | POST / PUT / DELETE | `/api/users…`                         | Admin                     | Tạo, sửa họ tên/SĐT/mật khẩu, đổi trạng thái, xóa tài khoản |
 | GET                 | `/api/users/{id}/activity`            | Admin                     | Lịch sử hoạt động của một tài khoản: thống kê + 500 dòng mới nhất (USR-07) |
 | POST / PUT / DELETE | `/api/warehouses…`                    | Admin                     | Thêm, sửa, tạm ngưng, xóa kho                           |
@@ -171,6 +177,22 @@ Mọi lỗi đều trả về JSON dạng `{"error": "..."}`: lỗi nghiệp v�
 - Tồn không bao giờ âm. Mọi biến động đều ghi vào thẻ kho, và duyệt phiếu, kiểm kê đều chạy trong transaction.
 - Chỉ xóa được tài khoản **đã khóa**, và chỉ xóa được kho **đã tạm ngưng và hết hàng**. Chứng từ cũ luôn được giữ lại.
 - SĐT, email và hồ sơ PDF bị lược bỏ **ngay tại máy chủ** theo vai trò (bảng `Rules.HIDE_CONTACT`), không chỉ ẩn trên giao diện.
+
+### Nhập/xuất định kỳ (kế hoạch tự lập phiếu)
+
+Kế hoạch (mã `DK-0001`…) khai báo loại phiếu, kho, đối tác, danh sách hàng với **số lượng cố định**, chu kỳ **theo tháng / quý / năm** (ngày trong tháng, và tháng thứ mấy trong quý hoặc năm), ngày bắt đầu và ngày kết thúc (không bắt buộc).
+
+- **Phiếu tự sinh luôn ở trạng thái chờ duyệt**, kể cả phiếu nhập; người lập là **"Hệ thống"**. Tồn kho chỉ đổi khi Quản lý kho hoặc Admin duyệt. Phiếu không có người lập nên không bị che theo BR-25/26, và Quản lý kho của kho đó duyệt được.
+- **Hệ thống chưa có chức năng sửa phiếu.** Muốn đổi số lượng của một kỳ: dùng **"Điều chỉnh kỳ tới"** trước ngày đến hạn (kế hoạch gốc giữ nguyên, điều chỉnh tự xóa sau khi kỳ đó đã chạy hoặc bị bỏ qua), hoặc từ chối phiếu.
+- **Phiếu xuất khi tồn không đủ** vẫn được sinh ở trạng thái chờ duyệt, ghi chú có `CẢNH BÁO THIẾU HÀNG`; bước duyệt kiểm tra lại tồn và chặn nếu vẫn thiếu.
+- **Khi nào hệ thống kiểm tra kỳ đến hạn:** lúc khởi động, mỗi ngày một lần (00:10 giờ Việt Nam) và khi có người đăng nhập. Nhiều điểm kích hoạt là có chủ đích: bản chạy miễn phí trên Render tự "ngủ" khi không có người dùng nên không thể chỉ dựa vào hẹn giờ.
+- **Nếu lỡ ngày chạy, hệ thống chỉ bù phiếu cho kỳ hiện tại, không sinh dồn các kỳ đã qua.** Ví dụ kế hoạch hằng quý, ngày 5 của tháng đầu quý, mà máy chủ tắt qua ngày 5: ngày 6 phiếu của quý này được lập; phiếu của các quý trước không được lập bù.
+- **Mỗi kỳ chỉ sinh một phiếu.** Ràng buộc duy nhất (kế hoạch + kỳ) ở CSDL, nên khởi động lại hay chạy nhiều bản cùng lúc cũng không sinh trùng.
+- Kỳ có ngày đến hạn trước ngày bắt đầu bị bỏ qua. Kho đang tạm ngưng hoặc đã xóa: kỳ đó được ghi nhận là **bỏ qua** kèm lý do.
+- **Tạm dừng** thì không lập phiếu; **Tiếp tục** thì kỳ hiện tại (nếu đã đến hạn) được lập. **Kết thúc** không mở lại được; quá ngày kết thúc, kế hoạch tự chuyển sang đã kết thúc.
+- Trang Tổng quan nhắc trước **3 ngày** (thẻ "Sắp đến kỳ nhập/xuất").
+- **Phân quyền:** Admin tạo, sửa mọi kế hoạch; Quản lý kho chỉ kho của mình; Nhân viên kho chỉ xem kế hoạch của kho mình.
+- Dữ liệu mẫu có 2 kế hoạch bắt đầu từ 01/01/2027 (chưa tự sinh phiếu); dùng **"Chạy ngay"** để xem phiếu do "Hệ thống" lập.
 
 ## 9. Deploy online miễn phí
 

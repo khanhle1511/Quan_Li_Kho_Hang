@@ -15,7 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
- * Tạo bản ghi mới có mã sinh theo "mã lớn nhất + 1" (U, P, NCC-, KH-, PN-, PX-, KK-) một cách an toàn
+ * Tạo bản ghi mới có mã sinh theo "mã lớn nhất + 1" (U, P, PN-, PX-, KK-) một cách an toàn
  * khi nhiều request đến cùng lúc (BUG-005, BUG-007).
  *
  * <ul>

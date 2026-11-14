@@ -1,5 +1,6 @@
 package com.qlkho.service;
 
+import com.qlkho.common.RecurringSchedule;
 import com.qlkho.common.Rules;
 import com.qlkho.model.*;
 import com.qlkho.repo.*;
@@ -15,81 +16,78 @@ import java.util.List;
 @Component
 @Order(1) // trước ActivityBackfill (USR-07)
 public class DataSeeder implements CommandLineRunner {
-    private static final String MANAGER_NAME = "Trần Thị Bình";
+    private static final String MANAGER_NAME = FixedCatalog.NOTE_BY;
+    private static final String STAFF_HN = "Lê Minh Cường";
+    private static final String STAFF_HCM = "Bùi Thanh Tâm";
 
     private final UserRepo users;
-    private final WarehouseRepo warehouses;
     private final ProductRepo products;
     private final StockRepo stocks;
-    private final PartnerRepo partners;
     private final ReceiptRepo receipts;
     private final ReceiptLineRepo lines;
     private final StockHistoryRepo history;
     private final StocktakeRepo stocktakes;
     private final CatalogService catalog;
+    private final FixedCatalog fixed;
+    private final RecurringPlanRepo plans;
+    private final RecurringLineRepo planLines;
     private final BCryptPasswordEncoder encoder;
 
-    public DataSeeder(UserRepo users, WarehouseRepo warehouses, ProductRepo products, StockRepo stocks, PartnerRepo partners,
-                      ReceiptRepo receipts, ReceiptLineRepo lines, StockHistoryRepo history, StocktakeRepo stocktakes,
-                      CatalogService catalog, BCryptPasswordEncoder encoder) {
+    public DataSeeder(UserRepo users, ProductRepo products, StockRepo stocks, ReceiptRepo receipts, ReceiptLineRepo lines,
+                      StockHistoryRepo history, StocktakeRepo stocktakes, CatalogService catalog, FixedCatalog fixed,
+                      RecurringPlanRepo plans, RecurringLineRepo planLines,
+                      BCryptPasswordEncoder encoder) {
         this.users = users;
-        this.warehouses = warehouses;
         this.products = products;
         this.stocks = stocks;
-        this.partners = partners;
         this.receipts = receipts;
         this.lines = lines;
         this.history = history;
         this.stocktakes = stocktakes;
         this.catalog = catalog;
+        this.fixed = fixed;
+        this.plans = plans;
+        this.planLines = planLines;
         this.encoder = encoder;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
+        fixed.ensure(); // nhà cung cấp, khách hàng, kho cố định: chạy cả với CSDL đã có dữ liệu
         if (users.count() > 0) return;
         String hash = encoder.encode("123456");
         // AUTH-08: email demo nhận OTP qua Mailpit khi chạy local; U5 để trống email (kiểm thử tài khoản chưa có email)
-        user("U1", "Nguyễn Văn An", "0901111111", "an.nguyen@qlkho.local", hash, Rules.ADMIN, "2026-09-01", Rules.ACTIVE);
-        user("U2", MANAGER_NAME, "0902222222", "binh.tran@qlkho.local", hash, Rules.MANAGER, "2026-09-01", Rules.ACTIVE);
-        user("U3", "Lê Minh Cường", "0903333333", "cuong.le@qlkho.local", hash, Rules.STAFF, "2026-09-15", Rules.ACTIVE);
-        user("U4", "Phạm Thu Dung", "0904444444", "dung.pham@qlkho.local", hash, Rules.STAFF, "2026-09-15", Rules.LOCKED);
-        user("U5", "Hoàng Gia Huy", "0905555555", null, hash, Rules.STAFF, "2026-11-03", Rules.DRAFT);
+        // BR-36: mỗi kho một Quản lý kho (U2 Hà Nội, U6 TP.HCM, U7 Đà Nẵng) và có thể nhiều Nhân viên kho
+        user("U1", "Nguyễn Văn An", "0901111111", "an.nguyen@qlkho.local", hash, Rules.ADMIN, "2026-09-01", Rules.ACTIVE, null);
+        user("U2", MANAGER_NAME, "0902222222", "binh.tran@qlkho.local", hash, Rules.MANAGER, "2026-09-01", Rules.ACTIVE, "HN");
+        user("U3", STAFF_HN, "0903333333", "cuong.le@qlkho.local", hash, Rules.STAFF, "2026-09-15", Rules.ACTIVE, "HN");
+        user("U4", "Phạm Thu Dung", "0904444444", "dung.pham@qlkho.local", hash, Rules.STAFF, "2026-09-15", Rules.LOCKED, "HCM");
+        user("U5", "Hoàng Gia Huy", "0905555555", null, hash, Rules.STAFF, "2026-11-03", Rules.DRAFT, "DN");
+        user("U6", "Đỗ Quang Hải", "0906666666", "hai.do@qlkho.local", hash, Rules.MANAGER, "2026-09-01", Rules.ACTIVE, "HCM");
+        user("U7", "Vũ Ngọc Lan", "0907777777", "lan.vu@qlkho.local", hash, Rules.MANAGER, "2026-09-01", Rules.ACTIVE, "DN");
+        user("U8", STAFF_HCM, "0908888888", "tam.bui@qlkho.local", hash, Rules.STAFF, "2026-09-15", Rules.ACTIVE, "HCM");
 
-        warehouse("HN", "KHO-HN", "Kho Hà Nội", "Long Biên, Hà Nội", "U2", "0243999888", 2000, "2026-01-05");
-        warehouse("HCM", "KHO-HCM", "Kho TP.HCM", "Thủ Đức, TP.HCM", "U3", "0283777666", 1500, "2026-03-01");
+        product("P01", "SP-0001", "Giấy in A4 70gsm", "Văn phòng phẩm", "Ram", 50);
+        product("P02", "SP-0002", "Bút bi xanh (hộp 20)", "Văn phòng phẩm", "Hộp", 30);
+        product("P03", "SP-0003", "Bìa hồ sơ nhựa", "Văn phòng phẩm", "Cái", 100);
+        product("P04", "SP-0004", "Mực in laser đen", "Vật tư in", "Hộp", 10);
+        product("P05", "SP-0005", "Chuột không dây", "Thiết bị điện tử", "Cái", 15);
+        product("P06", "SP-0006", "Bàn phím có dây", "Thiết bị điện tử", "Cái", 10);
+        product("P07", "SP-0007", "Cáp USB-C 1m", "Thiết bị điện tử", "Sợi", 40);
+        product("P08", "SP-0008", "Nước rửa tay 500ml", "Hóa phẩm", "Chai", 24);
 
-        product("P01", "SP-0001", "Giấy in A4 70gsm", "Văn phòng phẩm", "Ram", 50, 65000);
-        product("P02", "SP-0002", "Bút bi xanh (hộp 20)", "Văn phòng phẩm", "Hộp", 30, 48000);
-        product("P03", "SP-0003", "Bìa hồ sơ nhựa", "Văn phòng phẩm", "Cái", 100, 6000);
-        product("P04", "SP-0004", "Mực in laser đen", "Vật tư in", "Hộp", 10, 420000);
-        product("P05", "SP-0005", "Chuột không dây", "Thiết bị điện tử", "Cái", 15, 180000);
-        product("P06", "SP-0006", "Bàn phím có dây", "Thiết bị điện tử", "Cái", 10, 250000);
-        product("P07", "SP-0007", "Cáp USB-C 1m", "Thiết bị điện tử", "Sợi", 40, 55000);
-        product("P08", "SP-0008", "Nước rửa tay 500ml", "Hóa phẩm", "Chai", 24, 42000);
+        // Tồn ban đầu theo thứ tự kho HN, HCM, DN (kho cố định trong FixedCatalog)
+        String[] whs = {"HN", "HCM", "DN"};
+        int[][] qty = {{120, 35, 40}, {80, 60, 25}, {90, 150, 60}, {6, 14, 8}, {22, 18, 12}, {12, 4, 9}, {55, 70, 30}, {30, 26, 18}};
+        for (int i = 0; i < qty.length; i++)
+            for (int k = 0; k < whs.length; k++) stocks.save(Stock.of("P0" + (i + 1), whs[k], qty[i][k]));
 
-        int[][] qty = {{120, 35}, {80, 60}, {90, 150}, {6, 14}, {22, 18}, {12, 4}, {55, 70}, {30, 26}};
-        for (int i = 0; i < qty.length; i++) {
-            String pid = "P0" + (i + 1);
-            stocks.save(Stock.of(pid, "HN", qty[i][0]));
-            stocks.save(Stock.of(pid, "HCM", qty[i][1]));
-        }
-
-        partner("NCC-01", "sup", "Công ty TNHH VPP Minh An", "0901234567", "kinhdoanh@vppminhan.vn", "Cầu Giấy, Hà Nội",
-                "Giao hàng thứ Hai và thứ Năm. Chiết khấu 3% cho đơn trên 10 triệu đồng.", "28/10/2026 10:20");
-        partner("NCC-02", "sup", "Công ty CP Thiết bị số Hoàng Long", "0912345678", "sales@hoanglongtech.vn", "Quận 10, TP.HCM",
-                "Bảo hành thiết bị 12 tháng, đổi trả trong 7 ngày nếu lỗi nhà sản xuất.", "02/11/2026 15:05");
-        partner("NCC-03", "sup", "Công ty TNHH Hóa phẩm Sao Mai", "0987654321", "lienhe@saomai.com.vn", "Thuận An, Bình Dương", "", "");
-        partner("KH-01", "cus", "Phòng Hành chính – Chi nhánh 1", "0243111222", "hanhchinh.cn1@congty.vn", "Đống Đa, Hà Nội",
-                "Chỉ nhận hàng trong giờ hành chính.", "30/10/2026 09:00");
-        partner("KH-02", "cus", "Cửa hàng Quận 3", "0283333444", "cuahangq3@congty.vn", "Quận 3, TP.HCM", "", "");
-        partner("KH-03", "cus", "Công ty TNHH An Phát", "0905777888", "muahang@anphat.vn", "Hải Châu, Đà Nẵng", "", "");
-
-        receipt("PN-0001", "in", "NCC-01", "HN", "01/11/2026 09:15", Rules.APPROVED, 1, new String[][]{{"P01", "100"}, {"P02", "50"}});
-        receipt("PX-0001", "out", "KH-01", "HN", "02/11/2026 14:30", Rules.APPROVED, 2, new String[][]{{"P01", "30"}, {"P03", "40"}});
-        receipt("PN-0002", "in", "NCC-02", "HCM", "03/11/2026 10:05", Rules.PENDING, 3, new String[][]{{"P05", "20"}, {"P06", "15"}});
-        receipt("PX-0002", "out", "KH-02", "HCM", "04/11/2026 08:40", Rules.PENDING, 4, new String[][]{{"P02", "20"}});
+        // Phiếu do Nhân viên kho của chính kho đó lập (BR-37)
+        receipt("PN-0001", "in", "NCC-01", "HN", "U3", "01/11/2026 09:15", Rules.APPROVED, 1, new String[][]{{"P01", "100"}, {"P02", "50"}});
+        receipt("PX-0001", "out", "KH-01", "HN", "U3", "02/11/2026 14:30", Rules.APPROVED, 2, new String[][]{{"P01", "30"}, {"P03", "40"}});
+        receipt("PN-0002", "in", "NCC-02", "HCM", "U8", "03/11/2026 10:05", Rules.PENDING, 3, new String[][]{{"P05", "20"}, {"P06", "15"}});
+        receipt("PX-0002", "out", "KH-02", "HCM", "U8", "04/11/2026 08:40", Rules.PENDING, 4, new String[][]{{"P02", "20"}});
 
         // Thẻ kho: ghi theo thứ tự thời gian (cũ trước) để hiển thị mới nhất lên đầu
         history.save(StockHistory.of("01/11/2026 09:15", "P01", "HN", "Nhập", 100, 150, "PN-0001"));
@@ -107,46 +105,51 @@ public class DataSeeder implements CommandLineRunner {
         kk.sortKey = 1;
         stocktakes.save(kk);
 
-        catalog.storeSample("NCC-01", "HopDong_NguyenTac_MinhAn_2026.pdf", "15/09/2026 09:30", MANAGER_NAME, "HOP DONG NGUYEN TAC 2026",
-                List.of("Ben A: Kho cong ty", "Ben B: Cong ty TNHH VPP Minh An (NCC-01)", "Thoi han: 01/2026 - 12/2026", "Tai lieu mau"));
-        catalog.storeSample("NCC-01", "GiayPhepKinhDoanh_MinhAn.pdf", "15/09/2026 09:32", MANAGER_NAME, "GIAY CHUNG NHAN DANG KY KINH DOANH",
-                List.of("Cong ty TNHH VPP Minh An", "Tai lieu mau"));
-        catalog.storeSample("NCC-02", "BaoGia_ThietBi_T11-2026.pdf", "01/11/2026 14:10", MANAGER_NAME, "BAO GIA THIET BI THANG 11/2026",
-                List.of("Cong ty CP Thiet bi so Hoang Long (NCC-02)", "Chuot khong day: 180.000 d", "Ban phim co day: 250.000 d", "Tai lieu mau"));
-        catalog.storeSample("KH-01", "HopDong_CungUng_CN1.pdf", "20/09/2026 11:00", MANAGER_NAME, "HOP DONG CUNG UNG NOI BO",
-                List.of("Phong Hanh chinh - Chi nhanh 1 (KH-01)", "Tai lieu mau"));
+        catalog.storeSample("NCC-01", "HopDong_NguyenTac_PhuThinh_2026.pdf", "15/09/2026 09:30", MANAGER_NAME, "HOP DONG NGUYEN TAC 2026",
+                List.of("Ben A: Kho cong ty", "Ben B: Cong ty TNHH Van phong pham Phu Thinh (NCC-01)", "Thoi han: 01/2026 - 12/2026", "Tai lieu mau"));
+        catalog.storeSample("NCC-01", "GiayPhepKinhDoanh_PhuThinh.pdf", "15/09/2026 09:32", MANAGER_NAME, "GIAY CHUNG NHAN DANG KY KINH DOANH",
+                List.of("Cong ty TNHH Van phong pham Phu Thinh", "Tai lieu mau"));
+        catalog.storeSample("NCC-02", "DanhMuc_ThietBi_T11-2026.pdf", "01/11/2026 14:10", MANAGER_NAME, "DANH MUC THIET BI CUNG CAP THANG 11/2026",
+                List.of("Cong ty CP Cong nghe Dai Viet So (NCC-02)", "Chuot khong day", "Ban phim co day", "Tai lieu mau"));
+        catalog.storeSample("KH-01", "HopDong_CungUng_HungPhat.pdf", "20/09/2026 11:00", MANAGER_NAME, "HOP DONG CUNG UNG VAN PHONG PHAM",
+                List.of("Cong ty CP Dau tu Xay dung Hung Phat (KH-01)", "Tai lieu mau"));
+
+        // Kế hoạch định kỳ mẫu, bắt đầu từ 2027 nên chưa tự sinh phiếu: dùng "Chạy ngay" để xem phiếu "Hệ thống" lập
+        plan("DK-0001", "in", "NCC-01", "HN", RecurringSchedule.QUARTER, 5, 1, "2027-01-01", "Nhập văn phòng phẩm đầu mỗi quý",
+                new String[][]{{"P01", "100"}, {"P02", "50"}, {"P03", "80"}});
+        plan("DK-0002", "out", "KH-02", "HCM", RecurringSchedule.MONTH, 10, 1, "2027-01-01", "Giao hàng hằng tháng cho nhà sách",
+                new String[][]{{"P02", "20"}, {"P07", "30"}});
     }
 
-    private void user(String id, String name, String phone, String email, String hash, String role, String opened, String status) {
+    private void plan(String id, String type, String partnerId, String wid, String cycle, int day, int monthInCycle, String start,
+                      String note, String[][] ls) {
+        RecurringPlan p = new RecurringPlan();
+        p.id = id; p.receiptType = type; p.partnerId = partnerId; p.warehouseId = wid; p.cycle = cycle; p.dayOfMonth = day;
+        p.monthInCycle = monthInCycle; p.startDate = start; p.status = Rules.ACTIVE; p.note = note;
+        p.createdBy = MANAGER_NAME; p.createdAt = "10/11/2026 09:00";
+        plans.save(p);
+        for (String[] l : ls) planLines.save(RecurringLine.of(id, l[0], Integer.parseInt(l[1])));
+    }
+
+    private void user(String id, String name, String phone, String email, String hash, String role, String opened, String status,
+                      String warehouseId) {
         UserAccount u = new UserAccount();
         u.id = id; u.name = name; u.phone = phone; u.email = email; u.passwordHash = hash; u.role = role; u.opened = opened; u.status = status;
+        u.warehouseId = warehouseId;
         users.save(u);
     }
 
-    private void warehouse(String id, String code, String name, String address, String keeperId, String phone, int cap, String opened) {
-        Warehouse w = new Warehouse();
-        w.id = id; w.code = code; w.name = name; w.address = address; w.keeperId = keeperId; w.phone = phone;
-        w.capacity = cap; w.opened = opened; w.status = Rules.ACTIVE;
-        warehouses.save(w);
-    }
-
-    private void product(String id, String sku, String name, String cat, String unit, int min, long price) {
+    private void product(String id, String sku, String name, String cat, String unit, int min) {
         Product p = new Product();
-        p.id = id; p.sku = sku; p.name = name; p.category = cat; p.unit = unit; p.minStock = min; p.price = price;
+        p.id = id; p.sku = sku; p.name = name; p.category = cat; p.unit = unit; p.minStock = min;
         products.save(p);
     }
 
-    private void partner(String id, String type, String name, String phone, String email, String address, String note, String noteAt) {
-        Partner p = new Partner();
-        p.id = id; p.partnerType = type; p.name = name; p.phone = phone; p.email = email; p.address = address;
-        p.note = note; p.noteAt = noteAt; p.noteBy = note.isEmpty() ? "" : MANAGER_NAME;
-        partners.save(p);
-    }
-
-    private void receipt(String id, String type, String partnerId, String wid, String date, String status, long sortKey, String[][] ls) {
+    private void receipt(String id, String type, String partnerId, String wid, String creatorId, String date, String status,
+                         long sortKey, String[][] ls) {
         Receipt r = new Receipt();
         r.id = id; r.receiptType = type; r.partnerId = partnerId; r.warehouseId = wid; r.createdAt = date; r.status = status;
-        r.creatorId = "U3"; r.creatorName = "Lê Minh Cường";
+        r.creatorId = creatorId; r.creatorName = "U3".equals(creatorId) ? STAFF_HN : STAFF_HCM;
         r.approverName = Rules.APPROVED.equals(status) ? MANAGER_NAME : "";
         r.note = ""; r.sortKey = sortKey;
         receipts.save(r);

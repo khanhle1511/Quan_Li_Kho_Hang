@@ -13,6 +13,6 @@ public class Product {
     @Column(nullable = false, length = 20) public String unit;
     /** Mức tồn tối thiểu cho mỗi kho */
     public int minStock;
-    /** Giá vốn (đồng) */
+    /** Cột cũ, không còn dùng (đã bỏ mọi tính toán tiền); giữ để CSDL đang có (cột NOT NULL) vẫn thêm được hàng mới. */
     public long price;
 }

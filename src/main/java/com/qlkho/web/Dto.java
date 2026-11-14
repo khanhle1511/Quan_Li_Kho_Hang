@@ -24,16 +24,28 @@ public final class Dto {
 
     public record NewStocktake(String warehouseId, List<CountRow> rows) {}
 
-    public record NewProduct(String sku, String name, String category, String unit, Integer minStock, Long price) {}
+    public record NewProduct(String sku, String name, String category, String unit, Integer minStock) {}
 
-    public record PartnerForm(String type, String name, String phone, String email, String address, String note) {}
+    public record PartnerForm(String name, String phone, String email, String address) {}
 
     public record NoteForm(String note) {}
 
-    public record UserForm(String name, String phone, String email, String password, String role, String opened, String status) {}
+    /** Kế hoạch nhập/xuất định kỳ: cycle = month/quarter/year; day = ngày trong tháng; monthInCycle = tháng thứ mấy trong chu kỳ. */
+    public record PlanForm(String type, String partnerId, String warehouseId, String cycle, Integer day, Integer monthInCycle,
+                           String startDate, String endDate, String note, List<Line> lines) {}
+
+    /** Dòng hàng điều chỉnh riêng cho kỳ tới của một kế hoạch. */
+    public record PlanLines(List<Line> lines) {}
+
+    /** warehouseId (BR-36): kho làm việc của Quản lý kho / Nhân viên kho; khi sửa, null = giữ nguyên, "" = bỏ phân kho. */
+    public record UserForm(String name, String phone, String email, String password, String role, String opened, String status,
+                           String warehouseId) {}
 
     public record StatusForm(String status) {}
 
-    public record WarehouseForm(String code, String name, String address, String keeperId, String phone,
-                                Integer capacity, String opened, String status) {}
+    /** managerId (BR-36): Quản lý kho của kho; trống = bỏ phân công. */
+    public record WarehouseForm(String name, String address, String managerId, String phone, Integer capacity, String status) {}
+
+    /** Admin xuất báo cáo nhập – xuất – tồn; warehouseId trống hoặc "all" = tất cả kho. */
+    public record ReportRequest(String warehouseId) {}
 }

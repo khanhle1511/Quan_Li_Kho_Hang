@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface ProductRepo extends JpaRepository<Product, String> {
     boolean existsBySkuIgnoreCase(String sku);
+    boolean existsBySkuIgnoreCaseAndIdNot(String sku, String id);
     List<Product> findAllByOrderByIdAsc();
 
     @Query("select p.id from Product p")
